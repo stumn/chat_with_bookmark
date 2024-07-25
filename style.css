@@ -1,0 +1,135 @@
+   body {
+       margin: 0;
+       padding-bottom: 3rem;
+       background-color: #f0f0f0;
+       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+   }
+
+   header {
+       background-color: #c2eddb;
+       color: black;
+   }
+
+   h1,
+   h3 {
+       display: inline;
+   }
+
+   /* #status {
+       padding: 1rem;
+       position: fixed;
+       bottom: 2.5rem;
+       right: 0;
+       background-color: beige;
+       border-radius: 1rem;
+   } */
+
+   /* chatForm */
+   #chatForm {
+       background: rgba(0, 0, 0, 0.15);
+       padding: 0.25rem;
+       position: fixed;
+       bottom: 0;
+       left: 0;
+       right: 0;
+       display: flex;
+       height: 3rem;
+       box-sizing: border-box;
+       backdrop-filter: blur(10px);
+   }
+
+   #nickname,
+   #input {
+       border: none;
+       padding: 0 1rem;
+       flex-basis: 30%;
+       border-radius: 2rem;
+       margin: 0.25rem;
+   }
+
+   #input:focus {
+       outline: none;
+   }
+
+   #chatForm>button {
+       background: #385CA8;
+       border: none;
+       padding: 0 1rem;
+       margin: 0.25rem;
+       border-radius: 3px;
+       outline: none;
+       color: #fff;
+   }
+
+   /* アンケート投稿 */
+
+
+   /* MSG */
+   #messageLists {
+       list-style-type: none;
+       margin: 0;
+       padding: 0;
+   }
+
+   #messageLists>li {
+       padding: 0.5rem 1rem;
+       position: relative;
+       display: flex;
+       align-items: center;
+   }
+
+   #messageLists>li span.message-text {
+       flex: 1;
+       justify-content: space-between;
+       align-items: center;
+       margin-right: 10px;
+   }
+
+   #messageLists>li span.survey-container {
+       flex: auto;
+       align-items: left;
+   }
+
+   #messageLists>li span.survey-container button {
+       background-color: blue;
+       border: none;
+       color: white;
+       padding: 0.25rem 0.5rem;
+       border-radius: 5px;
+       cursor: pointer;
+       outline: none;
+   }
+
+   #messageLists>li span.survey-num span{
+         margin-left: 5px;
+         font-weight: bold;
+         color: blue;
+   }
+
+   #messageLists>li span.up-container {
+       display: flex;
+       justify-content: flex-end
+   }
+
+
+   #messageLists>li span.up-container button {
+       background-color: #ff9669;
+       border: none;
+       color: white;
+       padding: 0.25rem 0.5rem;
+       margin-right: 10px;
+       border-radius: 5px;
+       cursor: pointer;
+       outline: none;
+   }
+
+   #messageLists>li span.up-count {
+       font-weight: bold;
+       color: #ff9669;
+       display: flex;
+       justify-content: flex-end;
+   }
+
+   /* #messageLists>li:nth-child(odd) {
+       background: ivory;
+   } */
