@@ -21,16 +21,16 @@ const options = {
     }
 };
 
-// up
-const upSchema = new mongoose.Schema({
+// up & down
+const up_down_Schema = new mongoose.Schema({
     userSocketId: String,
     up: { type: Number, default: 0 }
 });
 
-// down
-const downSchema = new mongoose.Schema({
+// bookmark
+const bookmarkSchema = new mongoose.Schema({
     userSocketId: String,
-    down: {type: Number, default:0 }
+    bookmark: {type: Number, default:0 }
 });
 
 const postSchema = new mongoose.Schema({
@@ -38,8 +38,9 @@ const postSchema = new mongoose.Schema({
     msg: String,
     question: String,
     options: Array,
-    ups: [{type: upSchema, default: () => ({})}],
-    downs:[{type: downSchema, default:() => ({})}],
+    ups: [{type: up_down_Schema, default: () => ({})}],
+    downs:[{type: up_down_Schema, default:() => ({})}],
+    bookmarks:[{type: bookmarkSchema, default:() =>({})}],
     voteOpt0: [String],
     voteOpt1: [String],
     voteOpt2: [String]

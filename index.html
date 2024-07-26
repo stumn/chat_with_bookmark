@@ -68,7 +68,7 @@
       pastArray.forEach(element => {
         addMessageToList(element);
       });
-      // addTemplateMessage('-----⇊ ここから参加 ⇊-----');
+      addTemplateMessage('-----⇊ ここから参加 ⇊-----');
     });
 
     // いらっしゃい！
@@ -97,13 +97,17 @@
         item.appendChild(surveyContainer);
       }
 
-      // 3 up button and up counts
-      const upContainer = makeUpContainerElement(message);
+      // 3 up button and counts
+      const upContainer = makeContainerElement('up', message);
       item.appendChild(upContainer);
 
-      // 4 down button and down counts 
-      const downContainer = makeDownContainerElement(message);
+      // 4 down button and counts 
+      const downContainer = makeContainerElement('down', message);
       item.appendChild(downContainer);
+
+      // 5 bookmark button and couonts
+      const bookmarkContainer = makeContainerElement('bookmark', message);
+      item.appendChild(bookmarkContainer);
 
       window.scrollTo(0, document.body.scrollHeight);
 
@@ -147,48 +151,48 @@
       return surveyContainer;
     }
 
-    // 3
-    function makeUpContainerElement(message) {
-      const upContainer = document.createElement('span');
-      upContainer.classList.add('up-container');
+    // 3,4,5
+    function makeContainerElement(eventType, message) {
+      let containerSign;
+      let emoji;
+      let countSign;
 
-      const upButton = document.createElement('button');
-      upButton.textContent = '⇧';
-      upButton.addEventListener('click', e => {
-        socket.emit('up', message._id);
+      switch (eventType) {
+        case 'up':
+          containerSign = 'up-container';
+          emoji = '⇧'
+          countSign = 'up-count'
+          break;
+        case 'down':
+          containerSign = 'down-container';
+          emoji = '⇩'
+          countSign = 'down-count'
+          break;
+        case 'bookmark':
+          containerSign = 'bookmark-container';
+          emoji = '🔖'
+          countSign = 'bookmark-count'
+          break;
+      }
+
+      const container = document.createElement('span');
+      container.classList.add(containerSign);
+
+      const button = document.createElement('button');
+      button.textContent = emoji;
+      button.addEventListener('click', e => {
+        socket.emit(eventType, message._id);
       });
 
-      const upCount = document.createElement('span');
-      upCount.classList.add('up-count');
+      const count = document.createElement('span');
+      count.classList.add(countSign);
 
-      upCount.textContent = message.likes >= 1 ? message.likes : 0;
+      count.textContent = message.likes >= 1 ? message.likes : 0;
 
-      upContainer.appendChild(upButton);
-      upContainer.appendChild(upCount);
+      container.appendChild(button);
+      container.appendChild(count);
 
-      return upContainer;
-    }
-
-    // 4
-    function makeDownContainerElement(message) {
-      const downContainer = document.createElement('span');
-      downContainer.classList.add('down-container');
-
-      const downButton = document.createElement('button');
-      downButton.textContent = '⇩';
-      downButton.addEventListener('click', e => {
-        socket.emit('down', message._id);
-      });
-
-      const downCount = document.createElement('span');
-      downCount.classList.add('down-count');
-
-      downCount.textContent = message.likes >= 1 ? message.likes : 0;
-
-      downContainer.appendChild(downButton);
-      downContainer.appendChild(downCount);
-
-      return downContainer;
+      return container;
     }
 
     // ★チャットメッセージをサーバーに送信
@@ -243,6 +247,13 @@
       const downCount = item.querySelector('.down-container span');
       downCount.textContent = downData.count;
     });
+
+    // ★bookmark受信
+    socket.on('bookmark',(bookmarkData) =>{
+      const item = document.getElementById(bookmarkData._id);
+      const bookmarkCount = item.querySelector('.bookmark-container span');
+      bookmarkCount.textContent = bookmarkData.count;
+    });    
 
     // アンケート作成の表示切り替え関数
     function toggleSurveyFormVisibility() {

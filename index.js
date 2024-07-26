@@ -18,7 +18,7 @@ const PORT = process.env.PORT || 3000;
 const ANONYMOUS_NAME = '匿名';
 
 // UP & DOWN 最大値
-const MAX = 10;
+const MAX = 1;
 
 // ルートへのGETリクエストに対するハンドラ
 app.get('/', (_, res) => {
@@ -71,6 +71,11 @@ io.on('connection', async (socket) => {
     socket.on('down', async msgId => {
       await receiveSendEvent('down', msgId, name, socket);
     });
+
+    // Bookmark受送信
+    socket.on('bookmark', async msgId =>{
+      await receiveSendEvent('bookmark', msgId, name, socket);
+    });
   });
 
   // 切断時のイベントハンドラ
@@ -101,7 +106,7 @@ async function logInFunction(name, socket) {
 // ログイン時・過去ログをDBから取得
 async function getPastLogs() {
   try {
-    const posts = await Post.find({}).limit(10).sort({ createdAt: -1 });
+    const posts = await Post.find({}).limit(30).sort({ createdAt: -1 });
     posts.reverse();
     const pastLogs = await Promise.all(posts.map(organizeLogs));
     console.log('過去ログ整理完了');
@@ -316,21 +321,37 @@ function calculate_VoteSum(voteArrays, msgId = '') {
 
 // ここから👆👇
 async function receiveSendEvent(eventType, msgId, name, socket) {
-  const eventEmoji = eventType === 'up' ? '👆' : '👇';
-  console.log(eventType + '先のポスト: ' + msgId + eventEmoji + 'by' + name);
-
+  let eventEmoji;
+  let Array;
+  
   try {
+    
     // 1投稿を見つける
     const post = await findPost(msgId, eventType);
 
-    // 2Arrayを作り出す
-    const Array = eventType === 'up' ? post.ups : post.downs;
+    // 2 eventTypeで場合分け
+    switch(eventType){
+      case 'up':
+        eventEmoji = '👆';
+        Array = post.ups;
+        break;
+      case 'down':
+        eventEmoji = '👇';
+        Array = post.downs;
+        break;
+      case 'bookmark':
+        eventEmoji = '🔖';
+        Array = post.bookmarks;
+        break;
+    }
+
+    console.log(eventType + '先のポスト: ' + msgId + eventEmoji + 'by' + name);
     console.log(Array);
 
-    // 3ユーザーの状態で条件分岐したうえで、up OR down を追加する
+    // 3ユーザーの状態で条件分岐したうえで、up OR down OR bookmark を追加する
     await addUserAction(Array, socket.id, post, socket, eventType);
 
-    // 4 up OR down 追加後のデータをオブジェクトにまとめる
+    // 4 up OR down OR bookmark 追加後のデータをオブジェクトにまとめる
     const eventData = await processEventData(Array, eventType, post);
     console.log(eventData);
 
