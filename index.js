@@ -17,11 +17,8 @@ const PORT = process.env.PORT || 3000;
 // 匿名ユーザーの名前
 const ANONYMOUS_NAME = '匿名';
 
-// UP最大値
-const UP_MAX = 10;
-
-// DOWN最大値
-const DOWN_MAX = 10;
+// UP & DOWN 最大値
+const MAX = 10;
 
 // ルートへのGETリクエストに対するハンドラ
 app.get('/', (_, res) => {
@@ -67,12 +64,12 @@ io.on('connection', async (socket) => {
 
     // UP受送信
     socket.on('up', async msgId => {
-      await receiveSend_Up(msgId, name, socket);
+      await receiveSendEvent('up', msgId, name, socket);
     });
 
     // DOWN受送信
     socket.on('down', async msgId => {
-      await receiveSend_Down(msgId, name, socket);
+      await receiveSendEvent('down', msgId, name, socket);
     });
   });
 
@@ -157,8 +154,8 @@ async function receiveSend_Survey(data, name) {
 }
 
 function organizeLogs(post) {
-  const pastUpSum = calculate_UpSum(post.ups);// UP合計
-  const pastDownSum = calculate_DownSum(post.downs);// DOWN合計
+  const pastUpSum = calculateSum(post.ups, 'up');
+  const pastDownSum = calculateSum(post.ups, 'up');
   const voteSums = calculate_VoteSum(createVoteArrays(post));// 投票合計
 
   // 返り値
@@ -316,176 +313,95 @@ function calculate_VoteSum(voteArrays, msgId = '') {
   return voteSums;
 }
 
-// ★★UP受送信
-async function receiveSend_Up(msgId, name, socket) {
-  console.log('UP先のポスト: ' + msgId + ' 👆 by ' + name);
+
+// ここから👆👇
+async function receiveSendEvent(eventType, msgId, name, socket) {
+  const eventEmoji = eventType === 'up' ? '👆' : '👇';
+  console.log(eventType + '先のポスト: ' + msgId + eventEmoji + 'by' + name);
+
   try {
-    const upData = await processUpEvent(msgId, socket.id, socket);
-    console.log(upData);
-    io.emit('updateUp', upData);
+    // 1投稿を見つける
+    const post = await findPost(msgId, eventType);
+
+    // 2Arrayを作り出す
+    const Array = eventType === 'up' ? post.ups : post.downs;
+    console.log(Array);
+
+    // 3ユーザーの状態で条件分岐したうえで、up OR down を追加する
+    await addUserAction(Array, socket.id, post, socket, eventType);
+
+    // 4 up OR down 追加後のデータをオブジェクトにまとめる
+    const eventData = await processEventData(Array, eventType, post);
+    console.log(eventData);
+
+    // 結果を送信
+    io.emit(eventType, eventData);
   } catch (error) {
-    handleErrors(error, 'UP受送信');
+    handleErrors(error, 'receiveSendEvent受送信' + eventType);
   }
 }
 
-// ★★DOWN受送信
-async function receiveSend_Down(msgId, name, socket) {
-  console.log('DOWN先のポスト: ' + msgId + ' 👇 by ' + name);
-  try {
-    const downData = await processDownEvent(msgId, socket.id, socket);
-    console.log(downData);
-    io.emit('updateDown', downData);
-  } catch (error) {
-    handleErrors(error, 'DOWN受送信');
-  }
-}
-
-// ★UPイベントを処理する関数
-async function processUpEvent(msgId, userSocketId, socket) {
-  try {
-    // 投稿を特定
-    const upPost = await findUpPost(msgId);
-    console.log(upPost);
-    const upArray = upPost.ups;
-    console.log(upArray);
-
-    // ユーザーのUP状態に対して処理を行う
-    await handle_differentSituation_Up(upArray, userSocketId, upPost, socket);
-
-    // UP合計を計算
-    const upSum = await calculate_UpSum(upArray);
-
-    // 返り値
-    return {
-      _id: upPost._id,
-      count: upSum
-    };
-  }
-  catch (error) {
-    handleErrors(error, 'up関数内');
-  }
-}
-
-
-// ★DOWNイベントを処理する関数
-async function processDownEvent(msgId, userSocketId, socket) {
-  try {
-    // 投稿を特定
-    const downPost = await findDownPost(msgId);
-    console.log(downPost);
-    const downArray = downPost.downs;
-    console.log(downArray);
-
-    // ユーザーのDOWN状態に対して処理を行う
-    await handle_differentSituation_Down(downArray, userSocketId, downPost, socket);
-
-    console.log('🙇'+downArray);
-
-    // DOWN合計を計算
-    const downSum = await calculate_DownSum(downArray);
-
-    // 返り値
-    return {
-      _id: downPost._id,
-      count: downSum
-    };
-  }
-  catch (error) {
-    handleErrors(error, 'down関数内');
-  }
-}
-
-// -UP投稿を特定
-async function findUpPost(msgId) {
-  const upPost = await Post.findById(msgId);
-  if (!upPost) {
-    handleErrors(error, `up投稿見つからない${msgId}`);
+async function findPost(msgId, eventType) {
+  const post = await Post.findById(msgId);
+  if (!post) {
+    handleErrors(error, `${eventType}投稿見つからない${msgId}`);
     return;
   }
-  return upPost;
+  console.log(post);
+  return post;
 }
 
-// -DOWN投稿を特定
-async function findDownPost(msgId) {
-  const downPost = await Post.findById(msgId);
-  if (!downPost) {
-    handleErrors(error, `down投稿見つからない${msgId}`);
-    return;
-  }
-  return downPost;
-}
+async function addUserAction(users, userSocketId, post, socket, eventType) {
+  const actionUsers = post[eventType + 's']; // 'ups'または'downs'
 
-// -ユーザーのUP状況に合わせて処理
-async function handle_differentSituation_Up(upUsers, userSocketId, upPost, socket) {
-
-  // いいねがまだない場合
-  if (upPost.ups.length === 0) {
-    upUsers.push({ userSocketId: userSocketId, up: 1 });
-    console.log('はじめてのいいねを追加しました: ' + upUsers);
-    await upPost.save();
+  // アクションがまだない場合
+  if (actionUsers.length === 0) {
+    users.push({ userSocketId: userSocketId, [eventType]: 1 });
+    console.log(`はじめての${eventType}を追加しました: ` + users);
+    await post.save();
     return;
   }
 
-  // 既にいいねがある場合
-  const existingUser = upUsers.find(item => item.userSocketId === userSocketId);
+  // 既にアクションがある場合
+  const existingUser = users.find(item => item.userSocketId === userSocketId);
 
   // ユーザーが見つからない場合はエラー処理
   if (existingUser == null) {
-    handleErrors(error, 'error in handle_differentSituation_Up');
+    handleErrors(new Error(`error in addUserAction: ${eventType}`), `error in addUserAction: ${eventType}`);
     return;
   }
 
-  // いいねの上限に達している場合
-  if (existingUser.up >= UP_MAX) {
-    socket.emit('alert', `${UP_MAX}回以上⇧は出来ません`);
+  // アクションの上限に達している場合
+  if (existingUser[eventType] >= MAX) {
+    socket.emit('alert', `${MAX}回以上${eventType}は出来ません`);
     return;
   }
 
-  // いいねを追加
-  existingUser.up += 1;
-  await upPost.save();
+  // アクションを追加
+  existingUser[eventType] += 1;
+  await post.save();
 }
 
-// -UP処理後のUP数計算
-function calculate_UpSum(upArray) {
-  return upArray.reduce((sum, item) => sum + item.up, 0);
+async function processEventData(Array, eventType, post) {
+  try {
+    // 合計を計算
+    const sum = await calculateSum(Array, eventType);
+
+    // 返り値
+    return {
+      _id: post._id,
+      count: sum
+    };
+  } catch (error) {
+    handleErrors(error, 'processEventData関数内');
+  }
 }
 
-// -ユーザーのDOWN状況に合わせて処理
-async function handle_differentSituation_Down(downUsers, userSocketId, downPost, socket) {
-
-  // DOWNがまだない場合
-  if (downPost.downs.length === 0) {
-    downUsers.push({ userSocketId: userSocketId, down: 1 });
-    console.log('はじめてのDOWNを追加しました: ' + downUsers);
-    await downPost.save();
-    return;
-  }
-
-  // 既にDOWNがある場合
-  const existingUser = downUsers.find(item => item.userSocketId === userSocketId);
-
-  // ユーザーが見つからない場合はエラー処理
-  if (existingUser == null) {
-    handleErrors(error, 'error in handle_differentSituation_Down');
-    return;
-  }
-
-  // DOWNの上限に達している場合
-  if (existingUser.down >= DOWN_MAX) {
-    socket.emit('alert', `${DOWN_MAX}回以上⇩は出来ません`);
-    return;
-  }
-
-  // DOWNを追加
-  existingUser.down += 1;
-  await downPost.save();
+function calculateSum(array, actionType) {
+  console.log(array);
+  return array.reduce((sum, item) => sum + item[actionType], 0);
 }
-
-// -DOWN処理後のDOWN数計算
-function calculate_DownSum(downArray) {
-  return downArray.reduce((sum, item) => sum + item.down, 0);
-}
+// ここまで👆👇
 
 // テンプレメッセージを送信・DB保存
 async function templateMsg(templateEvent, message) {

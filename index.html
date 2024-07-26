@@ -231,14 +231,14 @@
     });
 
     // ★UP受信
-    socket.on('updateUp', (upData) => {
+    socket.on('up', (upData) => {
       const item = document.getElementById(upData._id);
       const upCount = item.querySelector('.up-container span');
       upCount.textContent = upData.count;
     });
 
     // ★DOWN受信
-    socket.on('updateDown', (downData) => {
+    socket.on('down', (downData) => {
       const item = document.getElementById(downData._id);
       const downCount = item.querySelector('.down-container span');
       downCount.textContent = downData.count;
