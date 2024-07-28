@@ -13,14 +13,14 @@ const PORT = process.env.PORT || 3000;
 const ANONYMOUS_NAME = '匿名';
 const MAX = 1;
 
-function setupServer(){
+function setupServer() {
   const app = express();
   const server = http.createServer(app);
   const io = new Server(server);
-  return {app, server, io};
+  return { app, server, io };
 }
 
-const {app, server, io} = setupServer();
+const { app, server, io } = setupServer();
 
 // ルートへのGETリクエストに対するハンドラ
 app.get('/', (_, res) => {
@@ -85,9 +85,13 @@ async function logInFunction(name, socket) {
   idsOnlineUsers.push({ id: socket.id, name: name });
   io.emit('onlineUsers', onlineUsers);
 
-  // 過去ログを取得
-  const pastLogs = await getPastLogs();
-  socket.emit('pastLogs', pastLogs);
+  try {
+    // 過去ログを取得
+    const pastLogs = await getPastLogs();
+    socket.emit('pastLogs', pastLogs);
+  } catch (error) {
+    handleErrors(error, 'ログイン時');
+  }
 
   return name;
 }
@@ -148,8 +152,10 @@ async function receiveSend_Survey(data, name) {
 }
 
 function organizeLogs(post) {
-  const pastUpSum = calculateSum(post.ups, 'up');
-  const pastDownSum = calculateSum(post.ups, 'up');
+  const pastUpSum = post.ups.length;
+  const pastDownSum = post.downs.length;
+  const pastBookmarkSum = post.bookmarks.length;
+
   const voteSums = calculate_VoteSum(createVoteArrays(post));// 投票合計
 
   // 返り値
@@ -161,6 +167,7 @@ function organizeLogs(post) {
     options: post.options,
     ups: pastUpSum,
     downs: pastDownSum,
+    bookmarks: pastBookmarkSum,
     voteSums: voteSums
   };
 }
@@ -190,7 +197,6 @@ async function processVoteEvent(msgId, option, userSocketId, socket) {
 
     // 投票済み
     if (userHasVoted === true) {
-      console.log(`ID ${userSocketId} は、投票者配列${hasVotedOption}にいます🙋`);
       await handle_Voted_User(option, hasVotedOption, socket, voteArrays, surveyPost);
     }
 
@@ -203,12 +209,7 @@ async function processVoteEvent(msgId, option, userSocketId, socket) {
     let voteSums = calculate_VoteSum(voteArrays, msgId);
 
     // 返り値
-    return {
-      _id: surveyPost._id,
-      count0: voteSums[0],
-      count1: voteSums[1],
-      count2: voteSums[2]
-    };
+    return organize_voteData(surveyPost, voteSums);
 
   } catch (error) {
     handleErrors(error, 'vote関数内');
@@ -235,31 +236,21 @@ function createVoteArrays(surveyPost) {
 
 // -ユーザーが既にvoteしているか確認
 function checkVoteStatus(userSocketId, voteArrays) {
-  let hasVotedOption;
-  let userHasVoted = false;
-  voteArrays.forEach((voteOptArray, index) => {
-    voteOptArray.forEach((voteOpt) => {
+  for (let index = 0; index < voteArrays.length; index++) {
+    const voteOptArray = voteArrays[index];
+    for (const voteOpt of voteOptArray) {
       if (Array.isArray(voteOpt)) {
         if (voteOpt.some(obj => obj.id === userSocketId)) {
-          console.log('配列で一致');
-          hasVotedOption = index;
-          userHasVoted = true;
-        } else {
-          console.log('配列だけど、一致しないね');
+          return { userHasVoted: true, hasVotedOption: index };
         }
-      }
-      else {
+      } else {
         if (voteOpt === userSocketId) {
-          console.log('配列じゃないけど、一致');
-          hasVotedOption = index;
-          userHasVoted = true;
-        } else {
-          console.log('checkVoteStatus配列じゃないし、一致もしない');
+          return { userHasVoted: true, hasVotedOption: index };
         }
       }
-    });
-  });
-  return { userHasVoted, hasVotedOption };
+    }
+  }
+  return { userHasVoted: false, hasVotedOption: undefined };
 }
 
 // -投票済みユーザーの投票
@@ -285,7 +276,7 @@ async function handle_Voted_User(option, hasVotedOption, socket, voteArrays, sur
 
 // -未投票ユーザーの投票
 async function handle_NeverVoted_User(option, surveyPost, voteArrays, userSocketId) {
-  console.log(`ID ${userSocketId} は、まだ1度も投票していません🙅`);
+  // console.log(`ID ${userSocketId} は、まだ1度も投票していません🙅`);
 
   // あり得ないと思うけど、エラー処理（選択肢がマイナスや、3以上などの存在しない数）
   if (option < 0 || option >= voteArrays.length) {
@@ -293,9 +284,9 @@ async function handle_NeverVoted_User(option, surveyPost, voteArrays, userSocket
   }
 
   voteArrays[option].push(userSocketId);
-  console.log(`ID ${userSocketId} は、投票者配列${option}に追加されました🙋`);
+  // console.log(`ID ${userSocketId} は、投票者配列${option}に追加されました🙋`);
   await surveyPost.save();
-  console.log('falseFuction投票保存完了🙆: ' + surveyPost);
+  // console.log('falseFuction投票保存完了🙆: ' + surveyPost);
 }
 
 // -投票処理後の投票数計算
@@ -307,19 +298,38 @@ function calculate_VoteSum(voteArrays, msgId = '') {
   return voteSums;
 }
 
+// -投票データを整理
+function organize_voteData(surveyPost, voteSums) {
+  return {
+    _id: surveyPost._id,
+    count0: voteSums[0],
+    count1: voteSums[1],
+    count2: voteSums[2]
+  };
+}
 
-// ここから👆👇
+
+// ここから👆👇🔖
 async function receiveSendEvent(eventType, msgId, name, socket) {
-  let eventEmoji;
-  let Array;
-  
+  console.log('start receiveSendEvent関数');
+  console.log('eventType: ' + eventType + ' msgId: ' + msgId + ' name: ' + name);
+
+  // 処理
+  const eventData = await processEventData(msgId, eventType, name, socket);
+
+  // 結果を送信
+  io.emit(eventType, eventData);
+}
+
+async function processEventData(msgId, eventType, name, socket) {
   try {
-    
+    let eventEmoji;
+    let Array;
     // 1投稿を見つける
     const post = await findPost(msgId, eventType);
 
     // 2 eventTypeで場合分け
-    switch(eventType){
+    switch (eventType) {
       case 'up':
         eventEmoji = '👆';
         Array = post.ups;
@@ -335,17 +345,21 @@ async function receiveSendEvent(eventType, msgId, name, socket) {
     }
 
     console.log(eventType + '先のポスト: ' + msgId + eventEmoji + 'by' + name);
-    console.log(Array);
+    console.log('switch後のArray: ' + Array);
 
     // 3ユーザーの状態で条件分岐したうえで、up OR down OR bookmark を追加する
     await addUserAction(Array, socket.id, post, socket, eventType);
 
-    // 4 up OR down OR bookmark 追加後のデータをオブジェクトにまとめる
-    const eventData = await processEventData(Array, eventType, post);
-    console.log(eventData);
+    // 4合計を計算
+    const sum = await calculateEventSum(Array, eventType);
 
-    // 結果を送信
-    io.emit(eventType, eventData);
+    // 5 up OR down OR bookmark 追加後のデータをオブジェクトにまとめる
+    const eventData = await organize_eventData(sum, post);
+    console.log('eventData: ' + eventData);
+
+    // 6 返り値
+    return eventData;
+
   } catch (error) {
     handleErrors(error, 'receiveSendEvent受送信' + eventType);
   }
@@ -357,71 +371,78 @@ async function findPost(msgId, eventType) {
     handleErrors(error, `${eventType}投稿見つからない${msgId}`);
     return;
   }
-  console.log(post);
   return post;
 }
 
 async function addUserAction(users, userSocketId, post, socket, eventType) {
-  const actionUsers = post[eventType + 's']; // 'ups'または'downs'
-
-  // アクションがまだない場合
-  if (actionUsers.length === 0) {
-    users.push({ userSocketId: userSocketId, [eventType]: 1 });
-    console.log(`はじめての${eventType}を追加しました: ` + users);
-    await post.save();
-    return;
-  }
-
-  // 既にアクションがある場合
-  const existingUser = users.find(item => item.userSocketId === userSocketId);
-
-  // ユーザーが見つからない場合はエラー処理
-  if (existingUser == null) {
-    handleErrors(new Error(`error in addUserAction: ${eventType}`), `error in addUserAction: ${eventType}`);
-    return;
-  }
-
-  // アクションの上限に達している場合
-  if (existingUser[eventType] >= MAX) {
-    socket.emit('alert', `${MAX}回以上${eventType}は出来ません`);
-    return;
-  }
-
-  // アクションを追加
-  existingUser[eventType] += 1;
-  await post.save();
-}
-
-async function processEventData(Array, eventType, post) {
   try {
-    // 合計を計算
-    const sum = await calculateSum(Array, eventType);
+    // const actionUsers = post[eventType + 's']; // 'ups'または'downs'
 
-    // 返り値
-    return {
-      _id: post._id,
-      count: sum
-    };
+    // アクションがまだない場合
+    if (users.length === 0) {
+      users.push({ userSocketId: userSocketId, [eventType]: 1 });
+      console.log(`はじめての${eventType}を追加しました: ` + users);
+      await post.save();
+      return;
+    }
+
+    // 既にアクションがある場合 users.lenght > 0
+    const TF = users.includes(userSocketId);
+    if (TF) {
+      console.log('既にアクションがあります');
+      return;
+    }
+    // const existingUser = users.find(item => item.userSocketId === userSocketId);
+
+    // // ユーザーが見つからない場合はエラー処理
+    // if (existingUser == null) {
+    //   handleErrors(new Error(`error in addUserAction: ${eventType}`), `error in addUserAction: ${eventType}`);
+    //   return;
+    // }
+
+    // // アクションの上限に達している場合
+    // if (existingUser[eventType] >= MAX) {
+    //   socket.emit('alert', `${MAX}回以上${eventType}は出来ません`);
+    //   return;
+    // }
+
+    // アクションを追加
+    users.push({ userSocketId: userSocketId, [eventType]: 1 });
+    await post.save();
   } catch (error) {
-    handleErrors(error, 'processEventData関数内');
+    handleErrors(error, 'addUserAction関数内');
   }
 }
 
-function calculateSum(array, actionType) {
-  console.log(array);
-  return array.reduce((sum, item) => sum + item[actionType], 0);
+function calculateEventSum(array, actionType) {
+  console.log('array: ' + array);
+  const sum = array.reduce((sum, item) => sum + item[actionType], 0);
+  return sum;
 }
+
+async function organize_eventData(sum, post) {
+  return {
+    _id: post._id,
+    count: sum
+  };
+}
+
 // ここまで👆👇
 
 // 切断時のイベントハンドラ
 function disconnectFunction(socket) {
-  let targetId = socket.id;
-  let targetName = idsOnlineUsers.find(obj => obj.id === targetId)?.name;
+  try {
+    let targetId = socket.id;
+    let targetName = idsOnlineUsers.find(obj => obj.id === targetId)?.name;
 
-  // オンラインメンバーから削除
-  let onlinesWithoutTarget = onlineUsers.filter(val => val !== targetName);
-  onlineUsers = onlinesWithoutTarget;
-  io.emit('onlineUsers', onlineUsers);
+    // オンラインメンバーから削除
+    let onlinesWithoutTarget = onlineUsers.filter(val => val !== targetName);
+    onlineUsers = onlinesWithoutTarget;
+    io.emit('onlineUsers', onlineUsers);
+  } catch (error) {
+    handleErrors(error, 'disconnectFunction内');
+  }
+
 }
 
 // エラーをコンソールに出力する関数

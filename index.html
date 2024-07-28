@@ -151,22 +151,26 @@
       let containerSign;
       let emoji;
       let countSign;
+      let Num;
 
       switch (eventType) {
         case 'up':
           containerSign = 'up-container';
           emoji = '⇧'
           countSign = 'up-count'
+          Num = message.ups >= 1 ? message.ups : 0;
           break;
         case 'down':
           containerSign = 'down-container';
           emoji = '⇩'
           countSign = 'down-count'
+          Num = message.downs >= 1 ? message.downs : 0;
           break;
         case 'bookmark':
           containerSign = 'bookmark-container';
           emoji = '🔖'
           countSign = 'bookmark-count'
+          Num = message.bookmarks >= 1 ? message.bookmarks : 0;
           break;
       }
 
@@ -183,7 +187,7 @@
       const count = document.createElement('span');
       count.classList.add(countSign);
 
-      count.textContent = message.likes >= 1 ? message.likes : 0;
+      count.textContent = Num;
 
       container.appendChild(button);
       container.appendChild(count);
