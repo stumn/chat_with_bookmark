@@ -346,7 +346,7 @@ async function processEventData(msgId, eventType, name, socket) {
     console.log('switch後のArray: ' + users);
 
     // 3ユーザーの状態で条件分岐したうえで、up OR down OR bookmark を追加する
-    await addUserAction(users, socket.id, post, eventType);
+    await addUserAction(users, socket.id, post, eventType, socket);
 
     // 4合計を計算
     const sum = await calculateEventSum(users, eventType);
@@ -374,12 +374,38 @@ async function findPost(msgId, eventType) {
 }
 
 // ユーザーのアクションを追加する関数
-async function addUserAction(users, userSocketId, post, eventType) {
+async function addUserAction(users, userSocketId, post, eventType, socket) {
   try {
-    if (users.length === 0 || !users.includes(userSocketId)) {
+    // 初めてのアクションの場合
+    if (users.length === 0) {
       users.push({ userSocketId: userSocketId, [eventType]: 1 });
+      console.log(`はじめての${eventType}を追加しました: ` + JSON.stringify(users));
       await post.save();
+      return;
     }
+
+    // 既にアクションがある場合 users.lenght > 0
+    const existingUser = users.find(obj => obj.userSocketId === userSocketId);
+    console.log('既存のユーザー: ' + JSON.stringify(existingUser));
+
+    // ユーザーが見つからない場合は新規追加
+    if (!existingUser) {
+      users.push({ userSocketId: userSocketId, [eventType]: 1 });
+      console.log(`新たなユーザーの${eventType}を追加しました: ` + JSON.stringify(users));
+      await post.save();
+      return;
+    }
+
+    // アクションの上限に達している場合
+    if (existingUser[eventType] >= MAX) {
+      socket.emit('alert', `${MAX}回以上${eventType}は出来ません`);
+      return;
+    }
+
+    // 既存ユーザのアクションを追加更新
+    existingUser[eventType] += 1;
+    console.log(`既存ユーザーの${eventType}を追加しました: ` + JSON.stringify(users));
+    await post.save();
   } catch (error) {
     handleErrors(error, 'addUserAction関数内');
   }
