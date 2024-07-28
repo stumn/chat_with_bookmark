@@ -44,11 +44,6 @@ io.on('connection', async (socket) => {
   socket.on('login', async (name) => {
     name = await logInFunction(name, socket);
 
-    // タイピングイベント受送信
-    socket.on('typing', () => {
-      io.emit('typing', name);
-    });
-
     // チャットメッセージ受送信
     socket.on('chat message', async (nickname, msg) => {
       name = await receiveSend_Chat(name, nickname, msg);
@@ -102,6 +97,9 @@ async function getPastLogs() {
     const posts = await Post.find({}).limit(30).sort({ createdAt: -1 });
     posts.reverse();
     const pastLogs = await Promise.all(posts.map(organizeLogs));
+    pastLogs.forEach(e => {
+      console.log(e.name + e.msg + e.ups + e.downs + e.bookmarks);
+    });
     console.log('過去ログ整理完了');
     return pastLogs;
   } catch (error) {
@@ -286,7 +284,6 @@ async function handle_NeverVoted_User(option, surveyPost, voteArrays, userSocket
   voteArrays[option].push(userSocketId);
   // console.log(`ID ${userSocketId} は、投票者配列${option}に追加されました🙋`);
   await surveyPost.save();
-  // console.log('falseFuction投票保存完了🙆: ' + surveyPost);
 }
 
 // -投票処理後の投票数計算
@@ -309,7 +306,7 @@ function organize_voteData(surveyPost, voteSums) {
 }
 
 
-// ここから👆👇🔖
+// イベントの受送信（up, down, bookmark）
 async function receiveSendEvent(eventType, msgId, name, socket) {
   console.log('start receiveSendEvent関数');
   console.log('eventType: ' + eventType + ' msgId: ' + msgId + ' name: ' + name);
@@ -321,10 +318,11 @@ async function receiveSendEvent(eventType, msgId, name, socket) {
   io.emit(eventType, eventData);
 }
 
+// イベント処理関数(up, down, bookmark)
 async function processEventData(msgId, eventType, name, socket) {
   try {
     let eventEmoji;
-    let Array;
+    let users;
     // 1投稿を見つける
     const post = await findPost(msgId, eventType);
 
@@ -332,26 +330,26 @@ async function processEventData(msgId, eventType, name, socket) {
     switch (eventType) {
       case 'up':
         eventEmoji = '👆';
-        Array = post.ups;
+        users = post.ups;
         break;
       case 'down':
         eventEmoji = '👇';
-        Array = post.downs;
+        users = post.downs;
         break;
       case 'bookmark':
         eventEmoji = '🔖';
-        Array = post.bookmarks;
+        users = post.bookmarks;
         break;
     }
 
     console.log(eventType + '先のポスト: ' + msgId + eventEmoji + 'by' + name);
-    console.log('switch後のArray: ' + Array);
+    console.log('switch後のArray: ' + users);
 
     // 3ユーザーの状態で条件分岐したうえで、up OR down OR bookmark を追加する
-    await addUserAction(Array, socket.id, post, socket, eventType);
+    await addUserAction(users, socket.id, post, eventType);
 
     // 4合計を計算
-    const sum = await calculateEventSum(Array, eventType);
+    const sum = await calculateEventSum(users, eventType);
 
     // 5 up OR down OR bookmark 追加後のデータをオブジェクトにまとめる
     const eventData = await organize_eventData(sum, post);
@@ -365,6 +363,7 @@ async function processEventData(msgId, eventType, name, socket) {
   }
 }
 
+// 投稿を見つける関数
 async function findPost(msgId, eventType) {
   const post = await Post.findById(msgId);
   if (!post) {
@@ -374,52 +373,26 @@ async function findPost(msgId, eventType) {
   return post;
 }
 
-async function addUserAction(users, userSocketId, post, socket, eventType) {
+// ユーザーのアクションを追加する関数
+async function addUserAction(users, userSocketId, post, eventType) {
   try {
-    // const actionUsers = post[eventType + 's']; // 'ups'または'downs'
-
-    // アクションがまだない場合
-    if (users.length === 0) {
+    if (users.length === 0 || !users.includes(userSocketId)) {
       users.push({ userSocketId: userSocketId, [eventType]: 1 });
-      console.log(`はじめての${eventType}を追加しました: ` + users);
       await post.save();
-      return;
     }
-
-    // 既にアクションがある場合 users.lenght > 0
-    const TF = users.includes(userSocketId);
-    if (TF) {
-      console.log('既にアクションがあります');
-      return;
-    }
-    // const existingUser = users.find(item => item.userSocketId === userSocketId);
-
-    // // ユーザーが見つからない場合はエラー処理
-    // if (existingUser == null) {
-    //   handleErrors(new Error(`error in addUserAction: ${eventType}`), `error in addUserAction: ${eventType}`);
-    //   return;
-    // }
-
-    // // アクションの上限に達している場合
-    // if (existingUser[eventType] >= MAX) {
-    //   socket.emit('alert', `${MAX}回以上${eventType}は出来ません`);
-    //   return;
-    // }
-
-    // アクションを追加
-    users.push({ userSocketId: userSocketId, [eventType]: 1 });
-    await post.save();
   } catch (error) {
     handleErrors(error, 'addUserAction関数内');
   }
 }
 
+// イベントの合計を計算する関数
 function calculateEventSum(array, actionType) {
   console.log('array: ' + array);
   const sum = array.reduce((sum, item) => sum + item[actionType], 0);
   return sum;
 }
 
+// イベントデータを整理する関数
 async function organize_eventData(sum, post) {
   return {
     _id: post._id,
@@ -427,22 +400,16 @@ async function organize_eventData(sum, post) {
   };
 }
 
-// ここまで👆👇
-
 // 切断時のイベントハンドラ
-function disconnectFunction(socket) {
+async function disconnectFunction(socket) {
   try {
-    let targetId = socket.id;
-    let targetName = idsOnlineUsers.find(obj => obj.id === targetId)?.name;
-
     // オンラインメンバーから削除
-    let onlinesWithoutTarget = onlineUsers.filter(val => val !== targetName);
-    onlineUsers = onlinesWithoutTarget;
+    const targetName = idsOnlineUsers.find(obj => obj.id === socket.id)?.name;
+    onlineUsers = onlineUsers.filter(val => val !== targetName);
     io.emit('onlineUsers', onlineUsers);
   } catch (error) {
     handleErrors(error, 'disconnectFunction内');
   }
-
 }
 
 // エラーをコンソールに出力する関数
