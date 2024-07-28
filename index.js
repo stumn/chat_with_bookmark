@@ -11,7 +11,7 @@ const { error } = require('console');
 // 定数の設定
 const PORT = process.env.PORT || 3000;
 const ANONYMOUS_NAME = '匿名';
-const MAX = 1;
+const EVENT_MAX = 1;
 
 function setupServer() {
   const app = express();
@@ -349,10 +349,10 @@ async function processEventData(msgId, eventType, name, socket) {
     await addUserAction(users, socket.id, post, eventType, socket);
 
     // 4合計を計算
-    const sum = await calculateEventSum(users, eventType);
+    const eventSum = await calculateEventSum(users, eventType);
 
     // 5 up OR down OR bookmark 追加後のデータをオブジェクトにまとめる
-    const eventData = await organize_eventData(sum, post);
+    const eventData = await organize_eventData(eventSum, post);
     console.log('eventData: ' + eventData);
 
     // 6 返り値
@@ -397,8 +397,8 @@ async function addUserAction(users, userSocketId, post, eventType, socket) {
     }
 
     // アクションの上限に達している場合
-    if (existingUser[eventType] >= MAX) {
-      socket.emit('alert', `${MAX}回以上${eventType}は出来ません`);
+    if (existingUser[eventType] >= EVENT_MAX) {
+      socket.emit('alert', `${EVENT_MAX}回以上${eventType}は出来ません`);
       return;
     }
 
@@ -414,15 +414,15 @@ async function addUserAction(users, userSocketId, post, eventType, socket) {
 // イベントの合計を計算する関数
 function calculateEventSum(array, actionType) {
   console.log('array: ' + array);
-  const sum = array.reduce((sum, item) => sum + item[actionType], 0);
-  return sum;
+  const eventSum = array.reduce((eventSum, item) => eventSum + item[actionType], 0);
+  return eventSum;
 }
 
 // イベントデータを整理する関数
-async function organize_eventData(sum, post) {
+async function organize_eventData(eventSum, post) {
   return {
     _id: post._id,
-    count: sum
+    count: eventSum
   };
 }
 
