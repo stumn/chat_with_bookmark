@@ -60,6 +60,10 @@ app.get('/api/rooms/:roomId/messages', (req, res) => {
   res.json(messages);
 });
 
+app.get('/rooms/:roomId/document', (req, res) => {
+  res.sendFile(__dirname + '/public/document.html');
+})
+
 
 // オンラインユーザーのリスト
 let onlineUsers = [];

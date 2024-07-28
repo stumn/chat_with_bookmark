@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Chat Documents</title>
+  <link rel="stylesheet" href="/styles/documents.css">
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const roomId = window.location.pathname.split('/').slice(-2, -1)[0];
+      fetch(`/api/messages/${roomId}`)
+        .then(response => response.json())
+        .then(messages => {
+          const documentList = document.getElementById('documents');
+          messages.forEach(msg => {
+            const li = document.createElement('li');
+            li.textContent = msg.message;
+            documentList.appendChild(li);
+          });
+        });
+    });
+  </script>
+</head>
+<body>
+  <h1>Chat Documents</h1>
+  <ul id="documents"></ul>
+</body>
+</html>
