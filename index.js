@@ -63,7 +63,7 @@ io.on('connection', async (socket) => {
     socket.on('survey', async (msgId, option) => {
       await receiveSend_Vote(msgId, option, name, socket);
     });
-    
+
     // イベント受送信（up, down, bookmark）
     socket.on('event', async (eventType, msgId) => {
       await receiveSendEvent(eventType, msgId, name, socket);
@@ -89,9 +89,6 @@ async function logInFunction(name, socket) {
   const pastLogs = await getPastLogs();
   socket.emit('pastLogs', pastLogs);
 
-  // // いらっしゃいメッセージ
-  // const welcomeMsg = name + 'さん、いらっしゃい！';
-  // templateMsg('welcome', welcomeMsg);
   return name;
 }
 
@@ -416,20 +413,10 @@ function calculateSum(array, actionType) {
 }
 // ここまで👆👇
 
-// テンプレメッセージを送信・DB保存
-async function templateMsg(templateEvent, message) {
-  io.emit(templateEvent, message);
-  await saveRecord('system', message);
-}
-
 // 切断時のイベントハンドラ
 function disconnectFunction(socket) {
   let targetId = socket.id;
   let targetName = idsOnlineUsers.find(obj => obj.id === targetId)?.name;
-
-  // さようならテンプレ
-  const byeMsg = targetName + 'さん、またね！';
-  templateMsg('bye', byeMsg);
 
   // オンラインメンバーから削除
   let onlinesWithoutTarget = onlineUsers.filter(val => val !== targetName);
@@ -438,8 +425,8 @@ function disconnectFunction(socket) {
 }
 
 // エラーをコンソールに出力する関数
-function handleErrors(error, custonMsg = '') {
-  console.error(custonMsg, error);
+function handleErrors(error, customMsg = '') {
+  console.error(customMsg, error);
 }
 
 // サーバーの起動

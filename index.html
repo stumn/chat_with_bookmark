@@ -68,13 +68,8 @@
       pastArray.forEach(element => {
         addMessageToList(element);
       });
-      addTemplateMessage('-----⇊ ここから参加 ⇊-----');
+      addStartMessage('-----⇊ ここから参加 ⇊-----');
     });
-
-    // いらっしゃい！
-    // socket.on('welcome', (welcome) => {
-    //   addTemplateMessage(welcome);
-    // });
 
     // ★メッセージリストに追加する
     function addMessageToList(message) {
@@ -272,13 +267,8 @@
       socket.emit('dialog_to_js', confirm(dialogMsg) ? true : false);
     });
 
-    // ディスコネクト受信
-    socket.on('disconnection', (bye) => {
-      addTemplateMessage(bye);
-    });
-
     // テンプレートメッセージ作成関数(※up無し)
-    function addTemplateMessage(templateMsg) {
+    function addStartMessage(templateMsg) {
       const item = document.createElement('li');
       item.textContent = templateMsg;
       messageLists.appendChild(item);
