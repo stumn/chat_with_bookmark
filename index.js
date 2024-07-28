@@ -85,7 +85,7 @@ async function logInFunction(name, socket) {
     const pastLogs = await getPastLogs();
     socket.emit('pastLogs', pastLogs);
   } catch (error) {
-    handleErrors(error, 'ログイン時');
+    handleErrors(error, 'LogInFunction 過去ログ取得中にエラーが発生しました');
   }
 
   return name;
@@ -103,7 +103,7 @@ async function getPastLogs() {
     console.log('過去ログ整理完了');
     return pastLogs;
   } catch (error) {
-    handleErrors(error, '過去ログ');
+    handleErrors(error, 'getPastLogs 過去ログ取得中にエラーが発生しました');
     throw error;
   }
 }
@@ -115,7 +115,7 @@ async function saveRecord(name, msg, question = '', options = [], ups = [], down
     const newPost = await Post.create(npData);
     return newPost;
   } catch (error) {
-    handleErrors(error, 'データ保存時');
+    handleErrors(error, 'データ保存時にエラーが発生しました');
     throw error;
   }
 }
@@ -130,7 +130,7 @@ async function receiveSend_Chat(name, nickname, msg) {
     io.emit('chatLogs', p);
   }
   catch (error) {
-    handleErrors(error, 'チャット受送信');
+    handleErrors(error, 'チャット受送信中にエラーが発生しました');
   }
   return name;
 }
@@ -145,7 +145,7 @@ async function receiveSend_Survey(data, name) {
     console.log('アンケート保存しました📄:' + xxx.question + xxx._id);
     io.emit('survey_post', xxx);
   } catch (error) {
-    handleErrors(error, 'アンケート受送信');
+    handleErrors(error, 'アンケート受送信中にエラーが発生しました');
   }
 }
 
@@ -177,7 +177,7 @@ async function receiveSend_Vote(msgId, option, name, socket) {
     const voteData = await processVoteEvent(msgId, option, socket.id, socket);
     io.emit('updateVote', voteData);
   } catch (error) {
-    handleErrors(error, 'アンケート投票受送信');
+    handleErrors(error, 'アンケート投票受送信中にエラーが発生しました');
   }
 }
 
@@ -210,7 +210,7 @@ async function processVoteEvent(msgId, option, userSocketId, socket) {
     return organize_voteData(surveyPost, voteSums);
 
   } catch (error) {
-    handleErrors(error, 'vote関数内');
+    handleErrors(error, 'processVoteEvent  投票処理中にエラーが発生しました');
   }
 }
 
@@ -359,7 +359,7 @@ async function processEventData(msgId, eventType, name, socket) {
     return eventData;
 
   } catch (error) {
-    handleErrors(error, 'receiveSendEvent受送信' + eventType);
+    handleErrors(error, `receiveSendEvent ${eventType}イベントデータの処理中にエラーが発生しました`);
   }
 }
 
@@ -408,7 +408,7 @@ async function disconnectFunction(socket) {
     onlineUsers = onlineUsers.filter(val => val !== targetName);
     io.emit('onlineUsers', onlineUsers);
   } catch (error) {
-    handleErrors(error, 'disconnectFunction内');
+    handleErrors(error, 'disconnectFunction 切断時にエラーが発生しました');
   }
 }
 
