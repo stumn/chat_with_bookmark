@@ -24,13 +24,13 @@ const { app, server, io } = setupServer();
 
 // ルートへのGETリクエストに対するハンドラ
 app.get('/', (_, res) => {
-  res.sendFile(__dirname + '/index.html');
+  res.sendFile(__dirname + '/public/chat-room.html');
 });
 
 // スタイルシートへのGETリクエストに対するハンドラ
 app.get('/style.css', function (_, res) {
   res.header('Content-Type', 'text/css');
-  res.sendFile(__dirname + '/style.css');
+  res.sendFile(__dirname + '/public/style.css');
 });
 
 app.get('/rooms', (req, res) => {
