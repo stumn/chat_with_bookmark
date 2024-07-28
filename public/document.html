@@ -1,13 +1,13 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ja">
 <head>
   <meta charset="UTF-8">
   <title>Chat Documents</title>
-  <link rel="stylesheet" href="/styles/documents.css">
+  <link rel="stylesheet" href="/document.css">
   <script>
     document.addEventListener('DOMContentLoaded', () => {
       const roomId = window.location.pathname.split('/').slice(-2, -1)[0];
-      fetch(`/api/messages/${roomId}`)
+      fetch(`/api/rooms/:${roomId}/messages`)
         .then(response => response.json())
         .then(messages => {
           const documentList = document.getElementById('documents');
