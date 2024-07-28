@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Chat Room Selection</title>
+</head>
+<body>
+  <h1>Select or Create a Chat Room</h1>
+  <input type="text" id="roomName" placeholder="Enter room name">
+  <button onclick="createRoom()">Create Room</button>
+  <ul id="roomList"></ul>
+  
+  <script>
+    function createRoom() {
+      const roomName = document.getElementById('roomName').value;
+      if (roomName) {
+        window.open(`/chat/${roomName}`, '_blank');
+      }
+    }
+    
+    // サンプルデータ: 実際にはサーバーから取得
+    const rooms = ['Room1', 'Room2', 'Room3'];
+    const roomList = document.getElementById('roomList');
+    
+    rooms.forEach(room => {
+      const li = document.createElement('li');
+      const link = document.createElement('a');
+      link.href = `/chat/${room}`;
+      link.target = '_blank';
+      link.textContent = room;
+      li.appendChild(link);
+      roomList.appendChild(li);
+    });
+  </script>
+</body>
+</html>

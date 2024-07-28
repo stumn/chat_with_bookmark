@@ -33,6 +33,34 @@ app.get('/style.css', function (_, res) {
   res.sendFile(__dirname + '/style.css');
 });
 
+app.get('/rooms', (req, res) => {
+  res.sendFile(__dirname + '/public/room-selection.html');
+});
+
+app.get('/rooms/:roomId', (req, res) =>{
+  res.sendFile(__dirname + '/public/chat-room.html');
+});
+
+app.get('/api/rooms', (req, res) => {
+  // チャットルームの一覧を返す
+  const rooms = [
+      { id: 1, name: 'Room 1' },
+      { id: 2, name: 'Room 2' }
+  ];
+  res.json(rooms);
+});
+
+app.get('/api/rooms/:roomId/messages', (req, res) => {
+  const roomId = req.params.roomId;
+  // 特定のチャットルームのメッセージを返す
+  const messages = [
+      { user: 'Alice', message: 'Hello!' },
+      { user: 'Bob', message: 'Hi!' }
+  ];
+  res.json(messages);
+});
+
+
 // オンラインユーザーのリスト
 let onlineUsers = [];
 let idsOnlineUsers = [];
