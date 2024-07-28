@@ -181,7 +181,8 @@
       const button = document.createElement('button');
       button.textContent = emoji;
       button.addEventListener('click', e => {
-        socket.emit(eventType, message._id);
+        console.log(eventType);
+        socket.emit('event', eventType, message._id);
       });
 
       const count = document.createElement('span');

@@ -3,22 +3,24 @@ require('dotenv').config();
 
 // 必要なモジュールのインポート
 const express = require('express');
-const app = express();
 const http = require('http');
-const server = http.createServer(app);
 const { Server } = require("socket.io");
-const io = new Server(server);
 const { Post } = require('./db');
 const { error } = require('console');
 
-// ポート番号の設定
+// 定数の設定
 const PORT = process.env.PORT || 3000;
-
-// 匿名ユーザーの名前
 const ANONYMOUS_NAME = '匿名';
-
-// UP & DOWN 最大値
 const MAX = 1;
+
+function setupServer(){
+  const app = express();
+  const server = http.createServer(app);
+  const io = new Server(server);
+  return {app, server, io};
+}
+
+const {app, server, io} = setupServer();
 
 // ルートへのGETリクエストに対するハンドラ
 app.get('/', (_, res) => {
@@ -61,20 +63,10 @@ io.on('connection', async (socket) => {
     socket.on('survey', async (msgId, option) => {
       await receiveSend_Vote(msgId, option, name, socket);
     });
-
-    // UP受送信
-    socket.on('up', async msgId => {
-      await receiveSendEvent('up', msgId, name, socket);
-    });
-
-    // DOWN受送信
-    socket.on('down', async msgId => {
-      await receiveSendEvent('down', msgId, name, socket);
-    });
-
-    // Bookmark受送信
-    socket.on('bookmark', async msgId =>{
-      await receiveSendEvent('bookmark', msgId, name, socket);
+    
+    // イベント受送信（up, down, bookmark）
+    socket.on('event', async (eventType, msgId) => {
+      await receiveSendEvent(eventType, msgId, name, socket);
     });
   });
 
