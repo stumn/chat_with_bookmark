@@ -28,7 +28,7 @@ app.get('/', (_, res) => {
 });
 
 // スタイルシートへのGETリクエストに対するハンドラ
-app.get('/style.css', function (_, res) {
+app.get('/style.css', (_, res) => {
   res.header('Content-Type', 'text/css');
   res.sendFile(__dirname + '/public/style.css');
 });

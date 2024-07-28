@@ -14,18 +14,18 @@
     function createRoom() {
       const roomName = document.getElementById('roomName').value;
       if (roomName) {
-        window.open(`/chat/${roomName}`, '_blank');
+        window.open(`/rooms/${roomName}`, '_blank');
       }
     }
     
     // サンプルデータ: 実際にはサーバーから取得
-    const rooms = ['Room1', 'Room2', 'Room3'];
+    const rooms = ['1', '2', '3'];
     const roomList = document.getElementById('roomList');
     
     rooms.forEach(room => {
       const li = document.createElement('li');
       const link = document.createElement('a');
-      link.href = `/chat/${room}`;
+      link.href = `/rooms/:${room}`;
       link.target = '_blank';
       link.textContent = room;
       li.appendChild(link);
