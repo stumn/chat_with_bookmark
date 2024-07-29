@@ -12,6 +12,7 @@ const { error } = require('console');
 const PORT = process.env.PORT || 3000;
 const ANONYMOUS_NAME = '匿名';
 const EVENT_MAX = 1;
+const PAST_POST = 5;
 
 function setupServer() {
   const app = express();
@@ -50,15 +51,22 @@ app.get('/api/rooms', (req, res) => {
   res.json(rooms);
 });
 
-app.get('/api/rooms/:roomId/messages', (req, res) => {
+app.get('/api/rooms/:roomId/messages', async (req, res) => {
   const roomId = req.params.roomId;
-  // 特定のチャットルームのメッセージを返す
-  const messages = [
-      { user: 'Alice', message: 'Hello!' },
-      { user: 'Bob', message: 'Hi!' },
-      { user: 'Alice', message: 'Goodbye!' },
-      { user: 'Bob  ', message: 'Bye!' }
-  ];
+  const messages = [];
+  try {
+    const posts = await Post.find({ bookmarks: { $exists: true, $ne: [] } }).sort({ createdAt: -1 });
+    posts.reverse();
+    const pastLogs = await Promise.all(posts.map(organizeLogs));
+    pastLogs.forEach(e => {
+      console.log(e.name + e.msg + e.ups + e.downs + e.bookmarks);
+      messages.push({ user: e.name, message: e.msg});
+    });
+    console.log('api kakoLOG');
+  } catch (error) {
+    handleErrors(error, 'api 過去ログ取得中にエラーが発生しました');
+    throw error;
+  }
   res.json(messages);
 });
 
@@ -128,7 +136,7 @@ async function logInFunction(name, socket) {
 // ログイン時・過去ログをDBから取得
 async function getPastLogs() {
   try {
-    const posts = await Post.find({}).limit(30).sort({ createdAt: -1 });
+    const posts = await Post.find({}).limit(PAST_POST).sort({ createdAt: -1 });
     posts.reverse();
     const pastLogs = await Promise.all(posts.map(organizeLogs));
     pastLogs.forEach(e => {
