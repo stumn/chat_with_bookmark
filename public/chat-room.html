@@ -12,7 +12,7 @@
 
 <body>
   <header>
-    <h3>chat with bookmark</h3> <span id="login-name"></span>
+    <h3>chat with bookmark</h3> <span id="sign-up-name"></span>
     <br>
     <h4>7/25(木)【西田ゼミ】リアルタイム参加：</h4><span id="onlines"></span>
     <button onclick="window.open('/rooms/:1/document', '_blank');">ドキュメント</button>
@@ -55,8 +55,8 @@
     // ★ログイン時
     // プロンプト　ログインで名前を入力・サーバーに送信
     const name = prompt("名前を入力してください", "");
-    socket.emit('login', name);
-    document.getElementById('login-name').textContent = 'ログイン名： ' + name;
+    socket.emit('sign-up', name);
+    document.getElementById('sign-up-name').textContent = 'ログイン名： ' + name;
 
     // オンラインメンバー
     socket.on('onlineUsers', (onlines) => {
