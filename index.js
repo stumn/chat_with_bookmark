@@ -38,15 +38,15 @@ app.get('/rooms', (req, res) => {
   res.sendFile(__dirname + '/public/room-selection.html');
 });
 
-app.get('/rooms/:roomId', (req, res) =>{
+app.get('/rooms/:roomId', (req, res) => {
   res.sendFile(__dirname + '/public/chat-room.html');
 });
 
 app.get('/api/rooms', (req, res) => {
   // チャットルームの一覧を返す
   const rooms = [
-      { id: 1, name: 'Room 1' },
-      { id: 2, name: 'Room 2' }
+    { id: 1, name: 'Room 1' },
+    { id: 2, name: 'Room 2' }
   ];
   res.json(rooms);
 });
@@ -60,7 +60,7 @@ app.get('/api/rooms/:roomId/messages', async (req, res) => {
     const pastLogs = await Promise.all(posts.map(organizeLogs));
     pastLogs.forEach(e => {
       console.log(e.name + e.msg + e.ups + e.downs + e.bookmarks);
-      messages.push({ user: e.name, message: e.msg});
+      messages.push({ user: e.name, message: e.msg });
     });
     console.log('api kakoLOG');
   } catch (error) {
@@ -98,7 +98,7 @@ io.on('connection', async (socket) => {
 
     // アンケート投票受送信
     socket.on('survey', async (msgId, option) => {
-      await receiveSend_Vote(msgId, option, name, socket);
+      await receiveSendVote(msgId, option, name, socket);
     });
 
     // イベント受送信（up, down, bookmark）
@@ -213,7 +213,7 @@ function organizeLogs(post) {
 }
 
 // ★★アンケート投票受送信
-async function receiveSend_Vote(msgId, option, name, socket) {
+async function receiveSendVote(msgId, option, name, socket) {
   console.log('投票先のポスト: ' + msgId + ' 選んだ選択肢: ' + option + ' 🙋 by ' + name);
   try {
     const voteData = await processVoteEvent(msgId, option, socket.id, socket);
@@ -420,34 +420,25 @@ async function addUserAction(users, userSocketId, post, eventType, socket) {
   try {
     // 初めてのアクションの場合
     if (users.length === 0) {
-      users.push({ userSocketId: userSocketId, [eventType]: 1 });
-      console.log(`はじめての${eventType}を追加しました: ` + JSON.stringify(users));
+      users.push(userSocketId);
+      console.log(`はじめての${eventType}を追加しました: ` + users[0]);
       await post.save();
       return;
     }
 
     // 既にアクションがある場合 users.lenght > 0
-    const existingUser = users.find(obj => obj.userSocketId === userSocketId);
-    console.log('既存のユーザー: ' + JSON.stringify(existingUser));
-
-    // ユーザーが見つからない場合は新規追加
-    if (!existingUser) {
+    const existingUser = users.find(obj => obj === userSocketId);
+    if (existingUser) {
+      console.log('この人は既にアクションがあります');
+      socket.emit('alert', `${eventType}は一度しかできません`);
+      return;
+    }
+    else {// ユーザーが見つからない場合は新規追加
       users.push({ userSocketId: userSocketId, [eventType]: 1 });
       console.log(`新たなユーザーの${eventType}を追加しました: ` + JSON.stringify(users));
       await post.save();
       return;
     }
-
-    // アクションの上限に達している場合
-    if (existingUser[eventType] >= EVENT_MAX) {
-      socket.emit('alert', `${EVENT_MAX}回以上${eventType}は出来ません`);
-      return;
-    }
-
-    // 既存ユーザのアクションを追加更新
-    existingUser[eventType] += 1;
-    console.log(`既存ユーザーの${eventType}を追加しました: ` + JSON.stringify(users));
-    await post.save();
   } catch (error) {
     handleErrors(error, 'addUserAction関数内');
   }
@@ -455,8 +446,8 @@ async function addUserAction(users, userSocketId, post, eventType, socket) {
 
 // イベントの合計を計算する関数
 function calculateEventSum(array, actionType) {
-  console.log('array: ' + array);
-  const eventSum = array.reduce((eventSum, item) => eventSum + item[actionType], 0);
+  console.log(actionType + 'のarray: ' + array);
+  const eventSum = array.length;
   return eventSum;
 }
 
