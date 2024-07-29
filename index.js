@@ -55,7 +55,9 @@ app.get('/api/rooms/:roomId/messages', (req, res) => {
   // 特定のチャットルームのメッセージを返す
   const messages = [
       { user: 'Alice', message: 'Hello!' },
-      { user: 'Bob', message: 'Hi!' }
+      { user: 'Bob', message: 'Hi!' },
+      { user: 'Alice', message: 'Goodbye!' },
+      { user: 'Bob  ', message: 'Bye!' }
   ];
   res.json(messages);
 });

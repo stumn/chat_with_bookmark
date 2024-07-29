@@ -1,27 +1,50 @@
 <!DOCTYPE html>
 <html lang="ja">
+
 <head>
   <meta charset="UTF-8">
   <title>Chat Documents</title>
-  <link rel="stylesheet" href="/document.css">
+  <link rel="stylesheet" type="texr/css" href="/document.css">
+</head>
+
+<body>
+  <header>
+    <h1>Chat Documents</h1>
+  </header>
+
+  <main>
+    <ul id="documents"></ul>
+  </main>
+
+  <!-- ブラウザ側のスクリプト -->
+  <script src="/socket.io/socket.io.js"></script>
   <script>
+    const socket = io();
+
+    const documentList = document.getElementById('documents');
+
     document.addEventListener('DOMContentLoaded', () => {
       const roomId = window.location.pathname.split('/').slice(-2, -1)[0];
+      console.log('roomId: ' + roomId);
+
       fetch(`/api/rooms/:${roomId}/messages`)
         .then(response => response.json())
         .then(messages => {
-          const documentList = document.getElementById('documents');
           messages.forEach(msg => {
+            console.log('msg: ' + JSON.stringify(msg)); // メッセージの内容を確認
+
             const li = document.createElement('li');
-            li.textContent = msg.message;
+            li.classList.add('doc');
+            li.textContent = msg.user + ': ' + msg.message;
+            li.setAttribute("id", msg.id);
             documentList.appendChild(li);
+
           });
         });
     });
+
+
   </script>
-</head>
-<body>
-  <h1>Chat Documents</h1>
-  <ul id="documents"></ul>
 </body>
+
 </html>
