@@ -24,23 +24,30 @@ function setupServer() {
 const { app, server, io } = setupServer();
 
 // ルートへのGETリクエストに対するハンドラ
-app.get('/', (_, res) => {
+// app.get('/', (_, res) => {
+//   res.sendFile(__dirname + '/public/chat-room.html');
+// });
+
+// ルーム選択ページ
+app.get('/rooms', (req, res) => {
+  res.sendFile(__dirname + '/public/room-selection.html');
+});
+
+// チャットルームページ
+app.get('/rooms/:roomId', (req, res) => {
   res.sendFile(__dirname + '/public/chat-room.html');
 });
 
-// スタイルシートへのGETリクエストに対するハンドラ
+// チャットルームページ・スタイルシートへのGETリクエストに対するハンドラ
 app.get('/style.css', (_, res) => {
   res.header('Content-Type', 'text/css');
   res.sendFile(__dirname + '/public/style.css');
 });
 
-app.get('/rooms', (req, res) => {
-  res.sendFile(__dirname + '/public/room-selection.html');
-});
-
-app.get('/rooms/:roomId', (req, res) => {
-  res.sendFile(__dirname + '/public/chat-room.html');
-});
+// ドキュメントページ
+app.get('/rooms/:roomId/:name/document', (req, res) => {
+  res.sendFile(__dirname + '/public/document.html');
+})
 
 app.get('/api/rooms', (req, res) => {
   // チャットルームの一覧を返す
@@ -51,29 +58,17 @@ app.get('/api/rooms', (req, res) => {
   res.json(rooms);
 });
 
-app.get('/api/rooms/:roomId/messages', async (req, res) => {
-  const roomId = req.params.roomId;
-  const messages = [];
-  try {
-    const posts = await Post.find({ bookmarks: { $exists: true, $ne: [] } }).sort({ createdAt: -1 });
-    posts.reverse();
-    const pastLogs = await Promise.all(posts.map(organizeLogs));
-    pastLogs.forEach(e => {
-      console.log(e.name + e.msg + e.ups + e.downs + e.bookmarks);
-      messages.push({ user: e.name, message: e.msg });
-    });
-    console.log('api kakoLOG');
-  } catch (error) {
-    handleErrors(error, 'api 過去ログ取得中にエラーが発生しました');
-    throw error;
-  }
+app.get('/api/rooms/:roomId/:name/messages', async (req, res) => {
+  console.log('api 来たヨ apiName👇');
+  // const roomId = req.params.roomId; //まだ使ってないけどいずれ使うかも
+  const apiName = req.params.name;
+  console.log('apiName: ', apiName);
+
+  const nameToMatch = apiName;
+  const messages = await fetchPosts(nameToMatch);
+
   res.json(messages);
 });
-
-app.get('/rooms/:roomId/document', (req, res) => {
-  res.sendFile(__dirname + '/public/document.html');
-})
-
 
 // オンラインユーザーのリスト
 let onlineUsers = [];
@@ -83,12 +78,12 @@ let idsOnlineUsers = [];
 io.on('connection', async (socket) => {
 
   // ログイン時
-  socket.on('login', async (name) => {
+  socket.on('sign-up', async (name) => {
     name = await logInFunction(name, socket);
 
     // チャットメッセージ受送信
-    socket.on('chat message', async (nickname, msg) => {
-      name = await receiveSend_Chat(name, nickname, msg);
+    socket.on('chat message', async (msg) => {
+      await receiveSend_Chat(name, msg);
     });
 
     // アンケートメッセージ受送信
@@ -112,6 +107,50 @@ io.on('connection', async (socket) => {
     disconnectFunction(socket);
   });
 });
+
+async function fetchPosts(nameToMatch) {
+  try {
+    console.log('nameToMatch 入っているか再度確認: ', nameToMatch);
+    let posts = await Post.find(
+      {
+        'bookmarks': {
+          '$elemMatch': {
+            'name': nameToMatch
+          }
+        }
+      }
+    ).sort({ createdAt: -1 });
+
+    // bookmarksが見つからない場合
+    if (posts.length === 0) {
+      console.log('bookmarksが見つかりません 仕方ないから全部取得します');
+      posts = await Post.find({ bookmarks: { $exists: true, $ne: [] } }).sort({ createdAt: -1 });
+    }
+
+    // 取得したpostsを確認（console出力を短くしたいための色々）
+    const fp = await Promise.all(posts.map(organizeLogs));
+    let foundPosts = [];
+    fp.forEach(e => {
+      foundPosts.push({ user: e.name, message: e.msg });
+    });
+    console.log('foundPosts: ', foundPosts);
+
+    // 反対に並べ替え
+    posts.reverse();
+
+    const pastLogs = await Promise.all(posts.map(organizeLogs));
+    let messages = [];
+    pastLogs.forEach(e => {
+      messages.push({ user: e.name, message: e.msg });
+    });
+    console.log('api 過去ログ messaages: ', messages);
+    return messages;
+  }
+  catch (error) {
+    handleErrors(error, 'api 過去ログ取得中にエラーが発生しました');
+    throw error;
+  }
+}
 
 // ログイン時（名前・オンラインユーザーリスト・過去ログ・いらっしゃい）
 async function logInFunction(name, socket) {
@@ -163,9 +202,7 @@ async function saveRecord(name, msg, question = '', options = [], ups = [], down
 }
 
 // チャットメッセージ受送信
-async function receiveSend_Chat(name, nickname, msg) {
-  name = /^\s*$/.test(nickname) ? name : nickname;
-
+async function receiveSend_Chat(name, msg) {
   try {
     const p = await saveRecord(name, msg);
     console.log('チャット保存しました💬:' + p.msg + p.id);
@@ -174,7 +211,6 @@ async function receiveSend_Chat(name, nickname, msg) {
   catch (error) {
     handleErrors(error, 'チャット受送信中にエラーが発生しました');
   }
-  return name;
 }
 
 // アンケートメッセージ受送信
@@ -388,14 +424,15 @@ async function processEventData(msgId, eventType, name, socket) {
     console.log('switch後のArray: ' + users);
 
     // 3ユーザーの状態で条件分岐したうえで、up OR down OR bookmark を追加する
-    await addUserAction(users, socket.id, post, eventType, socket);
+    await addUserAction(users, name, socket.id, post, eventType, socket);
 
     // 4合計を計算
     const eventSum = await calculateEventSum(users, eventType);
 
     // 5 up OR down OR bookmark 追加後のデータをオブジェクトにまとめる
     const eventData = await organize_eventData(eventSum, post);
-    console.log('eventData: ' + eventData);
+    console.log('eventData 確認👇: ');
+    console.log(eventData);
 
     // 6 返り値
     return eventData;
@@ -416,25 +453,25 @@ async function findPost(msgId, eventType) {
 }
 
 // ユーザーのアクションを追加する関数
-async function addUserAction(users, userSocketId, post, eventType, socket) {
+async function addUserAction(users, name, userSocketId, post, eventType, socket) {
   try {
     // 初めてのアクションの場合
     if (users.length === 0) {
-      users.push(userSocketId);
+      users.push({ userSocketId: userSocketId, name: name });
       console.log(`はじめての${eventType}を追加しました: ` + users[0]);
       await post.save();
       return;
     }
 
     // 既にアクションがある場合 users.lenght > 0
-    const existingUser = users.find(obj => obj === userSocketId);
+    const existingUser = users.find(obj => obj.userSocketId === userSocketId);
     if (existingUser) {
       console.log('この人は既にアクションがあります');
       socket.emit('alert', `${eventType}は一度しかできません`);
       return;
     }
     else {// ユーザーが見つからない場合は新規追加
-      users.push({ userSocketId: userSocketId, [eventType]: 1 });
+      users.push({ userSocketId: userSocketId, name: name });
       console.log(`新たなユーザーの${eventType}を追加しました: ` + JSON.stringify(users));
       await post.save();
       return;

@@ -15,7 +15,7 @@
     <h3>chat with bookmark</h3> <span id="sign-up-name"></span>
     <br>
     <h4>7/25(木)【西田ゼミ】リアルタイム参加：</h4><span id="onlines"></span>
-    <button onclick="window.open('/rooms/:1/document', '_blank');">ドキュメント</button>
+    <button onclick="OpenWindow()">ドキュメント</button>
 
   </header>
 
@@ -23,7 +23,6 @@
     <ul id="messageLists"></ul>
 
     <form id="chatForm" action="">
-      <input id="nickname" name="name" placeholder="ニックネーム">
       <input id="input" autocomplete="off" placeholder="メッセージ" pattern=".*\S+.*" required>
       <button>Send</button>
     </form>
@@ -48,15 +47,22 @@
     // html要素の取得 
     const messageLists = document.getElementById('messageLists');
     const chatForm = document.getElementById('chatForm');
-    const nickname = document.getElementById('nickname');
     const input = document.getElementById('input');
     const surveyForm = document.getElementById('surveyForm');
 
     // ★ログイン時
     // プロンプト　ログインで名前を入力・サーバーに送信
-    const name = prompt("名前を入力してください", "");
-    socket.emit('sign-up', name);
-    document.getElementById('sign-up-name').textContent = 'ログイン名： ' + name;
+    const myName = prompt("名前を入力してください", "");
+    const favNum = prompt("好きな3桁の数字を入力してください", "");
+    const userName = myName + favNum;
+    socket.emit('sign-up', userName);
+    document.getElementById('sign-up-name').textContent = 'ログイン名： ' + userName;
+
+    function OpenWindow() {
+      const roomId = window.location.pathname.split('/').slice(-1);
+      const name = userName;
+      window.open(`/rooms/${roomId}/${name}/document`, '_blank');
+    }
 
     // オンラインメンバー
     socket.on('onlineUsers', (onlines) => {
@@ -198,7 +204,7 @@
     // ★チャットメッセージをサーバーに送信
     chatForm.addEventListener('submit', (event) => {
       event.preventDefault();
-      socket.emit('chat message', nickname.value, input.value);
+      socket.emit('chat message', input.value);
       input.value = '';
     });
 
@@ -249,11 +255,11 @@
     });
 
     // ★bookmark受信
-    socket.on('bookmark',(bookmarkData) =>{
+    socket.on('bookmark', (bookmarkData) => {
       const item = document.getElementById(bookmarkData._id);
       const bookmarkCount = item.querySelector('.bookmark-container span');
       bookmarkCount.textContent = bookmarkData.count;
-    });    
+    });
 
     // アンケート作成の表示切り替え関数
     function toggleSurveyFormVisibility() {

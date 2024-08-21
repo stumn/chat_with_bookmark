@@ -21,14 +21,19 @@ const options = {
     }
 };
 
+const bookmarkSchema = new mongoose.Schema({
+    userSocketId: String,
+    name: String
+});
+
 const postSchema = new mongoose.Schema({
     name: String,
     msg: String,
     question: String,
     options: Array,
-    ups: [String],
-    downs:[String],
-    bookmarks:[String],
+    ups: [{ type: bookmarkSchema, default: () => ({}) }],
+    downs: [{ type: bookmarkSchema, default: () => ({}) }],
+    bookmarks: [{ type: bookmarkSchema, default: () => ({}) }],
     voteOpt0: [String],
     voteOpt1: [String],
     voteOpt2: [String]

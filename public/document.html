@@ -9,7 +9,7 @@
 
 <body>
   <header>
-    <h1>Chat Documents</h1>
+    <h1>Chat Documents</h1><span id="login-name"></span>
   </header>
 
   <main>
@@ -17,17 +17,24 @@
   </main>
 
   <!-- ブラウザ側のスクリプト -->
-  <script src="/socket.io/socket.io.js"></script>
+  <!-- <script src="/socket.io/socket.io.js"></script> -->
   <script>
-    const socket = io();
+    // const socket = io();
 
+    // ドキュメントリスト要素の取得
     const documentList = document.getElementById('documents');
 
     document.addEventListener('DOMContentLoaded', () => {
-      const roomId = window.location.pathname.split('/').slice(-2, -1)[0];
-      console.log('roomId: ' + roomId);
+      const pathname = window.location.pathname;
 
-      fetch(`/api/rooms/:${roomId}/messages`)
+      const roomId = pathname.split('/')[2];
+      console.log('roomId: ' + roomId);
+      
+      const name = decodeURIComponent(pathname.split('/')[3]);
+      console.log('name: ' + name);
+      
+      // APIに接続して、ブックマークされたポストだけ取得
+      fetch(`/api/rooms/${roomId}/${name}/messages`)
         .then(response => response.json())
         .then(messages => {
           messages.forEach(msg => {
