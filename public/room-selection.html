@@ -25,7 +25,7 @@
     rooms.forEach(room => {
       const li = document.createElement('li');
       const link = document.createElement('a');
-      link.href = `/rooms/:${room}`;
+      link.href = `/rooms/${room}`;
       link.target = '_blank';
       link.textContent = room;
       li.appendChild(link);
