@@ -6,6 +6,7 @@ const express = require('express');
 const http = require('http');
 const { Server } = require("socket.io");
 const { Post } = require('./db');
+const { Memo } = require('./db')
 const { error } = require('console');
 
 // 定数の設定
@@ -86,6 +87,11 @@ io.on('connection', async (socket) => {
       await receiveSend_Chat(name, msg);
     });
 
+    // 自分メモ受送信
+    socket.on('personal memo', async (memo) => {
+      await receiveSend_personalMemo(name, memo, socket);
+    });
+
     // アンケートメッセージ受送信
     socket.on('submitSurvey', async data => {
       await receiveSend_Survey(data, name);
@@ -123,8 +129,8 @@ async function fetchPosts(nameToMatch) {
 
     // bookmarksが見つからない場合
     if (posts.length === 0) {
-      console.log('bookmarksが見つかりません 仕方ないから全部取得します');
-      posts = await Post.find({ bookmarks: { $exists: true, $ne: [] } }).sort({ createdAt: -1 });
+      console.log('bookmarksがありません');
+      // posts = await Post.find({ bookmarks: { $exists: true, $ne: [] } }).sort({ createdAt: -1 });
     }
 
     // 取得したpostsを確認（console出力を短くしたいための色々）
@@ -210,6 +216,34 @@ async function receiveSend_Chat(name, msg) {
   }
   catch (error) {
     handleErrors(error, 'チャット受送信中にエラーが発生しました');
+  }
+}
+
+// 自分メモ受送信
+async function receiveSend_personalMemo(name, memo, socket) {
+  try {
+    const m = await saveMemo(name, memo);
+    console.log('自分メモ保存完了 ( ..)φメモメモ');
+    console.log(m.msg);
+    // io.to(socket.id).emit('memoLogs', m);
+    socket.emit('memoLogs', m);
+  }
+  catch (error) {
+    handleErrors(error, '自分メモ受送信中にエラーが発生しました');
+  }
+}
+
+async function saveMemo(name, memo) {
+  try {
+    console.log('name + memo : ', name, memo);
+    const memoData = { name: name, msg: memo };
+    console.log(memoData);
+    const newMemo = await Memo.create(memoData);
+    console.log(newMemo);
+    return newMemo;
+  } catch (error) {
+    handleErrors(error, '自分メモ保存時にエラーが発生しました');
+    throw error;
   }
 }
 

@@ -23,8 +23,13 @@
     <ul id="messageLists"></ul>
 
     <form id="chatForm" action="">
-      <input id="input" autocomplete="off" placeholder="メッセージ" pattern=".*\S+.*" required>
+      <input id="input" autocomplete="off" placeholder="メッセージ みんなに表示" pattern=".*\S+.*" required>
       <button>Send</button>
+    </form>
+
+    <form id="memoForm" action="">
+      <input id="memoInput" autocomplete="off" placeholder="自分メモ 他の人には表示されません" pattern=".*\S+.*" required>
+      <button>Save</button>
     </form>
 
     <button onclick="toggleSurveyFormVisibility()">アンケート作成</button>
@@ -48,13 +53,14 @@
     const messageLists = document.getElementById('messageLists');
     const chatForm = document.getElementById('chatForm');
     const input = document.getElementById('input');
+    const memoForm = document.getElementById('memoForm');
+    const memoInput = document.getElementById('memoInput');
     const surveyForm = document.getElementById('surveyForm');
 
     // ★ログイン時
     // プロンプト　ログインで名前を入力・サーバーに送信
     const myName = prompt("名前を入力してください", "");
-    const favNum = prompt("好きな3桁の数字を入力してください", "");
-    const userName = myName + favNum;
+    const userName = myName;
     socket.emit('sign-up', userName);
     document.getElementById('sign-up-name').textContent = 'ログイン名： ' + userName;
 
@@ -212,6 +218,21 @@
     socket.on('chatLogs', (post) => {
       const item = addMessageToList(post);
       item.id = post._id;
+    });
+
+    // ★自分メモをサーバーに送信
+    memoForm.addEventListener('submit', (event) => {
+      event.preventDefault();
+      console.log(memoInput.value);
+      socket.emit('personal memo', memoInput.value);
+      memoInput.value = '';
+    });
+
+    // 自分メモ受信
+    socket.on('memoLogs', (memo) => {
+      console.log('memoLogs: ', memo);
+      const item = addMessageToList(memo);
+      item.id = memo._id;
     });
 
     // ★アンケート投稿をサーバーに送信

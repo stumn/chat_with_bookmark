@@ -21,11 +21,13 @@ const options = {
     }
 };
 
+// bookmark スキーマ（Post 内部）
 const bookmarkSchema = new mongoose.Schema({
     userSocketId: String,
     name: String
 });
 
+// Post スキーマ
 const postSchema = new mongoose.Schema({
     name: String,
     msg: String,
@@ -40,8 +42,16 @@ const postSchema = new mongoose.Schema({
     // voteOptions: [[voteSchema]]　2次元配列の拡張案
 }, options);
 
-// その形式のデータを保存・読み出しするために必要なモデルを作る
+// Postモデル
 const Post = mongoose.model("Post", postSchema);
 
+// memo スキーマ
+const memoSchema = new mongoose.Schema({
+    name: String,
+    msg: String
+}, options);
+
+const Memo = mongoose.model("Memo", memoSchema);
+
 // その形式のデータを保存・読み出しするために必要なモデルを作る
-module.exports = { mongoose, Post };
+module.exports = { mongoose, Post, Memo };

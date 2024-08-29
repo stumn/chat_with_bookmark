@@ -15,21 +15,12 @@
        display: inline;
    }
 
-   /* #status {
-       padding: 1rem;
-       position: fixed;
-       bottom: 2.5rem;
-       right: 0;
-       background-color: beige;
-       border-radius: 1rem;
-   } */
-
    /* chatForm */
    #chatForm {
        background: rgba(0, 0, 0, 0.15);
        padding: 0.25rem;
        position: fixed;
-       bottom: 0;
+       bottom: 3rem;
        left: 0;
        right: 0;
        display: flex;
@@ -38,11 +29,10 @@
        backdrop-filter: blur(10px);
    }
 
-   #nickname,
    #input {
        border: none;
        padding: 0 1rem;
-       flex-basis: 30%;
+       flex-basis: 100%;
        border-radius: 2rem;
        margin: 0.25rem;
    }
@@ -60,6 +50,45 @@
        outline: none;
        color: #fff;
    }
+
+   /* 自分メモ */
+
+   #memoForm {
+    background: rgba(0, 0, 0, 0.15);
+    padding: 0.25rem;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    display: flex;
+    height: 3rem;
+    box-sizing: border-box;
+    backdrop-filter: blur(10px);
+}
+
+#memoInput {
+    border: none;
+    padding: 0 1rem;
+    flex-basis: 100%;
+    border-radius: 2rem;
+    margin: 0.25rem;
+}
+
+#memoInput:focus {
+    outline: none;
+}
+
+#memoForm>button {
+    background: lightseagreen;
+    border: none;
+    padding: 0 1rem;
+    margin: 0.25rem;
+    border-radius: 3px;
+    outline: none;
+    color: #fff;
+}
+
+
 
    /* アンケート投稿 */
 
@@ -100,10 +129,10 @@
        outline: none;
    }
 
-   #messageLists>li span.survey-num span{
-         margin-left: 5px;
-         font-weight: bold;
-         color: blue;
+   #messageLists>li span.survey-num span {
+       margin-left: 5px;
+       font-weight: bold;
+       color: blue;
    }
 
    #messageLists>li span.up-container {
