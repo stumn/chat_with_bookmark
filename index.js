@@ -3,73 +3,25 @@ require('dotenv').config();
 
 // 必要なモジュールのインポート
 const express = require('express');
+const app = express();
+const routes = require('./routes');
+
+app.use('/', routes);
+
 const http = require('http');
+const server = http.createServer(app);
+
 const { Server } = require("socket.io");
-const { Post } = require('./db');
-const { Memo } = require('./db')
+const io = new Server(server);
+
+const { mongoose, Post, Memo } = require('./db');
+const { getPastLogs, receiveSend_Survey, fetchPosts } = require('./dbOperations');
+
 const { error } = require('console');
 
 // 定数の設定
 const PORT = process.env.PORT || 3000;
 const ANONYMOUS_NAME = '匿名';
-const EVENT_MAX = 1;
-const PAST_POST = 5;
-
-function setupServer() {
-  const app = express();
-  const server = http.createServer(app);
-  const io = new Server(server);
-  return { app, server, io };
-}
-
-const { app, server, io } = setupServer();
-
-// ルートへのGETリクエストに対するハンドラ
-// app.get('/', (_, res) => {
-//   res.sendFile(__dirname + '/public/chat-room.html');
-// });
-
-// ルーム選択ページ
-app.get('/rooms', (req, res) => {
-  res.sendFile(__dirname + '/public/room-selection.html');
-});
-
-// チャットルームページ
-app.get('/rooms/:roomId', (req, res) => {
-  res.sendFile(__dirname + '/public/chat-room.html');
-});
-
-// チャットルームページ・スタイルシートへのGETリクエストに対するハンドラ
-app.get('/style.css', (_, res) => {
-  res.header('Content-Type', 'text/css');
-  res.sendFile(__dirname + '/public/style.css');
-});
-
-// ドキュメントページ
-app.get('/rooms/:roomId/:name/document', (req, res) => {
-  res.sendFile(__dirname + '/public/document.html');
-})
-
-app.get('/api/rooms', (req, res) => {
-  // チャットルームの一覧を返す
-  const rooms = [
-    { id: 1, name: 'Room 1' },
-    { id: 2, name: 'Room 2' }
-  ];
-  res.json(rooms);
-});
-
-app.get('/api/rooms/:roomId/:name/messages', async (req, res) => {
-  console.log('api 来たヨ apiName👇');
-  // const roomId = req.params.roomId; //まだ使ってないけどいずれ使うかも
-  const apiName = req.params.name;
-  console.log('apiName: ', apiName);
-
-  const nameToMatch = apiName;
-  const messages = await fetchPosts(nameToMatch);
-
-  res.json(messages);
-});
 
 // オンラインユーザーのリスト
 let onlineUsers = [];
@@ -114,51 +66,7 @@ io.on('connection', async (socket) => {
   });
 });
 
-async function fetchPosts(nameToMatch) {
-  try {
-    console.log('nameToMatch 入っているか再度確認: ', nameToMatch);
-    let posts = await Post.find(
-      {
-        'bookmarks': {
-          '$elemMatch': {
-            'name': nameToMatch
-          }
-        }
-      }
-    ).sort({ createdAt: -1 });
-
-    // bookmarksが見つからない場合
-    if (posts.length === 0) {
-      console.log('bookmarksがありません');
-      // posts = await Post.find({ bookmarks: { $exists: true, $ne: [] } }).sort({ createdAt: -1 });
-    }
-
-    // 取得したpostsを確認（console出力を短くしたいための色々）
-    const fp = await Promise.all(posts.map(organizeLogs));
-    let foundPosts = [];
-    fp.forEach(e => {
-      foundPosts.push({ user: e.name, message: e.msg });
-    });
-    console.log('foundPosts: ', foundPosts);
-
-    // 反対に並べ替え
-    posts.reverse();
-
-    const pastLogs = await Promise.all(posts.map(organizeLogs));
-    let messages = [];
-    pastLogs.forEach(e => {
-      messages.push({ user: e.name, message: e.msg });
-    });
-    console.log('api 過去ログ messaages: ', messages);
-    return messages;
-  }
-  catch (error) {
-    handleErrors(error, 'api 過去ログ取得中にエラーが発生しました');
-    throw error;
-  }
-}
-
-// ログイン時（名前・オンラインユーザーリスト・過去ログ・いらっしゃい）
+// ログイン時（名前・オンラインユーザーリスト・過去ログ）
 async function logInFunction(name, socket) {
   name = name !== null && name !== '' ? name : ANONYMOUS_NAME;
   console.log(name + ' (' + socket.id + ') 接続完了💨');
@@ -178,22 +86,7 @@ async function logInFunction(name, socket) {
   return name;
 }
 
-// ログイン時・過去ログをDBから取得
-async function getPastLogs() {
-  try {
-    const posts = await Post.find({}).limit(PAST_POST).sort({ createdAt: -1 });
-    posts.reverse();
-    const pastLogs = await Promise.all(posts.map(organizeLogs));
-    pastLogs.forEach(e => {
-      console.log(e.name + e.msg + e.ups + e.downs + e.bookmarks);
-    });
-    console.log('過去ログ整理完了');
-    return pastLogs;
-  } catch (error) {
-    handleErrors(error, 'getPastLogs 過去ログ取得中にエラーが発生しました');
-    throw error;
-  }
-}
+
 
 // データベースにレコードを保存
 async function saveRecord(name, msg, question = '', options = [], ups = [], downs = [], voteOpt0 = [], voteOpt1 = [], voteOpt2 = []) {
@@ -225,7 +118,7 @@ async function receiveSend_personalMemo(name, memo, socket) {
     const m = await saveMemo(name, memo);
     console.log('自分メモ保存完了 ( ..)φメモメモ');
     console.log(m.memo);
-    // io.to(socket.id).emit('memoLogs', m);
+    // 自分だけに送信
     socket.emit('memoLogs', m);
   }
   catch (error) {
@@ -233,6 +126,7 @@ async function receiveSend_personalMemo(name, memo, socket) {
   }
 }
 
+// 自分メモ保存
 async function saveMemo(name, memo) {
   try {
     console.log('name + memo : ', name, memo);
@@ -245,41 +139,6 @@ async function saveMemo(name, memo) {
     handleErrors(error, '自分メモ保存時にエラーが発生しました');
     throw error;
   }
-}
-
-// アンケートメッセージ受送信
-async function receiveSend_Survey(data, name) {
-  const Q = data.question;
-  const optionTexts = [data.options[0], data.options[1], data.options[2]];
-  try {
-    const surveyPost = await saveRecord(name, '', Q, optionTexts);
-    const xxx = organizeLogs(surveyPost);
-    console.log('アンケート保存しました📄:' + xxx.question + xxx._id);
-    io.emit('survey_post', xxx);
-  } catch (error) {
-    handleErrors(error, 'アンケート受送信中にエラーが発生しました');
-  }
-}
-
-function organizeLogs(post) {
-  const pastUpSum = post.ups.length;
-  const pastDownSum = post.downs.length;
-  const pastBookmarkSum = post.bookmarks.length;
-
-  const voteSums = calculate_VoteSum(createVoteArrays(post));// 投票合計
-
-  // 返り値
-  return {
-    _id: post._id,
-    name: post.name,
-    msg: post.msg,
-    question: post.question,
-    options: post.options,
-    ups: pastUpSum,
-    downs: pastDownSum,
-    bookmarks: pastBookmarkSum,
-    voteSums: voteSums
-  };
 }
 
 // ★★アンケート投票受送信
