@@ -20,14 +20,64 @@ async function getPastLogs() {
     }
 }
 
+
+// データベースにレコードを保存
+async function saveRecord(name, msg, question = '', options = [], ups = [], downs = [], voteOpt0 = [], voteOpt1 = [], voteOpt2 = []) {
+    try {
+        const npData = { name, msg, question, options, ups, downs, voteOpt0, voteOpt1, voteOpt2 };
+        const newPost = await Post.create(npData);
+        return newPost;
+    } catch (error) {
+        handleErrors(error, 'データ保存時にエラーが発生しました');
+        throw error;
+    }
+}
+
+// チャットメッセージ受送信
+async function SaveChatMessage(name, msg) {
+    try {
+        const p = await saveRecord(name, msg);
+        console.log('チャット保存しました💬:' + p.msg + p.id);
+        return p;
+    }
+    catch (error) {
+        handleErrors(error, 'チャット受送信中にエラーが発生しました');
+    }
+}
+
+// 自分メモ受送信
+async function SavePersonalMemo(name, memo, socket) {
+    try {
+        const m = await saveMemo(name, memo);
+        console.log('自分メモ保存完了', m.name, m.memo);
+        return m;
+    }
+    catch (error) {
+        handleErrors(error, '自分メモ受送信中にエラーが発生しました');
+    }
+}
+
+// 自分メモ保存
+async function saveMemo(name, memo) {
+    try {
+        const memoData = { name, memo };
+        const newMemo = await Memo.create(memoData);
+        console.log(newMemo);
+        return newMemo;
+    } catch (error) {
+        handleErrors(error, '自分メモ保存時にエラーが発生しました');
+        throw error;
+    }
+}
+
 // アンケートメッセージ受送信
-async function receiveSend_Survey(data, name) {
+async function SaveSurveyMessage(data, name) {
     const Q = data.question;
     const optionTexts = [data.options[0], data.options[1], data.options[2]];
     try {
         const surveyPost = await saveRecord(name, '', Q, optionTexts);
         const xxx = organizeLogs(surveyPost);
-        io.emit('survey_post', xxx);
+        return xxx;
     } catch (error) {
         console.error('アンケート受送信中にエラーが発生しました', error);
     }
@@ -107,6 +157,6 @@ function createVoteArrays(surveyPost) {
     return voteArrays;
 }
 
-module.exports = { getPastLogs, receiveSend_Survey, fetchPosts };
+module.exports = { getPastLogs, SaveChatMessage, SavePersonalMemo, SaveSurveyMessage, fetchPosts };
 
 

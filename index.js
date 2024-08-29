@@ -15,7 +15,7 @@ const { Server } = require("socket.io");
 const io = new Server(server);
 
 const { mongoose, Post, Memo } = require('./db');
-const { getPastLogs, receiveSend_Survey, fetchPosts } = require('./dbOperations');
+const { getPastLogs, SaveChatMessage, SavePersonalMemo, SaveSurveyMessage, fetchPosts } = require('./dbOperations');
 
 const { error } = require('console');
 
@@ -36,17 +36,20 @@ io.on('connection', async (socket) => {
 
     // チャットメッセージ受送信
     socket.on('chat message', async (msg) => {
-      await receiveSend_Chat(name, msg);
+      const p = await SaveChatMessage(name, msg);
+      io.emit('chatLogs', p);
     });
 
     // 自分メモ受送信
     socket.on('personal memo', async (memo) => {
-      await receiveSend_personalMemo(name, memo, socket);
+      const m = await SavePersonalMemo(name, memo, socket);
+      socket.emit('memoLogs', m); // 自分だけに送信
     });
 
     // アンケートメッセージ受送信
     socket.on('submitSurvey', async data => {
-      await receiveSend_Survey(data, name);
+      const s = await SaveSurveyMessage(data, name);
+      io.emit('survey_post', s);
     });
 
     // アンケート投票受送信
@@ -84,61 +87,6 @@ async function logInFunction(name, socket) {
   }
 
   return name;
-}
-
-
-
-// データベースにレコードを保存
-async function saveRecord(name, msg, question = '', options = [], ups = [], downs = [], voteOpt0 = [], voteOpt1 = [], voteOpt2 = []) {
-  try {
-    const npData = { name, msg, question, options, ups, downs, voteOpt0, voteOpt1, voteOpt2 };
-    const newPost = await Post.create(npData);
-    return newPost;
-  } catch (error) {
-    handleErrors(error, 'データ保存時にエラーが発生しました');
-    throw error;
-  }
-}
-
-// チャットメッセージ受送信
-async function receiveSend_Chat(name, msg) {
-  try {
-    const p = await saveRecord(name, msg);
-    console.log('チャット保存しました💬:' + p.msg + p.id);
-    io.emit('chatLogs', p);
-  }
-  catch (error) {
-    handleErrors(error, 'チャット受送信中にエラーが発生しました');
-  }
-}
-
-// 自分メモ受送信
-async function receiveSend_personalMemo(name, memo, socket) {
-  try {
-    const m = await saveMemo(name, memo);
-    console.log('自分メモ保存完了 ( ..)φメモメモ');
-    console.log(m.memo);
-    // 自分だけに送信
-    socket.emit('memoLogs', m);
-  }
-  catch (error) {
-    handleErrors(error, '自分メモ受送信中にエラーが発生しました');
-  }
-}
-
-// 自分メモ保存
-async function saveMemo(name, memo) {
-  try {
-    console.log('name + memo : ', name, memo);
-    const memoData = { name, memo };
-    console.log(memoData);
-    const newMemo = await Memo.create(memoData);
-    console.log(newMemo);
-    return newMemo;
-  } catch (error) {
-    handleErrors(error, '自分メモ保存時にエラーが発生しました');
-    throw error;
-  }
 }
 
 // ★★アンケート投票受送信
@@ -245,15 +193,13 @@ async function handle_Voted_User(option, hasVotedOption, socket, voteArrays, sur
 
 // -未投票ユーザーの投票
 async function handle_NeverVoted_User(option, surveyPost, voteArrays, userSocketId) {
-  // console.log(`ID ${userSocketId} は、まだ1度も投票していません🙅`);
 
-  // あり得ないと思うけど、エラー処理（選択肢がマイナスや、3以上などの存在しない数）
+  // あり得ない エラー処理（選択肢がマイナスや、3以上などの存在しない数）
   if (option < 0 || option >= voteArrays.length) {
     handleErrors(error, '無効なオプション');
   }
 
   voteArrays[option].push(userSocketId);
-  // console.log(`ID ${userSocketId} は、投票者配列${option}に追加されました🙋`);
   await surveyPost.save();
 }
 
@@ -276,10 +222,8 @@ function organize_voteData(surveyPost, voteSums) {
   };
 }
 
-
 // イベントの受送信（up, down, bookmark）
 async function receiveSendEvent(eventType, msgId, name, socket) {
-  console.log('start receiveSendEvent関数');
   console.log('eventType: ' + eventType + ' msgId: ' + msgId + ' name: ' + name);
 
   // 処理
@@ -292,43 +236,14 @@ async function receiveSendEvent(eventType, msgId, name, socket) {
 // イベント処理関数(up, down, bookmark)
 async function processEventData(msgId, eventType, name, socket) {
   try {
-    let eventEmoji;
-    let users;
-    // 1投稿を見つける
-    const post = await findPost(msgId, eventType);
-
-    // 2 eventTypeで場合分け
-    switch (eventType) {
-      case 'up':
-        eventEmoji = '👆';
-        users = post.ups;
-        break;
-      case 'down':
-        eventEmoji = '👇';
-        users = post.downs;
-        break;
-      case 'bookmark':
-        eventEmoji = '🔖';
-        users = post.bookmarks;
-        break;
-    }
-
-    console.log(eventType + '先のポスト: ' + msgId + eventEmoji + 'by' + name);
-    console.log('switch後のArray: ' + users);
-
-    // 3ユーザーの状態で条件分岐したうえで、up OR down OR bookmark を追加する
+    const post = await findPost(msgId);
+    const users = post[eventType + 's']; // ups, downs, bookmarks (配列)
     await addUserAction(users, name, socket.id, post, eventType, socket);
 
-    // 4合計を計算
-    const eventSum = await calculateEventSum(users, eventType);
-
-    // 5 up OR down OR bookmark 追加後のデータをオブジェクトにまとめる
-    const eventData = await organize_eventData(eventSum, post);
-    console.log('eventData 確認👇: ');
-    console.log(eventData);
-
-    // 6 返り値
-    return eventData;
+    return {
+      _id: post._id,
+      count: users.length
+    };
 
   } catch (error) {
     handleErrors(error, `receiveSendEvent ${eventType}イベントデータの処理中にエラーが発生しました`);
@@ -336,10 +251,10 @@ async function processEventData(msgId, eventType, name, socket) {
 }
 
 // 投稿を見つける関数
-async function findPost(msgId, eventType) {
+async function findPost(msgId) {
   const post = await Post.findById(msgId);
   if (!post) {
-    handleErrors(error, `${eventType}投稿見つからない${msgId}`);
+    handleErrors(error, `投稿見つからない${msgId}`);
     return;
   }
   return post;
@@ -374,34 +289,18 @@ async function addUserAction(users, name, userSocketId, post, eventType, socket)
   }
 }
 
-// イベントの合計を計算する関数
-function calculateEventSum(array, actionType) {
-  console.log(actionType + 'のarray: ' + array);
-  const eventSum = array.length;
-  return eventSum;
-}
-
-// イベントデータを整理する関数
-async function organize_eventData(eventSum, post) {
-  return {
-    _id: post._id,
-    count: eventSum
-  };
-}
-
-// 切断時のイベントハンドラ
+// 切断時のイベントハンドラ　＝　オンラインメンバーから削除
 async function disconnectFunction(socket) {
   try {
-    // オンラインメンバーから削除
     const targetName = idsOnlineUsers.find(obj => obj.id === socket.id)?.name;
     onlineUsers = onlineUsers.filter(val => val !== targetName);
     io.emit('onlineUsers', onlineUsers);
   } catch (error) {
-    handleErrors(error, 'disconnectFunction 切断時にエラーが発生しました');
+    handleErrors(error, 'disconnectFunction 切断時');
   }
 }
 
-// エラーをコンソールに出力する関数
+// エラーをコンソールに出力する関数(consoleが無限に増えないので見やすいかも)
 function handleErrors(error, customMsg = '') {
   console.error(customMsg, error);
 }
@@ -410,4 +309,3 @@ function handleErrors(error, customMsg = '') {
 server.listen(PORT, () => {
   console.log('listening on *:' + PORT);
 });
-
