@@ -48,7 +48,7 @@ const Post = mongoose.model("Post", postSchema);
 // memo スキーマ
 const memoSchema = new mongoose.Schema({
     name: String,
-    msg: String
+    memo: String
 }, options);
 
 const Memo = mongoose.model("Memo", memoSchema);

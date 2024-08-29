@@ -224,7 +224,7 @@ async function receiveSend_personalMemo(name, memo, socket) {
   try {
     const m = await saveMemo(name, memo);
     console.log('自分メモ保存完了 ( ..)φメモメモ');
-    console.log(m.msg);
+    console.log(m.memo);
     // io.to(socket.id).emit('memoLogs', m);
     socket.emit('memoLogs', m);
   }
@@ -236,7 +236,7 @@ async function receiveSend_personalMemo(name, memo, socket) {
 async function saveMemo(name, memo) {
   try {
     console.log('name + memo : ', name, memo);
-    const memoData = { name: name, msg: memo };
+    const memoData = { name, memo };
     console.log(memoData);
     const newMemo = await Memo.create(memoData);
     console.log(newMemo);

@@ -104,17 +104,30 @@
         item.appendChild(surveyContainer);
       }
 
-      // 3 up button and counts
+      // Create containers for up, down, and bookmark buttons
       const upContainer = makeContainerElement('up', message);
-      item.appendChild(upContainer);
-
-      // 4 down button and counts 
       const downContainer = makeContainerElement('down', message);
-      item.appendChild(downContainer);
-
-      // 5 bookmark button and couonts
       const bookmarkContainer = makeContainerElement('bookmark', message);
-      item.appendChild(bookmarkContainer);
+
+      // Append the containers to the item
+      item.append(upContainer, downContainer, bookmarkContainer);
+
+      window.scrollTo(0, document.body.scrollHeight);
+
+      messageLists.appendChild(item);
+      item.id = message._id;
+      return item;
+    }
+
+    // ★メッセージリストに追加する(自分メモ)
+    function addPersonalMemoToList(memo) {
+
+      // 1 name + memo
+      const item = document.createElement('li');
+      let nameAndMemo = '[' + memo.name + '] ' + memo.memo;
+      
+      const messageText = makeMessageTextElement(nameAndMemo);
+      item.appendChild(messageText);
 
       window.scrollTo(0, document.body.scrollHeight);
 
@@ -192,6 +205,7 @@
       const button = document.createElement('button');
       button.textContent = emoji;
       button.addEventListener('click', e => {
+        button.classList.toggle("active");
         console.log(eventType);
         socket.emit('event', eventType, message._id);
       });
@@ -231,7 +245,7 @@
     // 自分メモ受信
     socket.on('memoLogs', (memo) => {
       console.log('memoLogs: ', memo);
-      const item = addMessageToList(memo);
+      const item = addPersonalMemoToList(memo);
       item.id = memo._id;
     });
 
