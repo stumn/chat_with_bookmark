@@ -1,4 +1,4 @@
-// description.js 
+// dbOperations.js 
 const { mongoose, Post, Memo } = require('./db');
 
 const PAST_POST = 5; // 過去ログ取得数
@@ -15,11 +15,9 @@ async function getPastLogs() {
         console.log('過去ログ整理完了');
         return pastLogs;
     } catch (error) {
-        console.error('getPastLogs 過去ログ取得中にエラーが発生しました', error);
-        throw error;
+        handleErrors(error, 'getPastLogs 過去ログ取得中にエラーが発生しました');
     }
 }
-
 
 // データベースにレコードを保存
 async function saveRecord(name, msg, question = '', options = [], ups = [], downs = [], voteOpt0 = [], voteOpt1 = [], voteOpt2 = []) {
@@ -29,7 +27,6 @@ async function saveRecord(name, msg, question = '', options = [], ups = [], down
         return newPost;
     } catch (error) {
         handleErrors(error, 'データ保存時にエラーが発生しました');
-        throw error;
     }
 }
 
@@ -66,7 +63,6 @@ async function saveMemo(name, memo) {
         return newMemo;
     } catch (error) {
         handleErrors(error, '自分メモ保存時にエラーが発生しました');
-        throw error;
     }
 }
 
@@ -79,7 +75,7 @@ async function SaveSurveyMessage(data, name) {
         const xxx = organizeLogs(surveyPost);
         return xxx;
     } catch (error) {
-        console.error('アンケート受送信中にエラーが発生しました', error);
+        handleErrors(error, 'アンケート受送信中にエラーが発生しました');
     }
 }
 
@@ -114,8 +110,7 @@ async function fetchPosts(nameToMatch) {
         return messages;
     }
     catch (error) {
-        console.error('api 過去ログ取得中にエラーが発生しました', error);
-        throw error;
+        handleErrors(error, 'api 過去ログ取得中にエラーが発生しました');
     }
 }
 
@@ -157,6 +152,10 @@ function createVoteArrays(surveyPost) {
     return voteArrays;
 }
 
+// エラーをコンソールに出力する関数(consoleが無限に増えないので見やすいかも)
+function handleErrors(error, customMsg = '') {
+    console.error(customMsg, error);
+    throw error;
+}
+
 module.exports = { getPastLogs, SaveChatMessage, SavePersonalMemo, SaveSurveyMessage, fetchPosts };
-
-

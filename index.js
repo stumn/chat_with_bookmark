@@ -54,7 +54,8 @@ io.on('connection', async (socket) => {
 
     // アンケート投票受送信
     socket.on('survey', async (msgId, option) => {
-      await receiveSendVote(msgId, option, name, socket);
+      const voteData = await processVoteEvent(msgId, option, socket.id, socket);
+      io.emit('updateVote', voteData);
     });
 
     // イベント受送信（up, down, bookmark）
@@ -89,44 +90,24 @@ async function logInFunction(name, socket) {
   return name;
 }
 
-// ★★アンケート投票受送信
-async function receiveSendVote(msgId, option, name, socket) {
-  console.log('投票先のポスト: ' + msgId + ' 選んだ選択肢: ' + option + ' 🙋 by ' + name);
-  try {
-    const voteData = await processVoteEvent(msgId, option, socket.id, socket);
-    io.emit('updateVote', voteData);
-  } catch (error) {
-    handleErrors(error, 'アンケート投票受送信中にエラーが発生しました');
-  }
-}
-
 // ★投票イベントを処理する関数
 async function processVoteEvent(msgId, option, userSocketId, socket) {
   try {
-    // ポストを特定
-    const surveyPost = await findSurveyPost(msgId);
+    const surveyPost = await findSurveyPost(msgId); // ポストを特定
+    let voteArrays = createVoteArrays(surveyPost);  // 投票配列
 
-    // 投票配列
-    let voteArrays = createVoteArrays(surveyPost);
+    let { userHasVoted, hasVotedOption } = checkVoteStatus(userSocketId, voteArrays); // ユーザーが投票済みか否か
 
-    // ユーザーが投票済みか否か
-    let { userHasVoted, hasVotedOption } = checkVoteStatus(userSocketId, voteArrays);
-
-    // 投票済み
-    if (userHasVoted === true) {
+    if (userHasVoted === true) { // 投票済み
       await handle_Voted_User(option, hasVotedOption, socket, voteArrays, surveyPost);
+    } else { // 未投票
+      voteArrays[option].push(userSocketId);
+      await surveyPost.save();
     }
 
-    // まだ投票したこと無い
-    else if (userHasVoted === false) {
-      handle_NeverVoted_User(option, surveyPost, voteArrays, userSocketId);
-    }
+    let voteSums = calculate_VoteSum(voteArrays, msgId); // 投票合計を計算
 
-    // 投票合計を計算
-    let voteSums = calculate_VoteSum(voteArrays, msgId);
-
-    // 返り値
-    return organize_voteData(surveyPost, voteSums);
+    return organize_voteData(surveyPost, voteSums); //返り値
 
   } catch (error) {
     handleErrors(error, 'processVoteEvent  投票処理中にエラーが発生しました');
@@ -188,19 +169,6 @@ async function handle_Voted_User(option, hasVotedOption, socket, voteArrays, sur
     voteArrays[option].push(socket.id);
     await surveyPost.save();
   }
-
-}
-
-// -未投票ユーザーの投票
-async function handle_NeverVoted_User(option, surveyPost, voteArrays, userSocketId) {
-
-  // あり得ない エラー処理（選択肢がマイナスや、3以上などの存在しない数）
-  if (option < 0 || option >= voteArrays.length) {
-    handleErrors(error, '無効なオプション');
-  }
-
-  voteArrays[option].push(userSocketId);
-  await surveyPost.save();
 }
 
 // -投票処理後の投票数計算
