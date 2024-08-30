@@ -29,7 +29,7 @@
        backdrop-filter: blur(10px);
    }
 
-   #input {
+   #chatInput {
        border: none;
        padding: 0 1rem;
        flex-basis: 100%;
@@ -37,7 +37,7 @@
        margin: 0.25rem;
    }
 
-   #input:focus {
+   #chatInput:focus {
        outline: none;
    }
 

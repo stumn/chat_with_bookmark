@@ -23,7 +23,7 @@
     <ul id="messageLists"></ul>
 
     <form id="chatForm" action="">
-      <input id="input" autocomplete="off" placeholder="メッセージ みんなに表示" pattern=".*\S+.*" required>
+      <input id="chatInput" autocomplete="off" placeholder="メッセージ みんなに表示" pattern=".*\S+.*" required>
       <button>Send</button>
     </form>
 
@@ -49,30 +49,36 @@
   <script>
     const socket = io();
 
-    // html要素の取得 
-    const messageLists = document.getElementById('messageLists');
-    const chatForm = document.getElementById('chatForm');
-    const input = document.getElementById('input');
-    const memoForm = document.getElementById('memoForm');
-    const memoInput = document.getElementById('memoInput');
-    const surveyForm = document.getElementById('surveyForm');
+    // html要素の取得 ($は短縮形の関数名 = DOM要素の操作で使うと便利) 
+    function $(id) {
+      return document.getElementById(id);
+    }
+
+    const messageLists = $('messageLists'); // メッセージリスト
+
+    const chatForm = $('chatForm');
+    const chatInput = $('chatInput'); // チャットフォーム
+
+    const memoForm = $('memoForm');
+    const memoInput = $('memoInput'); // メモフォーム
+
+    const surveyForm = $('surveyForm'); // アンケートフォーム
 
     // ★ログイン時
     // プロンプト　ログインで名前を入力・サーバーに送信
     const myName = prompt("名前を入力してください", "");
-    const userName = myName;
-    socket.emit('sign-up', userName);
-    document.getElementById('sign-up-name').textContent = 'ログイン名： ' + userName;
+    socket.emit('sign-up', myName);
+    $('sign-up-name').textContent = 'ログイン名： ' + myName;
 
     function OpenWindow() {
       const roomId = window.location.pathname.split('/').slice(-1);
-      const name = userName;
+      const name = myName;
       window.open(`/rooms/${roomId}/${name}/document`, '_blank');
     }
 
     // オンラインメンバー
     socket.on('onlineUsers', (onlines) => {
-      document.getElementById('onlines').textContent = onlines;
+      $('onlines').textContent = onlines;
     });
 
     // 過去ログ受信
@@ -80,7 +86,8 @@
       pastArray.forEach(element => {
         addMessageToList(element);
       });
-      addStartMessage('-----⇊ ここから参加 ⇊-----');
+      // addStartMessage('-----⇊ ここから参加 ⇊-----');
+      addMessageToListNoButton('-----⇊ ここから参加 ⇊-----', true);
     });
 
     // ★メッセージリストに追加する
@@ -111,23 +118,6 @@
 
       // Append the containers to the item
       item.append(upContainer, downContainer, bookmarkContainer);
-
-      window.scrollTo(0, document.body.scrollHeight);
-
-      messageLists.appendChild(item);
-      item.id = message._id;
-      return item;
-    }
-
-    // ★メッセージリストに追加する(自分メモ)
-    function addPersonalMemoToList(memo) {
-
-      // 1 name + memo
-      const item = document.createElement('li');
-      let nameAndMemo = '[' + memo.name + '] ' + memo.memo;
-      
-      const messageText = makeMessageTextElement(nameAndMemo);
-      item.appendChild(messageText);
 
       window.scrollTo(0, document.body.scrollHeight);
 
@@ -173,28 +163,26 @@
 
     // 3,4,5
     function makeContainerElement(eventType, message) {
-      let containerSign;
-      let emoji;
-      let countSign;
-      let Num;
+
+      let containerSign, emoji, countSign, Num;
 
       switch (eventType) {
         case 'up':
           containerSign = 'up-container';
-          emoji = '⇧'
-          countSign = 'up-count'
+          emoji = '⇧';
+          countSign = 'up-count';
           Num = message.ups >= 1 ? message.ups : 0;
           break;
         case 'down':
           containerSign = 'down-container';
-          emoji = '⇩'
-          countSign = 'down-count'
+          emoji = '⇩';
+          countSign = 'down-count';
           Num = message.downs >= 1 ? message.downs : 0;
           break;
         case 'bookmark':
           containerSign = 'bookmark-container';
-          emoji = '🔖'
-          countSign = 'bookmark-count'
+          emoji = '🔖';
+          countSign = 'bookmark-count';
           Num = message.bookmarks >= 1 ? message.bookmarks : 0;
           break;
       }
@@ -206,7 +194,6 @@
       button.textContent = emoji;
       button.addEventListener('click', e => {
         button.classList.toggle("active");
-        console.log(eventType);
         socket.emit('event', eventType, message._id);
       });
 
@@ -224,8 +211,8 @@
     // ★チャットメッセージをサーバーに送信
     chatForm.addEventListener('submit', (event) => {
       event.preventDefault();
-      socket.emit('chat message', input.value);
-      input.value = '';
+      socket.emit('chat message', chatInput.value);
+      chatInput.value = '';
     });
 
     // チャット受信
@@ -237,25 +224,23 @@
     // ★自分メモをサーバーに送信
     memoForm.addEventListener('submit', (event) => {
       event.preventDefault();
-      console.log(memoInput.value);
       socket.emit('personal memo', memoInput.value);
       memoInput.value = '';
     });
 
     // 自分メモ受信
     socket.on('memoLogs', (memo) => {
-      console.log('memoLogs: ', memo);
-      const item = addPersonalMemoToList(memo);
+      const item = addMessageToListNoButton(memo);
       item.id = memo._id;
     });
 
     // ★アンケート投稿をサーバーに送信
     surveyForm.addEventListener('submit', (event) => {
       event.preventDefault();
-      const question = document.getElementById('surveyQuestion').value;
-      const optionText_1 = document.getElementById('option1').value;
-      const optionText_2 = document.getElementById('option2').value;
-      const optionText_3 = document.getElementById('option3').value;
+      const question = $('surveyQuestion').value;
+      const optionText_1 = $('option1').value;
+      const optionText_2 = $('option2').value;
+      const optionText_3 = $('option3').value;
       socket.emit('submitSurvey', { question: question, options: [optionText_1, optionText_2, optionText_3] });
       toggleSurveyFormVisibility();
     });
@@ -268,7 +253,7 @@
 
     // ★投票を受信
     socket.on('updateVote', (voteData) => {
-      const item = document.getElementById(voteData._id);
+      const item = $(voteData._id);
       for (let i = 0; i < 3; i++) {
         const surveyNum = item.querySelector(`.survey-container .survey-num-${i + 1}`);
         surveyNum.textContent = voteData[`count${i}`];
@@ -277,28 +262,28 @@
 
     // ★UP受信
     socket.on('up', (upData) => {
-      const item = document.getElementById(upData._id);
+      const item = $(upData._id);
       const upCount = item.querySelector('.up-container span');
       upCount.textContent = upData.count;
     });
 
     // ★DOWN受信
     socket.on('down', (downData) => {
-      const item = document.getElementById(downData._id);
+      const item = $(downData._id);
       const downCount = item.querySelector('.down-container span');
       downCount.textContent = downData.count;
     });
 
     // ★bookmark受信
     socket.on('bookmark', (bookmarkData) => {
-      const item = document.getElementById(bookmarkData._id);
+      const item = $(bookmarkData._id);
       const bookmarkCount = item.querySelector('.bookmark-container span');
       bookmarkCount.textContent = bookmarkData.count;
     });
 
     // アンケート作成の表示切り替え関数
     function toggleSurveyFormVisibility() {
-      const surveyFormElement = document.getElementById('surveyForm');
+      const surveyFormElement = $('surveyForm');
       surveyFormElement.style.display = surveyFormElement.style.display === 'none' ? 'block' : 'none';
     }
 
@@ -312,12 +297,29 @@
       socket.emit('dialog_to_js', confirm(dialogMsg) ? true : false);
     });
 
-    // テンプレートメッセージ作成関数(※up無し)
-    function addStartMessage(templateMsg) {
-      const item = document.createElement('li');
-      item.textContent = templateMsg;
-      messageLists.appendChild(item);
-      window.scrollTo(0, document.body.scrollHeight);
+    // メッセージリストに追加 ボタン無し
+    function addMessageToListNoButton(msg, isTemplate = false) {
+      const item = document.createElement('li'); // list要素を作成
+      
+      if (isTemplate) { //「ここから参加」
+        item.textContent = msg; // テンプレートメッセージを追加
+      } 
+      
+      else { // 自分メモ
+        const nameAndMemo = '[ personal memo ] ' + msg.memo; // name + memo
+        
+        const messageText = document.createElement('span'); // span要素を作成
+        messageText.classList.add('message-text');  // クラスを追加
+        messageText.textContent = nameAndMemo; // テキストを追加
+        
+        item.appendChild(messageText); // itemにspanを追加
+        item.id = msg._id; // itemにidを追加
+      }
+
+      messageLists.appendChild(item); // メッセージリストに追加
+      window.scrollTo(0, document.body.scrollHeight); // スクロール
+
+      return item; // itemを返す
     }
 
   </script>
