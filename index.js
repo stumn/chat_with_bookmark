@@ -150,7 +150,7 @@ async function receiveSendEvent(eventType, msgId, name, socket) {
       console.log('この人は既にアクションがあります');
       socket.emit('alert', `${eventType}は一度しかできません`);
     } else {
-      users.push({ userSocketId: userSocketId, name: name });
+      users.push({ userSocketId: socket.id, name: name });
       console.log(`新たなユーザーの${eventType}を追加しました: ` + JSON.stringify(users));
       await post.save();
     }
