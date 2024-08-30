@@ -1,5 +1,6 @@
 // dbOperations.js 
 const { mongoose, Post, Memo } = require('./db');
+const { handleErrors, organizeLogs } = require('./utils');
 
 const PAST_POST = 5; // 過去ログ取得数
 
@@ -79,6 +80,16 @@ async function SaveSurveyMessage(data, name) {
     }
 }
 
+// 投稿を見つける関数
+async function findPost(msgId) {
+    const post = await Post.findById(msgId);
+    if (!post) {
+      handleErrors(error, `投稿見つからない${msgId}`);
+      return;
+    }
+    return post;
+  }
+
 // ドキュメントページ用 DBからの過去ログ取得の関数
 async function fetchPosts(nameToMatch) {
     try {
@@ -114,48 +125,4 @@ async function fetchPosts(nameToMatch) {
     }
 }
 
-function organizeLogs(post) {
-    const pastUpSum = post.ups.length;
-    const pastDownSum = post.downs.length;
-    const pastBookmarkSum = post.bookmarks.length;
-
-    const voteSums = calculate_VoteSum(createVoteArrays(post));// 投票合計
-
-    // 返り値
-    return {
-        _id: post._id,
-        name: post.name,
-        msg: post.msg,
-        question: post.question,
-        options: post.options,
-        ups: pastUpSum,
-        downs: pastDownSum,
-        bookmarks: pastBookmarkSum,
-        voteSums: voteSums
-    };
-}
-
-function calculate_VoteSum(voteArrays, msgId = '') {
-    let voteSums = [];
-    for (let i = 0; i < voteArrays.length; i++) {
-        voteSums[i] = voteArrays[i].length;
-    }
-    return voteSums;
-}
-
-// -投票配列を作成(二次元配列[[ken_id, takashi_id][naknao_id][okamoto_id]])
-function createVoteArrays(surveyPost) {
-    let voteArrays = [];
-    voteArrays.push(surveyPost.voteOpt0);
-    voteArrays.push(surveyPost.voteOpt1);
-    voteArrays.push(surveyPost.voteOpt2);
-    return voteArrays;
-}
-
-// エラーをコンソールに出力する関数(consoleが無限に増えないので見やすいかも)
-function handleErrors(error, customMsg = '') {
-    console.error(customMsg, error);
-    throw error;
-}
-
-module.exports = { getPastLogs, SaveChatMessage, SavePersonalMemo, SaveSurveyMessage, fetchPosts };
+module.exports = { getPastLogs, SaveChatMessage, SavePersonalMemo, SaveSurveyMessage, findPost, fetchPosts };
