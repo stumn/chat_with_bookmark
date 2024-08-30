@@ -73,6 +73,10 @@
     function OpenWindow() {
       const roomId = window.location.pathname.split('/').slice(-1);
       const name = myName;
+      if (!name) {
+        alert('ドキュメント機能は匿名では利用できません。再読み込みし、名前を入力する必要があります。');
+        return;
+      }
       window.open(`/rooms/${roomId}/${name}/document`, '_blank');
     }
 
@@ -86,7 +90,6 @@
       pastArray.forEach(element => {
         addMessageToList(element);
       });
-      // addStartMessage('-----⇊ ここから参加 ⇊-----');
       addMessageToListNoButton('-----⇊ ここから参加 ⇊-----', true);
     });
 
@@ -208,33 +211,33 @@
       return container;
     }
 
-    // ★チャットメッセージをサーバーに送信
+    // チャットメッセージをサーバーに送信 >
     chatForm.addEventListener('submit', (event) => {
       event.preventDefault();
       socket.emit('chat message', chatInput.value);
       chatInput.value = '';
     });
 
-    // チャット受信
+    // < チャット受信
     socket.on('chatLogs', (post) => {
       const item = addMessageToList(post);
       item.id = post._id;
     });
 
-    // ★自分メモをサーバーに送信
+    // 自分メモをサーバーに送信 >
     memoForm.addEventListener('submit', (event) => {
       event.preventDefault();
       socket.emit('personal memo', memoInput.value);
       memoInput.value = '';
     });
 
-    // 自分メモ受信
+    // < 自分メモ受信
     socket.on('memoLogs', (memo) => {
       const item = addMessageToListNoButton(memo);
       item.id = memo._id;
     });
 
-    // ★アンケート投稿をサーバーに送信
+    // アンケート投稿をサーバーに送信 >
     surveyForm.addEventListener('submit', (event) => {
       event.preventDefault();
       const question = $('surveyQuestion').value;
@@ -245,13 +248,19 @@
       toggleSurveyFormVisibility();
     });
 
-    // アンケート投稿をサーバーから受信
+    // アンケート作成の表示切り替え関数
+    function toggleSurveyFormVisibility() {
+      const surveyFormElement = $('surveyForm');
+      surveyFormElement.style.display = surveyFormElement.style.display === 'none' ? 'block' : 'none';
+    }
+
+    // < アンケート投稿をサーバーから受信
     socket.on('survey_post', (surveyPost) => {
       const item = addMessageToList(surveyPost);
       item.id = surveyPost._id;
     });
 
-    // ★投票を受信
+    // < 投票を受信
     socket.on('updateVote', (voteData) => {
       const item = $(voteData._id);
       for (let i = 0; i < 3; i++) {
@@ -260,39 +269,33 @@
       }
     });
 
-    // ★UP受信
+    // < UP受信
     socket.on('up', (upData) => {
       const item = $(upData._id);
       const upCount = item.querySelector('.up-container span');
       upCount.textContent = upData.count;
     });
 
-    // ★DOWN受信
+    // < DOWN受信
     socket.on('down', (downData) => {
       const item = $(downData._id);
       const downCount = item.querySelector('.down-container span');
       downCount.textContent = downData.count;
     });
 
-    // ★bookmark受信
+    // < bookmark受信
     socket.on('bookmark', (bookmarkData) => {
       const item = $(bookmarkData._id);
       const bookmarkCount = item.querySelector('.bookmark-container span');
       bookmarkCount.textContent = bookmarkData.count;
     });
 
-    // アンケート作成の表示切り替え関数
-    function toggleSurveyFormVisibility() {
-      const surveyFormElement = $('surveyForm');
-      surveyFormElement.style.display = surveyFormElement.style.display === 'none' ? 'block' : 'none';
-    }
-
-    // アラート
+    // < アラート
     socket.on('alert', (alertMsg) => {
       alert(alertMsg);
     });
 
-    // ダイアログ
+    // < ダイアログ >
     socket.on('dialog_to_html', (dialogMsg) => {
       socket.emit('dialog_to_js', confirm(dialogMsg) ? true : false);
     });
@@ -300,18 +303,18 @@
     // メッセージリストに追加 ボタン無し
     function addMessageToListNoButton(msg, isTemplate = false) {
       const item = document.createElement('li'); // list要素を作成
-      
+
       if (isTemplate) { //「ここから参加」
         item.textContent = msg; // テンプレートメッセージを追加
-      } 
-      
+      }
+
       else { // 自分メモ
         const nameAndMemo = '[ personal memo ] ' + msg.memo; // name + memo
-        
+
         const messageText = document.createElement('span'); // span要素を作成
         messageText.classList.add('message-text');  // クラスを追加
         messageText.textContent = nameAndMemo; // テキストを追加
-        
+
         item.appendChild(messageText); // itemにspanを追加
         item.id = msg._id; // itemにidを追加
       }
