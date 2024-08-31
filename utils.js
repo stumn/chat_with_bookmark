@@ -32,7 +32,7 @@ function organizeLogs(post) {
 
 //　--以下、index.js で使う関数--
 
-// 投票関連 processVoteEvent で使う関数
+// ~~~投票関連 processVoteEvent で使う関数~~~
 
 // -投票配列を作成(二次元配列[[ken_id, takashi_id][naknao_id][okamoto_id]])
 function createVoteArrays(surveyPost) {
@@ -87,7 +87,7 @@ function organize_voteData(surveyPost, voteSums) {
     };
 }
 
-// イベント関連 processEvent で使う関数
+// ~~~イベント関連 processEvent で使う関数~~~
 
 // ユーザーのイベント状況を確認
 async function checkEventStatus(users, userSocketId) {
@@ -99,8 +99,5 @@ async function checkEventStatus(users, userSocketId) {
     }
     isAlert = false;
 }
-
-
-
 
 module.exports = { handleErrors, organizeLogs, createVoteArrays, checkVoteStatus, calculate_VoteSum, organize_voteData, checkEventStatus };

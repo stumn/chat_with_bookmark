@@ -27,14 +27,11 @@
     document.addEventListener('DOMContentLoaded', () => {
       const pathname = window.location.pathname;
 
-      const roomId = pathname.split('/')[2];
-      console.log('roomId: ' + roomId);
-      
-      const name = decodeURIComponent(pathname.split('/')[3]);
+      const name = decodeURIComponent(pathname.split('/')[1]);
       console.log('name: ' + name);
       
       // APIに接続して、ブックマークされたポストだけ取得
-      fetch(`/api/rooms/${roomId}/${name}/messages`)
+      fetch(`/api/${name}/messages`)
         .then(response => response.json())
         .then(messages => {
           messages.forEach(msg => {

@@ -3,13 +3,18 @@ const express = require('express');
 const router = express.Router();
 const { fetchPosts } = require('./dbOperations'); 
 
-// ルーム選択ページHTML
-router.get('/rooms', (req, res) => {
-    res.sendFile(__dirname + '/public/room-selection.html');
-});
+// // ルーム選択ページHTML
+// router.get('/rooms', (req, res) => {
+//     res.sendFile(__dirname + '/public/room-selection.html');
+// });
+
+// // チャットページHTML
+// router.get('/rooms/:roomId', (req, res) => {
+//     res.sendFile(__dirname + '/public/chat-room.html');
+// });
 
 // チャットページHTML
-router.get('/rooms/:roomId', (req, res) => {
+router.get('/', (req, res) => {
     res.sendFile(__dirname + '/public/chat-room.html');
 });
 
@@ -20,12 +25,12 @@ router.get('/style.css', (_, res) => {
 });
 
 // ドキュメントページHTML
-router.get('/rooms/:roomId/:name/document', (req, res) => {
+router.get('/:name/document', (req, res) => {
     res.sendFile(__dirname + '/public/document.html');
 });
 
 // ドキュメントページ用 DBアクセスAPI
-router.get('/api/rooms/:roomId/:name/messages', async (req, res) => {
+router.get('/api/:name/messages', async (req, res) => {
     try {
         const apiName = req.params.name;
         const messages = await fetchPosts(apiName);

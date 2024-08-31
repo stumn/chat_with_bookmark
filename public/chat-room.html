@@ -14,7 +14,7 @@
   <header>
     <h3>chat with bookmark</h3> <span id="sign-up-name"></span>
     <br>
-    <h4>7/25(木)【西田ゼミ】リアルタイム参加：</h4><span id="onlines"></span>
+    <h4 id = chatTitle></h4><span id="onlines"></span>
     <button onclick="OpenWindow()">ドキュメント</button>
 
   </header>
@@ -54,6 +54,7 @@
       return document.getElementById(id);
     }
 
+    const chatTitle = $('chatTitle'); // チャットタイトル
     const messageLists = $('messageLists'); // メッセージリスト
 
     const chatForm = $('chatForm');
@@ -71,13 +72,12 @@
     $('sign-up-name').textContent = 'ログイン名： ' + myName;
 
     function OpenWindow() {
-      const roomId = window.location.pathname.split('/').slice(-1);
       const name = myName;
       if (!name) {
         alert('ドキュメント機能は匿名では利用できません。再読み込みし、名前を入力する必要があります。');
         return;
       }
-      window.open(`/rooms/${roomId}/${name}/document`, '_blank');
+      window.open(`/${name}/document`, '_blank');
     }
 
     // オンラインメンバー
