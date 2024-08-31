@@ -220,6 +220,18 @@
        justify-content: flex-end;
    }
 
-   /* #messageLists>li:nth-child(odd) {
-       background: ivory;
-   } */
+/* memoSend */
+#messageLists>li span.memoSend-container button {
+    background-color: whitesmoke;
+    border: 1px solid gray;
+    color: black;
+    padding: 0.25rem 0.5rem;
+    margin-right: 10px;
+    border-radius: 5px;
+    cursor: pointer;
+    outline: none;
+}
+
+#messageLists>li span.memoSend-container button.active {
+    border: 4px solid gray;
+}

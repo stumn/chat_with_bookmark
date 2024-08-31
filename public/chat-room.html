@@ -14,7 +14,7 @@
   <header>
     <h3>chat with bookmark</h3> <span id="sign-up-name"></span>
     <br>
-    <h4 id = chatTitle></h4><span id="onlines"></span>
+    <h4 id=chatTitle></h4><span id="onlines"></span>
     <button onclick="OpenWindow()">ドキュメント</button>
 
   </header>
@@ -315,8 +315,23 @@
         messageText.classList.add('message-text');  // クラスを追加
         messageText.textContent = nameAndMemo; // テキストを追加
 
-        item.appendChild(messageText); // itemにspanを追加
-        item.id = msg._id; // itemにidを追加
+        const memoSendContainer = document.createElement('span');
+        memoSendContainer.classList.add('memoSend-container');
+
+        const button = document.createElement('button');
+        button.textContent = '➤';
+        button.addEventListener('click', e => {
+          button.classList.add("active");
+
+          event.preventDefault();
+          socket.emit('chat message', msg.memo);
+          button.disabled = true;
+        });
+
+        memoSendContainer.appendChild(button);
+
+        item.appendChild(messageText);
+        item.appendChild(memoSendContainer); // itemにspanを追加
       }
 
       messageLists.appendChild(item); // メッセージリストに追加
