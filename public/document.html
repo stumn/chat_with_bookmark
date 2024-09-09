@@ -27,11 +27,11 @@
     document.addEventListener('DOMContentLoaded', () => {
       const pathname = window.location.pathname;
 
-      const name = decodeURIComponent(pathname.split('/')[1]);
-      console.log('name: ' + name);
+      const randomString = decodeURIComponent(pathname.split('/')[1]);
+      console.log('randomString: ' + randomString);
       
       // APIに接続して、ブックマークされたポストだけ取得
-      fetch(`/api/${name}/messages`)
+      fetch(`/api/${randomString}/messages`)
         .then(response => response.json())
         .then(messages => {
           messages.forEach(msg => {

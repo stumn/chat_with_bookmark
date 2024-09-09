@@ -25,14 +25,14 @@ router.get('/style.css', (_, res) => {
 });
 
 // ドキュメントページHTML
-router.get('/:name/document', (req, res) => {
+router.get('/:randomString/document', (req, res) => {
     res.sendFile(__dirname + '/public/document.html');
 });
 
 // ドキュメントページ用 DBアクセスAPI
-router.get('/api/:name/messages', async (req, res) => {
+router.get('/api/:randomString/messages', async (req, res) => {
     try {
-        const apiName = req.params.name;
+        const apiName = req.params.randomString;
         const messages = await fetchPosts(apiName);
         res.json(messages);
     } catch (error) {

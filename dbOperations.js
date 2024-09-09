@@ -1,6 +1,28 @@
 // dbOperations.js 
-const { mongoose, Post, Memo } = require('./db');
+const { mongoose, User, Post, Memo } = require('./db');
 const { handleErrors, organizeLogs } = require('./utils');
+
+// ユーザーモデルに保存
+async function saveUser(name, socketId, randomString) {
+    try {
+        const userData = { name, socketId, randomString };
+        const newUser = await User.create(userData);
+        return newUser;
+    } catch (error) {
+        handleErrors(error, 'ユーザー保存時にエラーが発生しました');
+    }
+}
+
+// ユーザー情報を取得
+async function getUserInfo(name) {
+    try {
+        const userInfo = await User.findOne().where('name').equals(name);
+        const randomString = userInfo.randomString;
+        return randomString;
+    } catch {
+        handleErrors(error, 'ユーザー情報取得時にエラーが発生しました');
+    }
+}
 
 const PAST_POST = 5; // 過去ログ取得数
 
@@ -84,14 +106,28 @@ async function SaveSurveyMessage(data, name) {
 async function findPost(msgId) {
     const post = await Post.findById(msgId);
     if (!post) {
-      handleErrors(error, `投稿見つからない${msgId}`);
-      return;
+        handleErrors(error, `投稿見つからない${msgId}`);
+        return;
     }
     return post;
-  }
+}
+
+async function getUserInfo_rsnm(randomString) {
+    try {
+        const userInfo = await User.findOne().where('randomString').equals(randomString);
+        console.log('userInfo.name: ', userInfo.name);
+        return userInfo.name;
+    } catch {
+        handleErrors(error, ' rs=>name ユーザー情報取得時にエラーが発生しました');
+    }
+}
 
 // ドキュメントページ用 DBからの過去ログ取得の関数
-async function fetchPosts(nameToMatch) {
+async function fetchPosts(randomString) {
+
+    // まずユーザー情報のDBから、nameTomatchを取得
+    const nameToMatch = await getUserInfo_rsnm(randomString);
+
     try {
         console.log('nameToMatch 入っているか再度確認: ', nameToMatch);
         let posts = await Post.find(
@@ -125,4 +161,4 @@ async function fetchPosts(nameToMatch) {
     }
 }
 
-module.exports = { getPastLogs, SaveChatMessage, SavePersonalMemo, SaveSurveyMessage, findPost, fetchPosts };
+module.exports = { saveUser, getUserInfo, getPastLogs, SaveChatMessage, SavePersonalMemo, SaveSurveyMessage, findPost, fetchPosts };

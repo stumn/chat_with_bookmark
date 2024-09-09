@@ -21,6 +21,15 @@ const options = {
     }
 };
 
+// user スキーマ
+const userSchema = new mongoose.Schema({
+    name: String,
+    socketId: [],
+    randomString: String
+});
+
+const User = mongoose.model("User", userSchema);
+
 // bookmark スキーマ（Post 内部）
 const bookmarkSchema = new mongoose.Schema({
     userSocketId: String,
@@ -52,4 +61,4 @@ const memoSchema = new mongoose.Schema({
 
 const Memo = mongoose.model("Memo", memoSchema);
 
-module.exports = { mongoose, Post, Memo };
+module.exports = { mongoose, User, Post, Memo };

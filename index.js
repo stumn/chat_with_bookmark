@@ -15,7 +15,7 @@ const { Server } = require("socket.io");
 const io = new Server(server);
 
 // const { mongoose, Post, Memo } = require('./db');
-const { getPastLogs, SaveChatMessage, SavePersonalMemo, SaveSurveyMessage, findPost, fetchPosts } = require('./dbOperations');
+const { saveUser, getUserInfo, getPastLogs, SaveChatMessage, SavePersonalMemo, SaveSurveyMessage, findPost, fetchPosts } = require('./dbOperations');
 const { handleErrors, createVoteArrays, checkVoteStatus, calculate_VoteSum, organize_voteData, checkEventStatus } = require('./utils');
 
 const { error } = require('console');
@@ -32,8 +32,9 @@ let idsOnlineUsers = [];
 io.on('connection', async (socket) => {
 
   // ログイン時
-  socket.on('sign-up', async (name) => {
-    name = await logInFunction(name, socket);
+  socket.on('sign-up', async (rawname) => {
+    const { name, randomString } = await logInFunction(rawname, socket);
+    socket.emit('randomString', randomString);
 
     // < チャットメッセージ >
     socket.on('chat message', async (msg) => {
@@ -71,14 +72,35 @@ io.on('connection', async (socket) => {
   });
 });
 
+function generateRandomString(length) {
+  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  let result = '';
+  const charactersLength = characters.length;
+  for (let i = 0; i < length; i++) {
+    result += characters.charAt(Math.floor(Math.random() * charactersLength));
+  }
+  return result;
+}
+
 // ログイン時（名前・オンラインユーザーリスト・過去ログ）
-async function logInFunction(name, socket) {
-  name = name !== null && name !== '' ? name : ANONYMOUS_NAME;
+async function logInFunction(rawname, socket) {
+  const name = rawname !== null && rawname !== '' ? rawname : ANONYMOUS_NAME;
   console.log(name + ' (' + socket.id + ') 接続完了💨');
 
   onlineUsers.push(name);
   idsOnlineUsers.push({ id: socket.id, name: name });
   io.emit('onlineUsers', onlineUsers);
+
+  // ランダム文字列生成
+  const randomString = generateRandomString(10); // 10文字
+  console.log('randomString: ', randomString);
+
+  try { // ユーザー情報を保存 
+    await saveUser(name, socket.id, randomString);
+    console.log('ユーザー情報保存たぶん完了');
+  } catch (error) {
+    handleErrors(error, 'LogInFunction ユーザー情報保存中にエラーが発生しました');
+  }
 
   try { // 過去ログを取得・送信
     const pastLogs = await getPastLogs();
@@ -86,7 +108,7 @@ async function logInFunction(name, socket) {
   } catch (error) {
     handleErrors(error, 'LogInFunction 過去ログ取得中にエラーが発生しました');
   }
-  return name;
+  return { name, randomString };
 }
 
 // ★投票イベントを処理する関数

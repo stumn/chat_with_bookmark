@@ -71,13 +71,17 @@
     socket.emit('sign-up', myName);
     $('sign-up-name').textContent = 'ログイン名： ' + myName;
 
+    let randomString, docURL;
+    socket.on('randomString', (randomString) => {
+      randomString = randomString;
+      console.log(randomString);
+      docURL = `/${randomString}/document`;
+      console.log(docURL);
+    });
+
     function OpenWindow() {
-      const name = myName;
-      if (!name) {
-        alert('ドキュメント機能は匿名では利用できません。再読み込みし、名前を入力する必要があります。');
-        return;
-      }
-      window.open(`/${name}/document`, '_blank');
+      console.log(docURL);
+      window.open(docURL, '_blank');
     }
 
     // オンラインメンバー
