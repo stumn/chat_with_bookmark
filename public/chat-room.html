@@ -313,7 +313,7 @@
       }
 
       else { // 自分メモ
-        const nameAndMemo = '[ personal memo ] ' + msg.memo; // name + memo
+        const nameAndMemo = '[ personal memo ] ' + msg.msg; // name + memo
 
         const messageText = document.createElement('span'); // span要素を作成
         messageText.classList.add('message-text');  // クラスを追加
@@ -328,7 +328,7 @@
           button.classList.add("active");
 
           event.preventDefault();
-          socket.emit('chat message', msg.memo);
+          socket.emit('chat message', msg.msg);
           button.disabled = true;
         });
 

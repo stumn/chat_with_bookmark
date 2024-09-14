@@ -66,10 +66,10 @@ async function SaveChatMessage(name, msg) {
 }
 
 // 自分メモ受送信
-async function SavePersonalMemo(name, memo, socket) {
+async function SavePersonalMemo(name, msg, socket) {
     try {
-        const m = await saveMemo(name, memo);
-        console.log('自分メモ保存完了', m.name, m.memo);
+        const m = await saveMemo(name, msg);
+        console.log('自分メモ保存完了', m.name, m.msg);
         return m;
     }
     catch (error) {
@@ -78,9 +78,9 @@ async function SavePersonalMemo(name, memo, socket) {
 }
 
 // 自分メモ保存
-async function saveMemo(name, memo) {
+async function saveMemo(name, msg) {
     try {
-        const memoData = { name, memo };
+        const memoData = { name, msg };
         const newMemo = await Memo.create(memoData);
         console.log(newMemo);
         return newMemo;
@@ -145,14 +145,20 @@ async function fetchPosts(randomString) {
             console.log('bookmarksがありません');
         }
 
-        // 反対に並べ替え
-        posts.reverse();
-
-        const pastLogs = await Promise.all(posts.map(organizeLogs));
         let messages = [];
-        pastLogs.forEach(e => {
-            messages.push({ user: e.name, message: e.msg });
+        posts.forEach(e => {
+            messages.push({ name: e.name, msg: e.msg, createdAt: e.createdAt });
         });
+
+        // memo を取得
+        const memos = await Memo.find({ name: nameToMatch });
+        memos.forEach(e => {
+            messages.push({ name: "personal memo", msg: e.msg, createdAt: e.createdAt });
+        });
+
+        // createdAt でソート
+        messages.sort((a, b) => a.createdAt - b.createdAt);
+
         console.log('api 過去ログ messaages: ', messages);
         return messages;
     }

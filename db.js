@@ -56,7 +56,7 @@ const Post = mongoose.model("Post", postSchema);
 // memo スキーマ / モデル
 const memoSchema = new mongoose.Schema({
     name: String,
-    memo: String
+    msg: String
 }, options);
 
 const Memo = mongoose.model("Memo", memoSchema);
