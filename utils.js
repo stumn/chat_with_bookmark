@@ -25,7 +25,8 @@ function organizeLogs(post) {
         ups: pastUpSum,
         downs: pastDownSum,
         bookmarks: pastBookmarkSum,
-        voteSums: voteSums
+        voteSums: voteSums,
+        createdAt : post.createdAt
     };
 }
 

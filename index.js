@@ -104,6 +104,7 @@ async function logInFunction(rawname, socket) {
 
   try { // 過去ログを取得・送信
     const pastLogs = await getPastLogs();
+    console.log('過去ログ取得完了', pastLogs);
     socket.emit('pastLogs', pastLogs);
   } catch (error) {
     handleErrors(error, 'LogInFunction 過去ログ取得中にエラーが発生しました');

@@ -102,7 +102,7 @@
 
       // 1 name + message(or question)
       const item = document.createElement('li');
-      let nameAndMsg = '[' + message.name + '] ' + message.msg;
+      let nameAndMsg = '[' + message.name + '] ' + message.createdAt + message.msg;
       let isSurvey = false;
 
       if (message.question) {

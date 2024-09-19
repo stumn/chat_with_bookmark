@@ -33,7 +33,11 @@ async function getPastLogs() {
         posts.reverse();
         const pastLogs = await Promise.all(posts.map(organizeLogs));
         pastLogs.forEach(e => {
-            console.log(e.name + e.msg + e.ups + e.downs + e.bookmarks);
+            const UTCdate = new Date(e.createdAt);
+            UTCdate.setHours(UTCdate.getHours() + 9);
+            const organizedCreatedAt = UTCdate.toISOString().match(/T(\d{2}:\d{2}:\d{2})/)[1];
+            e.createdAt = organizedCreatedAt;
+            console.log(e.name + e.msg + e.ups + e.downs + e.bookmarks + e.createdAt);
         });
         console.log('過去ログ整理完了');
         return pastLogs;
