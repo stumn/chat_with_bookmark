@@ -109,7 +109,17 @@
 
       const name_time_div = document.createElement('div');
       name_time_div.classList.add('name-time-div');
-      name_time_div.textContent = '[' + message.name + '] ' + message.createdAt;
+
+      const name = document.createElement('span');
+      name.classList.add('name');
+      name.textContent = message.name;
+      name_time_div.appendChild(name);
+
+      const time = document.createElement('span');
+      time.classList.add('time');
+      time.textContent = message.createdAt;
+      name_time_div.appendChild(time);
+
       nameTimeMsg.appendChild(name_time_div);
 
       let isSurvey = false;

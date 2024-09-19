@@ -115,11 +115,22 @@
        justify-content: flex-start;
    }
 
+   #messageLists>li div.name-time-msg div.name-time-div span.name {
+       font-weight: bold;
+       color: black;
+   }
+
+   #messageLists>li div.name-time-msg div.name-time-div span.time {
+       font-size: small;
+       color: gray;
+   }
+
    #messageLists>li div.message-text {
        flex: 1;
        justify-content: flex-start;
        align-items: center;
        margin-right: 10px;
+       font-size: medium;
    }
 
    #messageLists>li span.survey-container {

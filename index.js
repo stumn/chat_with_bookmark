@@ -15,7 +15,7 @@ const { Server } = require("socket.io");
 const io = new Server(server);
 
 // const { mongoose, Post, Memo } = require('./db');
-const { saveUser, getUserInfo, getPastLogs, SaveChatMessage, SavePersonalMemo, SaveSurveyMessage, findPost, fetchPosts } = require('./dbOperations');
+const { saveUser, getUserInfo, getPastLogs, organizeCreatedAt, SaveChatMessage, SavePersonalMemo, SaveSurveyMessage, findPost, fetchPosts } = require('./dbOperations');
 const { handleErrors, createVoteArrays, checkVoteStatus, calculate_VoteSum, organize_voteData, checkEventStatus } = require('./utils');
 
 const { error } = require('console');
@@ -39,7 +39,17 @@ io.on('connection', async (socket) => {
     // < チャットメッセージ >
     socket.on('chat message', async (msg) => {
       const p = await SaveChatMessage(name, msg);
-      io.emit('chatLogs', p);
+      
+      const organizedPost = {
+        _id: p._id,
+        name: p.name,
+        msg: p.msg,
+        question: p.question,
+        options: p.options,
+        createdAt: organizeCreatedAt(p.createdAt)
+      }
+
+      io.emit('chatLogs', organizedPost);
     });
 
     // < 自分メモ >
