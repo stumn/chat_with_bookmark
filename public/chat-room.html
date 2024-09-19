@@ -100,23 +100,38 @@
     // ★メッセージリストに追加する
     function addMessageToList(message) {
 
-      // 1 name + message(or question)
       const item = document.createElement('li');
-      let nameAndMsg = '[' + message.name + '] ' + message.createdAt + message.msg;
-      let isSurvey = false;
 
+      // 1 [name + time] + [message(question)]
+
+      const nameTimeMsg = document.createElement('div');
+      nameTimeMsg.classList.add('name-time-msg');
+
+      const name_time_div = document.createElement('div');
+      name_time_div.classList.add('name-time-div');
+      name_time_div.textContent = '[' + message.name + '] ' + message.createdAt;
+      nameTimeMsg.appendChild(name_time_div);
+
+      let isSurvey = false;
       if (message.question) {
         isSurvey = true;
-        nameAndMsg = '[' + message.name + ']' + message.question;
+        message.msg = message.question;
       }
 
-      const messageText = makeMessageTextElement(nameAndMsg);
-      item.appendChild(messageText);
+      const messageText = document.createElement('div');
+      messageText.classList.add('message-text');
+      messageText.textContent = (message.msg);
+      nameTimeMsg.appendChild(messageText);
+
+      item.appendChild(nameTimeMsg);
 
       if (isSurvey) { // (2) case question => options and votes
         const surveyContainer = makeSurveyContainerElement(message);
         item.appendChild(surveyContainer);
       }
+
+      const buttons = document.createElement('div');
+      buttons.classList.add('buttons');
 
       // Create containers for up, down, and bookmark buttons
       const upContainer = makeContainerElement('up', message);
@@ -124,7 +139,9 @@
       const bookmarkContainer = makeContainerElement('bookmark', message);
 
       // Append the containers to the item
-      item.append(upContainer, downContainer, bookmarkContainer);
+      buttons.append(upContainer, downContainer, bookmarkContainer);
+
+      item.appendChild(buttons);
 
       window.scrollTo(0, document.body.scrollHeight);
 
@@ -133,17 +150,9 @@
       return item;
     }
 
-    // 1
-    function makeMessageTextElement(nameAndMsg) {
-      const messageText = document.createElement('span');
-      messageText.classList.add('message-text');
-      messageText.textContent = nameAndMsg;
-      return messageText;
-    }
-
     // (2)
     function makeSurveyContainerElement(message) {
-      const surveyContainer = document.createElement('span');
+      const surveyContainer = document.createElement('div');
       surveyContainer.classList.add('survey-container');
       for (let i = 0; i < message.options.length; i++) {
         //[button]要素を作成・クラスを追加・選択肢テキストを追加
@@ -161,7 +170,7 @@
           socket.emit('survey', message._id, i);
         });
 
-        //span要素にbutton要素を追加・span要素にspan要素を追加
+        //div要素にbutton要素を追加・span要素にspan要素を追加
         surveyContainer.appendChild(surveyOption);
         surveyContainer.appendChild(surveyNum);
       }
@@ -194,7 +203,7 @@
           break;
       }
 
-      const container = document.createElement('span');
+      const container = document.createElement('div');
       container.classList.add(containerSign);
 
       const button = document.createElement('button');

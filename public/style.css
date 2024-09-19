@@ -1,6 +1,7 @@
    body {
        margin: 0;
-       padding-bottom: 6rem; /* body の下を決めるFooter height */
+       padding-bottom: 6rem;
+       /* body の下を決めるFooter height */
        background-color: #f0f0f0;
        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
    }
@@ -95,21 +96,28 @@
 
    /* MSG */
    #messageLists {
+       /* ul */
        list-style-type: none;
        margin: 0;
        padding: 0;
    }
 
    #messageLists>li {
+       /* li */
        padding: 0.5rem 1rem;
        position: relative;
        display: flex;
        align-items: center;
    }
 
-   #messageLists>li span.message-text {
+   #messageLists>div.name-time-msg {
+       display: flex;
+       justify-content: flex-start;
+   }
+
+   #messageLists>li div.message-text {
        flex: 1;
-       justify-content: space-between;
+       justify-content: flex-start;
        align-items: center;
        margin-right: 10px;
    }
@@ -135,13 +143,19 @@
        color: blue;
    }
 
+   #messageLists>li div.buttons {
+       display: flex;
+       justify-content: flex-end;
+       margin-left: auto;
+   }
+
    /* up */
-   #messageLists>li span.up-container {
+   #messageLists>li div.up-container {
        display: flex;
        justify-content: flex-end
    }
 
-   #messageLists>li span.up-container button {
+   #messageLists>li div.up-container button {
        background-color: #ff9669;
        border: none;
        color: white;
@@ -152,7 +166,7 @@
        outline: none;
    }
 
-   #messageLists>li span.up-container button.active {
+   #messageLists>li div.up-container button.active {
        border: 4px solid red;
    }
 
@@ -164,13 +178,13 @@
    }
 
    /* down */
-   #messageLists>li span.down-container {
+   #messageLists>li div.down-container {
        display: flex;
        justify-content: flex-end
    }
 
 
-   #messageLists>li span.down-container button {
+   #messageLists>li div.down-container button {
        background-color: #699eff;
        border: none;
        color: white;
@@ -181,7 +195,7 @@
        outline: none;
    }
 
-   #messageLists>li span.down-container button.active {
+   #messageLists>li div.down-container button.active {
        border: 4px solid blue;
    }
 
@@ -193,12 +207,12 @@
    }
 
    /* bookmark */
-   #messageLists>li span.bookmark-container {
+   #messageLists>li div.bookmark-container {
        display: flex;
        justify-content: flex-end
    }
 
-   #messageLists>li span.bookmark-container button {
+   #messageLists>li div.bookmark-container button {
        background-color: #c2eddb;
        border: none;
        color: white;
@@ -209,7 +223,7 @@
        outline: none;
    }
 
-   #messageLists>li span.bookmark-container button.active {
+   #messageLists>li div.bookmark-container button.active {
        border: 4px solid green;
    }
 
@@ -220,18 +234,18 @@
        justify-content: flex-end;
    }
 
-/* memoSend */
-#messageLists>li span.memoSend-container button {
-    background-color: whitesmoke;
-    border: 1px solid gray;
-    color: black;
-    padding: 0.25rem 0.5rem;
-    margin-right: 10px;
-    border-radius: 5px;
-    cursor: pointer;
-    outline: none;
-}
+   /* memoSend */
+   #messageLists>li span.memoSend-container button {
+       background-color: whitesmoke;
+       border: 1px solid gray;
+       color: black;
+       padding: 0.25rem 0.5rem;
+       margin-right: 10px;
+       border-radius: 5px;
+       cursor: pointer;
+       outline: none;
+   }
 
-#messageLists>li span.memoSend-container button.active {
-    border: 4px solid gray;
-}
+   #messageLists>li span.memoSend-container button.active {
+       border: 4px solid gray;
+   }
