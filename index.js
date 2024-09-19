@@ -164,26 +164,25 @@ async function receiveSendEvent(eventType, msgId, name, socket) {
   try {
     const post = await findPost(msgId);
 
-    const users = post[eventType + 's']; // ups, downs, bookmarks (配列)
+    const events = post[eventType + 's']; // ups, downs, bookmarks (配列)
 
-    const isAlert = await checkEventStatus(users, socket.id);
+    const isAlert = await checkEventStatus(events, socket.id);
 
     if (isAlert) {
       console.log('この人は既にアクションがあります');
       socket.emit('alert', `${eventType}は一度しかできません`);
     } else {
-      users.push({ userSocketId: socket.id, name: name });
-      console.log(`新たなユーザーの${eventType}を追加しました: ` + JSON.stringify(users));
+      events.push({ userSocketId: socket.id, name: name });
+      console.log(`新たなユーザーの${eventType}を追加しました: ` + JSON.stringify(events));
       await post.save();
     }
 
-    const eventData = { _id: post._id, count: users.length };
+    const eventData = { _id: post._id, count: events.length };
     io.emit(eventType, eventData); // 結果を送信
 
   } catch (error) {
     handleErrors(error, `receiveSendEvent ${eventType}処理中にエラーが発生しました`);
   }
-
 }
 
 // 切断時のイベントハンドラ　＝　オンラインメンバーから削除

@@ -90,14 +90,15 @@ function organize_voteData(surveyPost, voteSums) {
 // ~~~イベント関連 processEvent で使う関数~~~
 
 // ユーザーのイベント状況を確認
-async function checkEventStatus(users, userSocketId) {
-    if (users.length > 0) {
-        const existingUser = users.find(obj => obj.userSocketId === userSocketId);
+async function checkEventStatus(events, userSocketId) {
+    let isAlert = false;
+    if (events.length > 0) {
+        const existingUser = events.find(obj => obj.userSocketId === userSocketId);
         if (existingUser) {
             isAlert = true;
         }
     }
-    isAlert = false;
+    return isAlert;
 }
 
 module.exports = { handleErrors, organizeLogs, createVoteArrays, checkVoteStatus, calculate_VoteSum, organize_voteData, checkEventStatus };
