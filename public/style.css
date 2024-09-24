@@ -1,5 +1,5 @@
    body {
-       margin: 0;
+       margin-top: 6rem;
        padding-bottom: 6rem;
        /* body の下を決めるFooter height */
        background-color: #f0f0f0;
@@ -9,12 +9,56 @@
    header {
        background-color: #c2eddb;
        color: black;
+       position: fixed;
+       top: 0;
+       left: 0;
+       right: 0;
+       z-index: 100;
+       display: flex;
+       justify-content: space-between;
+       align-items: center;
+       padding: 0.5rem 1rem;
+       box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+
    }
 
    h1,
    h3 {
        display: inline;
    }
+
+   @keyframes slideInWithImpact {
+    0% {
+      transform: translateX(100%) scale(0.8); /* 画面外、少し縮んでいる */
+      opacity: 0;
+    }
+    100% {
+      transform: translateX(0) scale(1); /* 画面内にスライドインしつつ、通常サイズに */
+      opacity: 1;
+    }
+  }
+  
+  .downCard {
+    position: fixed;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    background-color: #f0f0f0;
+    padding: 10px;
+    margin: 0.5rem;
+    border-radius: 8px;
+    opacity: 0;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: opacity 0.3s ease-in-out;
+  }
+  
+  .downCard.visible {
+    animation: slideInWithImpact 0.4s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+    /* カスタムイージング: 最初は速く、最後はゆっくり */
+  }
+  
+
+
 
    /* chatForm */
    #chatForm {

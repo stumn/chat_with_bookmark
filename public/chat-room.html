@@ -260,6 +260,14 @@
       item.id = memo._id;
     });
 
+    // 伏せカード登場！
+    socket.on('downCard', (msg) => {
+      const item = addMessageToList(msg);
+      item.id = msg._id;
+      item.classList.add('downCard');
+      item.classList.add('visible');
+    });
+
     // アンケート投稿をサーバーに送信 >
     surveyForm.addEventListener('submit', (event) => {
       event.preventDefault();
@@ -332,35 +340,40 @@
       }
 
       else { // 自分メモ
-        const nameAndMemo = '[ personal memo ] ' + msg.msg; // name + memo
-
-        const messageText = document.createElement('span'); // span要素を作成
-        messageText.classList.add('message-text');  // クラスを追加
-        messageText.textContent = nameAndMemo; // テキストを追加
-
-        const memoSendContainer = document.createElement('span');
-        memoSendContainer.classList.add('memoSend-container');
-
-        const button = document.createElement('button');
-        button.textContent = '➤';
-        button.addEventListener('click', e => {
-          button.classList.add("active");
-
-          event.preventDefault();
-          socket.emit('chat message', msg.msg);
-          button.disabled = true;
-        });
-
-        memoSendContainer.appendChild(button);
-
-        item.appendChild(messageText);
-        item.appendChild(memoSendContainer); // itemにspanを追加
+        personalMemo(item, msg);
       }
 
       messageLists.appendChild(item); // メッセージリストに追加
       window.scrollTo(0, document.body.scrollHeight); // スクロール
 
       return item; // itemを返す
+    }
+
+    function personalMemo(item, msg) {
+      const nameAndMemo = '[ personal memo ] ' + msg.msg; // name + memo
+
+      const messageText = document.createElement('span'); // span要素を作成
+      messageText.classList.add('message-text');  // クラスを追加
+      messageText.textContent = nameAndMemo; // テキストを追加
+
+      const memoSendContainer = document.createElement('span');
+      memoSendContainer.classList.add('memoSend-container');
+
+      const button = document.createElement('button');
+      button.textContent = '➤';
+      button.addEventListener('click', e => {
+        button.classList.add("active");
+
+        event.preventDefault();
+        socket.emit('open_downCard', msg.msg);
+
+        button.disabled = true;
+      });
+
+      memoSendContainer.appendChild(button);
+
+      item.appendChild(messageText);
+      item.appendChild(memoSendContainer); // itemにspanを追加
     }
 
   </script>

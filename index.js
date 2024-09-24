@@ -39,7 +39,7 @@ io.on('connection', async (socket) => {
     // < チャットメッセージ >
     socket.on('chat message', async (msg) => {
       const p = await SaveChatMessage(name, msg);
-      
+
       const organizedPost = {
         _id: p._id,
         name: p.name,
@@ -74,6 +74,24 @@ io.on('connection', async (socket) => {
     socket.on('event', async (eventType, msgId) => {
       await receiveSendEvent(eventType, msgId, name, socket);
     });
+
+    // 伏せカードオープン
+    socket.on('open_downCard', async (msg) => {
+      const p = await SaveChatMessage(name, msg);
+
+      const organizedPost = {
+        _id: p._id,
+        name: p.name,
+        msg: p.msg,
+        question: p.question,
+        options: p.options,
+        createdAt: organizeCreatedAt(p.createdAt)
+      }
+
+      io.emit('downCard', organizedPost);
+    })
+
+
   });
 
   // < 切断時 >
