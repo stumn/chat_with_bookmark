@@ -140,14 +140,12 @@
 
    /* MSG */
    #messageLists {
-       /* ul */
        list-style-type: none;
        margin: 0;
        padding: 0;
    }
 
-   #messageLists>li {
-       /* li */
+   #messageLists>div {
        padding: 0.5rem 1rem;
        position: relative;
        display: flex;
@@ -159,17 +157,17 @@
        justify-content: flex-start;
    }
 
-   #messageLists>li div.name-time-msg div.name-time-div span.name {
+   #messageLists>div div.name-time-msg div.name-time-div span.name {
        font-weight: bold;
        color: black;
    }
 
-   #messageLists>li div.name-time-msg div.name-time-div span.time {
+   #messageLists>div div.name-time-msg div.name-time-div span.time {
        font-size: small;
        color: gray;
    }
 
-   #messageLists>li div.message-text {
+   #messageLists>div div.message-text {
        flex: 1;
        justify-content: flex-start;
        align-items: center;
@@ -177,12 +175,12 @@
        font-size: medium;
    }
 
-   #messageLists>li span.survey-container {
+   #messageLists>div span.survey-container {
        flex: auto;
        align-items: left;
    }
 
-   #messageLists>li span.survey-container button {
+   #messageLists>div span.survey-container button {
        background-color: blue;
        border: none;
        color: white;
@@ -192,25 +190,25 @@
        outline: none;
    }
 
-   #messageLists>li span.survey-num span {
+   #messageLists>div span.survey-num span {
        margin-left: 5px;
        font-weight: bold;
        color: blue;
    }
 
-   #messageLists>li div.buttons {
+   #messageLists>div div.buttons {
        display: flex;
        justify-content: flex-end;
        margin-left: auto;
    }
 
    /* up */
-   #messageLists>li div.up-container {
+   #messageLists>div div.up-container {
        display: flex;
        justify-content: flex-end
    }
 
-   #messageLists>li div.up-container button {
+   #messageLists>div div.up-container button {
        background-color: #ff9669;
        border: none;
        color: white;
@@ -221,11 +219,11 @@
        outline: none;
    }
 
-   #messageLists>li div.up-container button.active {
+   #messageLists>div div.up-container button.active {
        border: 4px solid red;
    }
 
-   #messageLists>li span.up-count {
+   #messageLists>div span.up-count {
        font-weight: bold;
        color: #ff9669;
        display: flex;
@@ -233,13 +231,13 @@
    }
 
    /* down */
-   #messageLists>li div.down-container {
+   #messageLists>div div.down-container {
        display: flex;
        justify-content: flex-end
    }
 
 
-   #messageLists>li div.down-container button {
+   #messageLists>div div.down-container button {
        background-color: #699eff;
        border: none;
        color: white;
@@ -250,11 +248,11 @@
        outline: none;
    }
 
-   #messageLists>li div.down-container button.active {
+   #messageLists>div div.down-container button.active {
        border: 4px solid blue;
    }
 
-   #messageLists>li span.down-count {
+   #messageLists>div span.down-count {
        font-weight: bold;
        color: #699eff;
        display: flex;
@@ -262,12 +260,12 @@
    }
 
    /* bookmark */
-   #messageLists>li div.bookmark-container {
+   #messageLists>div div.bookmark-container {
        display: flex;
        justify-content: flex-end
    }
 
-   #messageLists>li div.bookmark-container button {
+   #messageLists>div div.bookmark-container button {
        background-color: #c2eddb;
        border: none;
        color: white;
@@ -278,11 +276,11 @@
        outline: none;
    }
 
-   #messageLists>li div.bookmark-container button.active {
+   #messageLists>div div.bookmark-container button.active {
        border: 4px solid green;
    }
 
-   #messageLists>li span.bookmark-count {
+   #messageLists>div span.bookmark-count {
        font-weight: bold;
        color: red;
        display: flex;
@@ -290,7 +288,7 @@
    }
 
    /* memoSend */
-   #messageLists>li span.memoSend-container button {
+   #messageLists>div span.memoSend-container button {
        background-color: whitesmoke;
        border: 1px solid gray;
        color: black;
@@ -301,6 +299,6 @@
        outline: none;
    }
 
-   #messageLists>li span.memoSend-container button.active {
+   #messageLists>div span.memoSend-container button.active {
        border: 4px solid gray;
    }

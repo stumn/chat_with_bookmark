@@ -20,7 +20,7 @@
   </header>
 
   <main>
-    <ul id="messageLists"></ul>
+    <div id="messageLists"></div>
 
     <form id="chatForm" action="">
       <input id="chatInput" autocomplete="off" placeholder="メッセージ みんなに表示" pattern=".*\S+.*" required>
@@ -100,7 +100,7 @@
     // ★メッセージリストに追加する
     function addMessageToList(message) {
 
-      const item = document.createElement('li');
+      const item = document.createElement('div');
 
       // 1 [name + time] + [message(question)]
 
@@ -262,6 +262,7 @@
 
     // 伏せカード登場！
     socket.on('downCard', (msg) => {
+      // messageLists にある全ての要素を取得したい
       const item = addMessageToList(msg);
       item.id = msg._id;
       item.classList.add('downCard');
@@ -333,7 +334,7 @@
 
     // メッセージリストに追加 ボタン無し
     function addMessageToListNoButton(msg, isTemplate = false) {
-      const item = document.createElement('li'); // list要素を作成
+      const item = document.createElement('div'); // div要素を作成
 
       if (isTemplate) { //「ここから参加」
         item.textContent = msg; // テンプレートメッセージを追加
