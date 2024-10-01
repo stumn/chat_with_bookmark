@@ -33,8 +33,7 @@ async function getPastLogs() {
         posts.reverse();
         const pastLogs = await Promise.all(posts.map(organizeLogs));
         pastLogs.forEach(e => {
-            const OC = organizeCreatedAt(e.createdAt);
-            console.log(e.name + e.msg + e.ups + e.downs + e.bookmarks + OC);
+            e.createdAt = organizeCreatedAt(e.createdAt);
         });
         console.log('過去ログ整理完了');
         return pastLogs;
