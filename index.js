@@ -55,7 +55,15 @@ io.on('connection', async (socket) => {
     // < 自分メモ >
     socket.on('personal memo', async (memo) => {
       const m = await SavePersonalMemo(name, memo, socket);
-      socket.emit('memoLogs', m); // 自分だけに送信
+
+      const organizedMemo = { 
+        _id: m._id,
+        name: m.name,
+        msg: m.msg,
+        createdAt: organizeCreatedAt(m.createdAt)
+      }
+
+      socket.emit('memoLogs', organizedMemo); // 自分だけに送信
     });
 
     // < アンケートメッセージ >

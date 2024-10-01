@@ -350,11 +350,37 @@
     }
 
     function personalMemo(item, msg) {
-      const nameAndMemo = '[ personal memo ] ' + msg.msg; // name + memo
 
-      const messageText = document.createElement('span'); // span要素を作成
-      messageText.classList.add('message-text');  // クラスを追加
-      messageText.textContent = nameAndMemo; // テキストを追加
+      const nameTimeMsg = document.createElement('div');
+      nameTimeMsg.classList.add('name-time-msg');
+
+      const name_time_div = document.createElement('div');
+      name_time_div.classList.add('name-time-div');
+
+      const name = document.createElement('span');
+      name.classList.add('name');
+      name.textContent = '[memo]'; // 違うポイント
+      name_time_div.appendChild(name);
+
+      const time = document.createElement('span');
+      time.classList.add('time');
+      time.textContent = msg.createdAt;
+      name_time_div.appendChild(time);
+
+      nameTimeMsg.appendChild(name_time_div);
+
+      const messageText = document.createElement('div');
+      messageText.classList.add('message-text');
+      messageText.textContent = (msg.msg);
+      nameTimeMsg.appendChild(messageText);
+
+      item.appendChild(nameTimeMsg);
+
+      // const nameAndMemo = '[ personal memo ] ' + msg.msg; // name + memo
+
+      // const messageText = document.createElement('span'); // span要素を作成
+      // messageText.classList.add('message-text');  // クラスを追加
+      // messageText.textContent = nameAndMemo; // テキストを追加
 
       const memoSendContainer = document.createElement('span');
       memoSendContainer.classList.add('memoSend-container');
@@ -363,16 +389,14 @@
       button.textContent = '➤';
       button.addEventListener('click', e => {
         button.classList.add("active");
-
         event.preventDefault();
         socket.emit('open_downCard', msg.msg);
-
         button.disabled = true;
       });
 
       memoSendContainer.appendChild(button);
 
-      item.appendChild(messageText);
+      // item.appendChild(messageText);
       item.appendChild(memoSendContainer); // itemにspanを追加
     }
 

@@ -77,7 +77,7 @@ async function SaveChatMessage(name, msg) {
 async function SavePersonalMemo(name, msg, socket) {
     try {
         const m = await saveMemo(name, msg);
-        console.log('自分メモ保存完了', m.name, m.msg);
+        console.log('自分メモ保存完了', m.name, m.msg, m.createdAt);
         return m;
     }
     catch (error) {
