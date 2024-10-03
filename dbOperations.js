@@ -64,6 +64,7 @@ async function saveRecord(name, msg, question = '', options = [], ups = [], down
 // チャットメッセージ受送信
 async function SaveChatMessage(name, msg) {
     try {
+        console.log('SCM msg: ', msg);
         const p = await saveRecord(name, msg);
         console.log('チャット保存しました💬:' + p.msg + p.id);
         return p;
@@ -88,6 +89,7 @@ async function SavePersonalMemo(name, msg, socket) {
 // 自分メモ保存
 async function saveMemo(name, msg) {
     try {
+        console.log(msg);
         const memoData = { name, msg };
         const newMemo = await Memo.create(memoData);
         console.log(newMemo);

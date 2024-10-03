@@ -62,7 +62,7 @@ io.on('connection', async (socket) => {
         msg: m.msg,
         createdAt: organizeCreatedAt(m.createdAt)
       }
-
+      console.log('organizedMemo', organizedMemo);
       socket.emit('memoLogs', organizedMemo); // 自分だけに送信
     });
 
@@ -85,7 +85,8 @@ io.on('connection', async (socket) => {
 
     // 伏せカードオープン
     socket.on('open_downCard', async (msg) => {
-      const p = await SaveChatMessage(name, msg);
+      console.log('open_downCard', msg);
+      const p = await SaveChatMessage(name, msg.msg);
 
       const organizedPost = {
         _id: p._id,
@@ -93,7 +94,7 @@ io.on('connection', async (socket) => {
         msg: p.msg,
         question: p.question,
         options: p.options,
-        createdAt: organizeCreatedAt(p.createdAt)
+        createdAt: msg.createdAt
       }
 
       io.emit('downCard', organizedPost);

@@ -157,6 +157,7 @@
 
       messageLists.appendChild(item);
       item.id = message._id;
+      item.classList.add('ml');
       return item;
     }
 
@@ -262,12 +263,107 @@
 
     // 伏せカード登場！
     socket.on('downCard', (msg) => {
-      // messageLists にある全ての要素を取得したい
-      const item = addMessageToList(msg);
-      item.id = msg._id;
-      item.classList.add('downCard');
-      item.classList.add('visible');
+      let timeSpans = document.querySelectorAll("#messageLists div span.time");
+      for (let i = 0; i < timeSpans.length; i++) {
+        const targetCreatedAt = msg.createdAt;
+        const compare = timeSpans[i].textContent;
+
+        const isBefore = checkIsBefore(targetCreatedAt, compare);
+
+        if (isBefore === false) {
+          console.log("target は compare の前ではない");
+          if (i === timeSpans.length - 1) {
+            console.log("target は 最新");
+            const item = addMessageToList(msg);
+            return;
+          }
+          continue;
+        }
+        else if (isBefore === true) {
+          console.log("target は compare の前に入る");
+          // ここで、messageLists に入れ込む
+          const item = downCard(msg);
+
+          const parentDIV = timeSpans[i].parentNode.parentNode.parentNode;
+          messageLists.insertBefore(item, parentDIV);
+
+          item.id = msg._id;
+          item.classList.add('ml', 'downCard', 'visible');
+          return;
+        }
+      }
     });
+
+    function downCard(message) {
+
+      const item = document.createElement('div');
+
+      // 1 [name + time] + [message(question)]
+
+      const nameTimeMsg = document.createElement('div');
+      nameTimeMsg.classList.add('name-time-msg');
+
+      const name_time_div = document.createElement('div');
+      name_time_div.classList.add('name-time-div');
+
+      const name = document.createElement('span');
+      name.classList.add('name');
+      name.textContent = message.name;
+      name_time_div.appendChild(name);
+
+      const time = document.createElement('span');
+      time.classList.add('time');
+      time.textContent = message.createdAt;
+      name_time_div.appendChild(time);
+
+      nameTimeMsg.appendChild(name_time_div);
+
+      let isSurvey = false;
+      if (message.question) {
+        isSurvey = true;
+        message.msg = message.question;
+      }
+
+      const messageText = document.createElement('div');
+      messageText.classList.add('message-text');
+      messageText.textContent = (message.msg);
+      nameTimeMsg.appendChild(messageText);
+
+      item.appendChild(nameTimeMsg);
+
+      if (isSurvey) { // (2) case question => options and votes
+        const surveyContainer = makeSurveyContainerElement(message);
+        item.appendChild(surveyContainer);
+      }
+
+      const buttons = document.createElement('div');
+      buttons.classList.add('buttons');
+
+      // Create containers for up, down, and bookmark buttons
+      const upContainer = makeContainerElement('up', message);
+      const downContainer = makeContainerElement('down', message);
+      const bookmarkContainer = makeContainerElement('bookmark', message);
+
+      // Append the containers to the item
+      buttons.append(upContainer, downContainer, bookmarkContainer);
+      item.appendChild(buttons);
+
+      return item;
+    }
+
+    function timeToSeconds(time) {
+      const [hours, minutes, seconds] = time.split(':').map(Number);
+      return hours * 3600 + minutes * 60 + seconds;
+    }
+
+    function checkIsBefore(target, compare) {
+      const targetSec = timeToSeconds(target);
+      const compareSec = timeToSeconds(compare);
+
+      const isBefore = targetSec < compareSec;
+      console.log('isBefore: ', isBefore);
+      return isBefore;
+    }
 
     // アンケート投稿をサーバーに送信 >
     surveyForm.addEventListener('submit', (event) => {
@@ -345,6 +441,7 @@
       }
 
       messageLists.appendChild(item); // メッセージリストに追加
+      item.classList.add('ml'); // クラスを追加
       window.scrollTo(0, document.body.scrollHeight); // スクロール
 
       return item; // itemを返す
@@ -372,6 +469,7 @@
 
       const messageText = document.createElement('div');
       messageText.classList.add('message-text');
+      console.log('messageだよね？: ', msg.msg);
       messageText.textContent = (msg.msg);
       nameTimeMsg.appendChild(messageText);
 
@@ -391,7 +489,7 @@
       button.addEventListener('click', e => {
         button.classList.add("active");
         event.preventDefault();
-        socket.emit('open_downCard', msg.msg);
+        socket.emit('open_downCard', msg);
         button.disabled = true;
       });
 
