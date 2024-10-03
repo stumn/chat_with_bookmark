@@ -15,7 +15,7 @@
     <h3>chat with bookmark</h3> <span id="sign-up-name"></span>
     <br>
     <h4 id=chatTitle></h4><span id="onlines"></span>
-    <button id = "openDocumentButton">ドキュメント</button>
+    <button onclick="OpenWindow()">ドキュメント</button>
 
   </header>
 
@@ -79,7 +79,6 @@
       console.log(docURL);
     });
 
-    document.getElementById("openDocumentButton").addEventListener("click", OpenWindow);
     function OpenWindow() {
       console.log(docURL);
       window.open(docURL, '_blank');
@@ -93,35 +92,53 @@
     // 過去ログ受信
     socket.on('pastLogs', (pastArray) => {
       pastArray.forEach(element => {
-        addMessageToList(element);
+        const item = addMessageToList(element);
+        settingML(item, element);
       });
       addMessageToListNoButton('-----⇊ ここから参加 ⇊-----', true);
     });
 
+    // 🟨🟨🟨🟨🟨🟨🟨🟨
     // ★メッセージリストに追加する
     function addMessageToList(message) {
 
       const item = document.createElement('div');
 
-      // 1 [name + time] + [message(question)]
+      // 1 nameTiemMsg
+      const { nameTimeMsg, isSurvey } = createNameTimeMsg(message);
+      item.appendChild(nameTimeMsg);
+
+      // (2) case survey => options and votes
+      if (isSurvey) {
+        const surveyContainer = makeSurveyContainerElement(message);
+        item.appendChild(surveyContainer);
+      }
+
+      // 3 buttons
+      const buttons = createButtons(message);
+      item.appendChild(buttons);
+
+      return item;
+    }
+
+    // 1 name + time + message
+    function createNameTimeMsg(message) {
 
       const nameTimeMsg = document.createElement('div');
       nameTimeMsg.classList.add('name-time-msg');
 
-      const name_time_div = document.createElement('div');
-      name_time_div.classList.add('name-time-div');
+      const name_time = document.createElement('div');
+      name_time.classList.add('name-time-div');
 
       const name = document.createElement('span');
       name.classList.add('name');
       name.textContent = message.name;
-      name_time_div.appendChild(name);
+      name_time.appendChild(name);
 
       const time = document.createElement('span');
       time.classList.add('time');
       time.textContent = message.createdAt;
-      name_time_div.appendChild(time);
-
-      nameTimeMsg.appendChild(name_time_div);
+      name_time.appendChild(time);
 
       let isSurvey = false;
       if (message.question) {
@@ -131,35 +148,13 @@
 
       const messageText = document.createElement('div');
       messageText.classList.add('message-text');
+      console.log('messageだよね？(chat): ', message.msg);
       messageText.textContent = (message.msg);
+
+      nameTimeMsg.appendChild(name_time);
       nameTimeMsg.appendChild(messageText);
 
-      item.appendChild(nameTimeMsg);
-
-      if (isSurvey) { // (2) case question => options and votes
-        const surveyContainer = makeSurveyContainerElement(message);
-        item.appendChild(surveyContainer);
-      }
-
-      const buttons = document.createElement('div');
-      buttons.classList.add('buttons');
-
-      // Create containers for up, down, and bookmark buttons
-      const upContainer = makeContainerElement('up', message);
-      const downContainer = makeContainerElement('down', message);
-      const bookmarkContainer = makeContainerElement('bookmark', message);
-
-      // Append the containers to the item
-      buttons.append(upContainer, downContainer, bookmarkContainer);
-
-      item.appendChild(buttons);
-
-      window.scrollTo(0, document.body.scrollHeight);
-
-      messageLists.appendChild(item);
-      item.id = message._id;
-      item.classList.add('ml');
-      return item;
+      return { nameTimeMsg, isSurvey };
     }
 
     // (2)
@@ -189,7 +184,22 @@
       return surveyContainer;
     }
 
-    // 3,4,5
+    // 3 buttons
+    function createButtons(message) {
+      const buttons = document.createElement('div');
+      buttons.classList.add('buttons');
+
+      // Create containers for up, down, and bookmark buttons
+      const upContainer = makeContainerElement('up', message);
+      const downContainer = makeContainerElement('down', message);
+      const bookmarkContainer = makeContainerElement('bookmark', message);
+
+      // Append the containers to the item
+      buttons.append(upContainer, downContainer, bookmarkContainer);
+      return buttons;
+    }
+
+    // (in 3rd function) Create containers for up, down, and bookmark buttons
     function makeContainerElement(eventType, message) {
 
       let containerSign, emoji, countSign, Num;
@@ -236,6 +246,15 @@
       return container;
     }
 
+    function settingML(item, message) {
+      window.scrollTo(0, document.body.scrollHeight);
+      messageLists.appendChild(item);
+      item.id = message._id;
+      item.classList.add('ml');
+    }
+
+    // 🟨🟨🟨🟨🟨🟨🟨🟨
+
     // チャットメッセージをサーバーに送信 >
     chatForm.addEventListener('submit', (event) => {
       event.preventDefault();
@@ -247,6 +266,7 @@
     socket.on('chatLogs', (post) => {
       const item = addMessageToList(post);
       item.id = post._id;
+      settingML(item, post);
     });
 
     // 自分メモをサーバーに送信 >
@@ -276,6 +296,7 @@
           if (i === timeSpans.length - 1) {
             console.log("target は 最新");
             const item = addMessageToList(msg);
+            settingML(item, msgre);
             return;
           }
           continue;
@@ -283,7 +304,7 @@
         else if (isBefore === true) {
           console.log("target は compare の前に入る");
           // ここで、messageLists に入れ込む
-          const item = downCard(msg);
+          const item = addMessageToList(msg);
 
           const parentDIV = timeSpans[i].parentNode.parentNode.parentNode;
           messageLists.insertBefore(item, parentDIV);
@@ -294,63 +315,6 @@
         }
       }
     });
-
-    function downCard(message) {
-
-      const item = document.createElement('div');
-
-      // 1 [name + time] + [message(question)]
-
-      const nameTimeMsg = document.createElement('div');
-      nameTimeMsg.classList.add('name-time-msg');
-
-      const name_time_div = document.createElement('div');
-      name_time_div.classList.add('name-time-div');
-
-      const name = document.createElement('span');
-      name.classList.add('name');
-      name.textContent = message.name;
-      name_time_div.appendChild(name);
-
-      const time = document.createElement('span');
-      time.classList.add('time');
-      time.textContent = message.createdAt;
-      name_time_div.appendChild(time);
-
-      nameTimeMsg.appendChild(name_time_div);
-
-      let isSurvey = false;
-      if (message.question) {
-        isSurvey = true;
-        message.msg = message.question;
-      }
-
-      const messageText = document.createElement('div');
-      messageText.classList.add('message-text');
-      messageText.textContent = (message.msg);
-      nameTimeMsg.appendChild(messageText);
-
-      item.appendChild(nameTimeMsg);
-
-      if (isSurvey) { // (2) case question => options and votes
-        const surveyContainer = makeSurveyContainerElement(message);
-        item.appendChild(surveyContainer);
-      }
-
-      const buttons = document.createElement('div');
-      buttons.classList.add('buttons');
-
-      // Create containers for up, down, and bookmark buttons
-      const upContainer = makeContainerElement('up', message);
-      const downContainer = makeContainerElement('down', message);
-      const bookmarkContainer = makeContainerElement('bookmark', message);
-
-      // Append the containers to the item
-      buttons.append(upContainer, downContainer, bookmarkContainer);
-      item.appendChild(buttons);
-
-      return item;
-    }
 
     function timeToSeconds(time) {
       const [hours, minutes, seconds] = time.split(':').map(Number);
@@ -387,6 +351,7 @@
     socket.on('survey_post', (surveyPost) => {
       const item = addMessageToList(surveyPost);
       item.id = surveyPost._id;
+      settingML(item, message);
     });
 
     // < 投票を受信
@@ -453,34 +418,28 @@
       const nameTimeMsg = document.createElement('div');
       nameTimeMsg.classList.add('name-time-msg');
 
-      const name_time_div = document.createElement('div');
-      name_time_div.classList.add('name-time-div');
+      const name_time = document.createElement('div');
+      name_time.classList.add('name-time-div');
 
       const name = document.createElement('span');
       name.classList.add('name');
       name.textContent = '[memo]'; // 違うポイント
-      name_time_div.appendChild(name);
+      name_time.appendChild(name);
 
       const time = document.createElement('span');
       time.classList.add('time');
       time.textContent = msg.createdAt;
-      name_time_div.appendChild(time);
+      name_time.appendChild(time);
 
-      nameTimeMsg.appendChild(name_time_div);
+      nameTimeMsg.appendChild(name_time);
 
       const messageText = document.createElement('div');
       messageText.classList.add('message-text');
-      console.log('messageだよね？: ', msg.msg);
+      console.log('messageだよね？(memo): ', msg.msg);
       messageText.textContent = (msg.msg);
       nameTimeMsg.appendChild(messageText);
 
       item.appendChild(nameTimeMsg);
-
-      // const nameAndMemo = '[ personal memo ] ' + msg.msg; // name + memo
-
-      // const messageText = document.createElement('span'); // span要素を作成
-      // messageText.classList.add('message-text');  // クラスを追加
-      // messageText.textContent = nameAndMemo; // テキストを追加
 
       const memoSendContainer = document.createElement('span');
       memoSendContainer.classList.add('memoSend-container');
@@ -495,8 +454,6 @@
       });
 
       memoSendContainer.appendChild(button);
-
-      // item.appendChild(messageText);
       item.appendChild(memoSendContainer); // itemにspanを追加
     }
 
