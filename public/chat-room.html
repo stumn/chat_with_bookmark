@@ -15,7 +15,7 @@
     <h3>chat with bookmark</h3> <span id="sign-up-name"></span>
     <br>
     <h4 id=chatTitle></h4><span id="onlines"></span>
-    <button onclick="OpenWindow()">ドキュメント</button>
+    <button id = "openDocumentButton">ドキュメント</button>
 
   </header>
 
@@ -79,6 +79,7 @@
       console.log(docURL);
     });
 
+    document.getElementById("openDocumentButton").addEventListener("click", OpenWindow);
     function OpenWindow() {
       console.log(docURL);
       window.open(docURL, '_blank');
