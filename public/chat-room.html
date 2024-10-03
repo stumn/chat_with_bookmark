@@ -44,26 +44,26 @@
 
   </main>
 
-  <!-- javascript　ブラウザ側 -->
   <script src="/socket.io/socket.io.js"></script>
   <script>
     const socket = io();
 
     // html要素の取得 ($は短縮形の関数名 = DOM要素の操作で使うと便利) 
     function $(id) {
-      return document.getElementById(id);
+      const element = document.getElementById(id);
+      if (!element) {
+        console.error(`Element with id "${id}" not found`);
+      }
+      return element;
     }
 
-    const chatTitle = $('chatTitle'); // チャットタイトル
-    const messageLists = $('messageLists'); // メッセージリスト
 
+    const messageLists = $('messageLists');
     const chatForm = $('chatForm');
-    const chatInput = $('chatInput'); // チャットフォーム
-
+    const chatInput = $('chatInput');
     const memoForm = $('memoForm');
-    const memoInput = $('memoInput'); // メモフォーム
-
-    const surveyForm = $('surveyForm'); // アンケートフォーム
+    const memoInput = $('memoInput');
+    const surveyForm = $('surveyForm');
 
     // ★ログイン時
     // プロンプト　ログインで名前を入力・サーバーに送信
@@ -92,21 +92,22 @@
     // 過去ログ受信
     socket.on('pastLogs', (pastArray) => {
       pastArray.forEach(element => {
-        const item = addMessageToList(element);
+        const item = appendMessageToChatDisplay(element);
         settingML(item, element);
       });
-      addMessageToListNoButton('-----⇊ ここから参加 ⇊-----', true);
+
+      const item = document.createElement('div');
+      item.textContent = '-----⇊ ここから参加 ⇊-----';
+      settingML(item);
     });
 
-    // 🟨🟨🟨🟨🟨🟨🟨🟨
-    // ★メッセージリストに追加する
-    function addMessageToList(message) {
+    function appendMessageToChatDisplay(message, userName = message.name) {
 
       const item = document.createElement('div');
 
       // 1 nameTiemMsg
-      const { nameTimeMsg, isSurvey } = createNameTimeMsg(message);
-      item.appendChild(nameTimeMsg);
+      const { userNameTimeMsg, isSurvey } = createNameTimeMsg(message, userName);
+      item.appendChild(userNameTimeMsg);
 
       // (2) case survey => options and votes
       if (isSurvey) {
@@ -115,30 +116,30 @@
       }
 
       // 3 buttons
-      const buttons = createButtons(message);
+      const buttons = createActionButtons(message);
       item.appendChild(buttons);
 
       return item;
     }
 
-    // 1 name + time + message
-    function createNameTimeMsg(message) {
+    // 1 userName + time + message
+    function createNameTimeMsg(message, nameText = message.name) {
 
-      const nameTimeMsg = document.createElement('div');
-      nameTimeMsg.classList.add('name-time-msg');
+      const userNameTimeMsg = document.createElement('div');
+      userNameTimeMsg.classList.add('userName-time-msg');
 
-      const name_time = document.createElement('div');
-      name_time.classList.add('name-time-div');
+      const userName_time = document.createElement('div');
+      userName_time.classList.add('userName-time');
 
-      const name = document.createElement('span');
-      name.classList.add('name');
-      name.textContent = message.name;
-      name_time.appendChild(name);
+      const userName = document.createElement('span');
+      userName.classList.add('userName');
+      userName.textContent = nameText;
+      userName_time.appendChild(userName);
 
       const time = document.createElement('span');
       time.classList.add('time');
       time.textContent = message.createdAt;
-      name_time.appendChild(time);
+      userName_time.appendChild(time);
 
       let isSurvey = false;
       if (message.question) {
@@ -146,15 +147,15 @@
         message.msg = message.question;
       }
 
-      const messageText = document.createElement('div');
-      messageText.classList.add('message-text');
+      const message_div = document.createElement('div');
+      message_div.classList.add('message-text');
       console.log('messageだよね？(chat): ', message.msg);
-      messageText.textContent = (message.msg);
+      message_div.textContent = (message.msg);
 
-      nameTimeMsg.appendChild(name_time);
-      nameTimeMsg.appendChild(messageText);
+      userNameTimeMsg.appendChild(userName_time);
+      userNameTimeMsg.appendChild(message_div);
 
-      return { nameTimeMsg, isSurvey };
+      return { userNameTimeMsg, isSurvey };
     }
 
     // (2)
@@ -185,14 +186,14 @@
     }
 
     // 3 buttons
-    function createButtons(message) {
+    function createActionButtons(message) {
       const buttons = document.createElement('div');
       buttons.classList.add('buttons');
 
       // Create containers for up, down, and bookmark buttons
-      const upContainer = makeContainerElement('up', message);
-      const downContainer = makeContainerElement('down', message);
-      const bookmarkContainer = makeContainerElement('bookmark', message);
+      const upContainer = makeActionButtonContainer('up', message);
+      const downContainer = makeActionButtonContainer('down', message);
+      const bookmarkContainer = makeActionButtonContainer('bookmark', message);
 
       // Append the containers to the item
       buttons.append(upContainer, downContainer, bookmarkContainer);
@@ -200,33 +201,33 @@
     }
 
     // (in 3rd function) Create containers for up, down, and bookmark buttons
-    function makeContainerElement(eventType, message) {
+    function makeActionButtonContainer(eventType, message) {
 
-      let containerSign, emoji, countSign, Num;
+      let containerClassName, emoji, countSign, interactionCount;
 
       switch (eventType) {
         case 'up':
-          containerSign = 'up-container';
+          containerClassName = 'up-container';
           emoji = '⇧';
           countSign = 'up-count';
-          Num = message.ups >= 1 ? message.ups : 0;
+          interactionCount = message.ups >= 1 ? message.ups : 0;
           break;
         case 'down':
-          containerSign = 'down-container';
+          containerClassName = 'down-container';
           emoji = '⇩';
           countSign = 'down-count';
-          Num = message.downs >= 1 ? message.downs : 0;
+          interactionCount = message.downs >= 1 ? message.downs : 0;
           break;
         case 'bookmark':
-          containerSign = 'bookmark-container';
+          containerClassName = 'bookmark-container';
           emoji = '🔖';
           countSign = 'bookmark-count';
-          Num = message.bookmarks >= 1 ? message.bookmarks : 0;
+          interactionCount = message.bookmarks >= 1 ? message.bookmarks : 0;
           break;
       }
 
       const container = document.createElement('div');
-      container.classList.add(containerSign);
+      container.classList.add(containerClassName);
 
       const button = document.createElement('button');
       button.textContent = emoji;
@@ -238,7 +239,7 @@
       const count = document.createElement('span');
       count.classList.add(countSign);
 
-      count.textContent = Num;
+      count.textContent = interactionCount;
 
       container.appendChild(button);
       container.appendChild(count);
@@ -246,14 +247,14 @@
       return container;
     }
 
-    function settingML(item, message) {
+    function settingML(item, message = {}) {
       window.scrollTo(0, document.body.scrollHeight);
       messageLists.appendChild(item);
-      item.id = message._id;
+      if (message._id) {
+        item.id = message._id;
+      }
       item.classList.add('ml');
     }
-
-    // 🟨🟨🟨🟨🟨🟨🟨🟨
 
     // チャットメッセージをサーバーに送信 >
     chatForm.addEventListener('submit', (event) => {
@@ -264,7 +265,7 @@
 
     // < チャット受信
     socket.on('chatLogs', (post) => {
-      const item = addMessageToList(post);
+      const item = appendMessageToChatDisplay(post);
       item.id = post._id;
       settingML(item, post);
     });
@@ -278,8 +279,28 @@
 
     // < 自分メモ受信
     socket.on('memoLogs', (memo) => {
-      const item = addMessageToListNoButton(memo);
-      item.id = memo._id;
+
+      const item = document.createElement('div'); // div要素を作成
+      const { userNameTimeMsg, isSurvey } = createNameTimeMsg(memo, '[memo]');
+
+      item.appendChild(userNameTimeMsg);
+
+      const memoSendContainer = document.createElement('span');
+      memoSendContainer.classList.add('memoSend-container');
+
+      const button = document.createElement('button');
+      button.textContent = '➤';
+      button.addEventListener('click', e => {
+        button.classList.add("active");
+        event.preventDefault();
+        socket.emit('open_downCard', memo);
+        button.disabled = true;
+      });
+
+      memoSendContainer.appendChild(button);
+      item.appendChild(memoSendContainer);
+
+      settingML(item, memo);
     });
 
     // 伏せカード登場！
@@ -295,8 +316,8 @@
           console.log("target は compare の前ではない");
           if (i === timeSpans.length - 1) {
             console.log("target は 最新");
-            const item = addMessageToList(msg);
-            settingML(item, msgre);
+            const item = appendMessageToChatDisplay(msg);
+            settingML(item, msg);
             return;
           }
           continue;
@@ -304,7 +325,7 @@
         else if (isBefore === true) {
           console.log("target は compare の前に入る");
           // ここで、messageLists に入れ込む
-          const item = addMessageToList(msg);
+          const item = appendMessageToChatDisplay(msg);
 
           const parentDIV = timeSpans[i].parentNode.parentNode.parentNode;
           messageLists.insertBefore(item, parentDIV);
@@ -349,7 +370,7 @@
 
     // < アンケート投稿をサーバーから受信
     socket.on('survey_post', (surveyPost) => {
-      const item = addMessageToList(surveyPost);
+      const item = appendMessageToChatDisplay(surveyPost);
       item.id = surveyPost._id;
       settingML(item, message);
     });
@@ -363,26 +384,16 @@
       }
     });
 
-    // < UP受信
-    socket.on('up', (upData) => {
-      const item = $(upData._id);
-      const upCount = item.querySelector('.up-container span');
-      upCount.textContent = upData.count;
-    });
+    function handleEvent(eventType) {
+      socket.on(eventType, (data) => {
+        const item = $(data._id);
+        const countElement = item.querySelector(`.${eventType}-container span`);
+        countElement.textContent = data.count;
+      });
+    }
 
-    // < DOWN受信
-    socket.on('down', (downData) => {
-      const item = $(downData._id);
-      const downCount = item.querySelector('.down-container span');
-      downCount.textContent = downData.count;
-    });
-
-    // < bookmark受信
-    socket.on('bookmark', (bookmarkData) => {
-      const item = $(bookmarkData._id);
-      const bookmarkCount = item.querySelector('.bookmark-container span');
-      bookmarkCount.textContent = bookmarkData.count;
-    });
+    // Map multiple events to the same handler
+    ['up', 'down', 'bookmark'].forEach(handleEvent);
 
     // < アラート
     socket.on('alert', (alertMsg) => {
@@ -393,69 +404,6 @@
     socket.on('dialog_to_html', (dialogMsg) => {
       socket.emit('dialog_to_js', confirm(dialogMsg) ? true : false);
     });
-
-    // メッセージリストに追加 ボタン無し
-    function addMessageToListNoButton(msg, isTemplate = false) {
-      const item = document.createElement('div'); // div要素を作成
-
-      if (isTemplate) { //「ここから参加」
-        item.textContent = msg; // テンプレートメッセージを追加
-      }
-
-      else { // 自分メモ
-        personalMemo(item, msg);
-      }
-
-      messageLists.appendChild(item); // メッセージリストに追加
-      item.classList.add('ml'); // クラスを追加
-      window.scrollTo(0, document.body.scrollHeight); // スクロール
-
-      return item; // itemを返す
-    }
-
-    function personalMemo(item, msg) {
-
-      const nameTimeMsg = document.createElement('div');
-      nameTimeMsg.classList.add('name-time-msg');
-
-      const name_time = document.createElement('div');
-      name_time.classList.add('name-time-div');
-
-      const name = document.createElement('span');
-      name.classList.add('name');
-      name.textContent = '[memo]'; // 違うポイント
-      name_time.appendChild(name);
-
-      const time = document.createElement('span');
-      time.classList.add('time');
-      time.textContent = msg.createdAt;
-      name_time.appendChild(time);
-
-      nameTimeMsg.appendChild(name_time);
-
-      const messageText = document.createElement('div');
-      messageText.classList.add('message-text');
-      console.log('messageだよね？(memo): ', msg.msg);
-      messageText.textContent = (msg.msg);
-      nameTimeMsg.appendChild(messageText);
-
-      item.appendChild(nameTimeMsg);
-
-      const memoSendContainer = document.createElement('span');
-      memoSendContainer.classList.add('memoSend-container');
-
-      const button = document.createElement('button');
-      button.textContent = '➤';
-      button.addEventListener('click', e => {
-        button.classList.add("active");
-        event.preventDefault();
-        socket.emit('open_downCard', msg);
-        button.disabled = true;
-      });
-
-      memoSendContainer.appendChild(button);
-      item.appendChild(memoSendContainer); // itemにspanを追加
-    }
 
   </script>
 </body>

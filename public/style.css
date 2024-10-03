@@ -19,7 +19,6 @@
        align-items: center;
        padding: 0.5rem 1rem;
        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-
    }
 
    h1,
@@ -57,9 +56,6 @@
     /* カスタムイージング: 最初は速く、最後はゆっくり */
   }
   
-
-
-
    /* chatForm */
    #chatForm {
        background: rgba(0, 0, 0, 0.15);
@@ -133,10 +129,7 @@
        color: #fff;
    }
 
-
-
    /* アンケート投稿 */
-
 
    /* MSG */
    #messageLists {
@@ -152,17 +145,17 @@
        align-items: center;
    }
 
-   #messageLists>div.name-time-msg {
+   #messageLists>div.userName-time-msg {
        display: flex;
        justify-content: flex-start;
    }
 
-   #messageLists>div div.name-time-msg div.name-time-div span.name {
+   #messageLists>div div.userName-time-msg div.userName-time span.userName {
        font-weight: bold;
        color: black;
    }
 
-   #messageLists>div div.name-time-msg div.name-time-div span.time {
+   #messageLists>div div.userName-time-msg div.userName-time span.time {
        font-size: small;
        color: gray;
    }
