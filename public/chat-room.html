@@ -122,39 +122,27 @@
       return item;
     }
 
+    function createElementWithClass(tagName, className, textContent = '') {
+      const element = document.createElement(tagName);
+      element.classList.add(className);
+      element.textContent = textContent;
+      return element;
+    }
+
     // 1 userName + time + message
     function createNameTimeMsg(message, nameText = message.name) {
+      const userNameTimeMsg = createElementWithClass('div', 'userName-time-msg');
+      const userName_time = createElementWithClass('div', 'userName-time');
+      const userName = createElementWithClass('span', 'userName', nameText);
+      const time = createElementWithClass('span', 'time', message.createdAt);
 
-      const userNameTimeMsg = document.createElement('div');
-      userNameTimeMsg.classList.add('userName-time-msg');
-
-      const userName_time = document.createElement('div');
-      userName_time.classList.add('userName-time');
-
-      const userName = document.createElement('span');
-      userName.classList.add('userName');
-      userName.textContent = nameText;
-      userName_time.appendChild(userName);
-
-      const time = document.createElement('span');
-      time.classList.add('time');
-      time.textContent = message.createdAt;
-      userName_time.appendChild(time);
-
-      let isSurvey = false;
-      if (message.question) {
-        isSurvey = true;
-        message.msg = message.question;
-      }
-
-      const message_div = document.createElement('div');
-      message_div.classList.add('message-text');
-      console.log('messageだよね？(chat): ', message.msg);
-      message_div.textContent = (message.msg);
-
+      userName_time.append(userName, time);
       userNameTimeMsg.appendChild(userName_time);
+
+      const message_div = createElementWithClass('div', 'message-text', message.question || message.msg);
       userNameTimeMsg.appendChild(message_div);
 
+      const isSurvey = Boolean(message.question);
       return { userNameTimeMsg, isSurvey };
     }
 
@@ -187,73 +175,45 @@
 
     // 3 buttons
     function createActionButtons(message) {
-      const buttons = document.createElement('div');
-      buttons.classList.add('buttons');
-
-      // Create containers for up, down, and bookmark buttons
-      const upContainer = makeActionButtonContainer('up', message);
-      const downContainer = makeActionButtonContainer('down', message);
-      const bookmarkContainer = makeActionButtonContainer('bookmark', message);
-
-      // Append the containers to the item
-      buttons.append(upContainer, downContainer, bookmarkContainer);
+      const buttons = createElementWithClass('div', 'buttons');
+      ['up', 'down', 'bookmark'].forEach(eventType => {
+        buttons.appendChild(makeActionButtonContainer(eventType, message));
+      });
       return buttons;
     }
 
-    // (in 3rd function) Create containers for up, down, and bookmark buttons
     function makeActionButtonContainer(eventType, message) {
 
-      let containerClassName, emoji, countSign, interactionCount;
+      const eventData = {
+        up: { className: 'up-container', emoji: '⇧', count: message.ups || 0 },
+        down: { className: 'down-container', emoji: '⇩', count: message.downs || 0 },
+        bookmark: { className: 'bookmark-container', emoji: '🔖', count: message.bookmarks || 0 }
+      }[eventType];
 
-      switch (eventType) {
-        case 'up':
-          containerClassName = 'up-container';
-          emoji = '⇧';
-          countSign = 'up-count';
-          interactionCount = message.ups >= 1 ? message.ups : 0;
-          break;
-        case 'down':
-          containerClassName = 'down-container';
-          emoji = '⇩';
-          countSign = 'down-count';
-          interactionCount = message.downs >= 1 ? message.downs : 0;
-          break;
-        case 'bookmark':
-          containerClassName = 'bookmark-container';
-          emoji = '🔖';
-          countSign = 'bookmark-count';
-          interactionCount = message.bookmarks >= 1 ? message.bookmarks : 0;
-          break;
-      }
+      const container = createElementWithClass('div', eventData.className);
+      const button = createElementWithClass('button', 'actionButton', eventData.emoji);
+      const count = createElementWithClass('span', `${eventType}-count`, eventData.count);
 
-      const container = document.createElement('div');
-      container.classList.add(containerClassName);
-
-      const button = document.createElement('button');
-      button.textContent = emoji;
       button.addEventListener('click', e => {
         button.classList.toggle("active");
         socket.emit('event', eventType, message._id);
       });
 
-      const count = document.createElement('span');
-      count.classList.add(countSign);
-
-      count.textContent = interactionCount;
-
-      container.appendChild(button);
-      container.appendChild(count);
-
+      container.appendChild(button, count);
       return container;
     }
 
-    function settingML(item, message = {}) {
-      window.scrollTo(0, document.body.scrollHeight);
+    function settingML(item, message = {}, shouldScroll = true) {
+      item.classList.add('ml');
       messageLists.appendChild(item);
+
       if (message._id) {
         item.id = message._id;
       }
-      item.classList.add('ml');
+
+      if (shouldScroll) {
+        window.scrollTo(0, document.body.scrollHeight);
+      }
     }
 
     // チャットメッセージをサーバーに送信 >
