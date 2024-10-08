@@ -102,4 +102,100 @@ async function checkEventStatus(events, userSocketId) {
     return isAlert;
 }
 
-module.exports = { handleErrors, organizeLogs, createVoteArrays, checkVoteStatus, calculate_VoteSum, organize_voteData, checkEventStatus };
+function generateRandomString(length) {
+    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    let result = '';
+    const charactersLength = characters.length;
+    for (let i = 0; i < length; i++) {
+      result += characters.charAt(Math.floor(Math.random() * charactersLength));
+    }
+    return result;
+  }
+  
+  // ★投票イベントを処理する関数
+  async function processVoteEvent(msgId, option, userSocketId, socket) {
+    try {
+      const surveyPost = await findPost(msgId); // ポストを特定
+      let voteArrays = createVoteArrays(surveyPost);  // 投票配列
+  
+      let { userHasVoted, hasVotedOption } = checkVoteStatus(userSocketId, voteArrays); // ユーザーが投票済みか否か
+  
+      if (userHasVoted === true) { // 投票済み（関数切り分け済み）
+        await handle_Voted_User(option, hasVotedOption, socket, voteArrays, surveyPost);
+      }
+      else { // 未投票(処理が短いので関数に切り分けていない)
+        voteArrays[option].push(userSocketId);
+        await surveyPost.save();
+      }
+  
+      let voteSums = calculate_VoteSum(voteArrays); // 投票合計を計算
+  
+      return organize_voteData(surveyPost, voteSums); //返り値
+  
+    } catch (error) {
+      handleErrors(error, 'processVoteEvent  投票処理中にエラーが発生しました');
+    }
+  }
+  
+  // -投票済みユーザーの投票
+  async function handle_Voted_User(option, hasVotedOption, socket, voteArrays, surveyPost) {
+  
+    // 同じ選択肢に投票済み
+    if (option === hasVotedOption) {
+      socket.emit('alert', '同じ選択肢には投票できません');
+      return;
+    }
+  
+    // 違う選択肢に投票済み dialogで確認
+    socket.emit('dialog_to_html', '投票を変更しますか？');
+    const answer = await new Promise(resolve => { socket.on('dialog_to_js', resolve); });
+  
+    // answer 変更希望 => 投票済みの選択肢を1減らし、新しい選択肢に1増やす
+    if (answer === true) {
+      voteArrays[hasVotedOption].pull(socket.id);
+      voteArrays[option].push(socket.id);
+      await surveyPost.save();
+    }
+  }
+  
+  // イベントの受送信（up, down, bookmark）
+  async function receiveSendEvent(eventType, msgId, name, socket) {
+    console.log('eventType: ' + eventType + ' msgId: ' + msgId + ' name: ' + name);
+  
+    try {
+      const post = await findPost(msgId);
+  
+      const events = post[eventType + 's']; // ups, downs, bookmarks (配列)
+  
+      const isAlert = await checkEventStatus(events, socket.id);
+  
+      if (isAlert) {
+        console.log('この人は既にアクションがあります');
+        socket.emit('alert', `${eventType}は一度しかできません`);
+      } else {
+        events.push({ userSocketId: socket.id, name: name });
+        console.log(`新たなユーザーの${eventType}を追加しました: ` + JSON.stringify(events));
+        await post.save();
+      }
+  
+      const eventData = { _id: post._id, count: events.length };
+      io.emit(eventType, eventData); // 結果を送信
+  
+    } catch (error) {
+      handleErrors(error, `receiveSendEvent ${eventType}処理中にエラーが発生しました`);
+    }
+  }
+
+module.exports = { 
+    handleErrors, 
+    organizeLogs, 
+    createVoteArrays, 
+    checkVoteStatus, 
+    calculate_VoteSum, 
+    organize_voteData, 
+    checkEventStatus,
+    generateRandomString,
+    processVoteEvent,
+    handle_Voted_User,
+    receiveSendEvent
+};

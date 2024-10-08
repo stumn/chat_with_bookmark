@@ -177,4 +177,14 @@ async function fetchPosts(randomString) {
     }
 }
 
-module.exports = { saveUser, getUserInfo, getPastLogs, organizeCreatedAt, SaveChatMessage, SavePersonalMemo, SaveSurveyMessage, findPost, fetchPosts };
+module.exports = {
+    saveUser,
+    getUserInfo,
+    getPastLogs,
+    organizeCreatedAt,
+    SaveChatMessage,
+    SavePersonalMemo,
+    SaveSurveyMessage,
+    findPost,
+    fetchPosts
+};
