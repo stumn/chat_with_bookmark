@@ -203,7 +203,7 @@ async function handle_Voted_User(option, hasVotedOption, socket, voteArrays, sur
 }
 
 // イベントの受送信（up, down, bookmark）
-async function receiveSendEvent(eventType, msgId, name, socket) {
+async function receiveSendButtonEvent(eventType, msgId, name, socket) {
   console.log('eventType: ' + eventType + ' msgId: ' + msgId + ' name: ' + name);
 
   try {
@@ -226,7 +226,7 @@ async function receiveSendEvent(eventType, msgId, name, socket) {
     io.emit(eventType, eventData); // 結果を送信
 
   } catch (error) {
-    handleErrors(error, `receiveSendEvent ${eventType}処理中にエラーが発生しました`);
+    handleErrors(error, `receiveSendButtonEvent ${eventType}処理中にエラーが発生しました`);
   }
 }
 
