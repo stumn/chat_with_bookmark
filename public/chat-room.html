@@ -15,7 +15,7 @@
     <h3>chat with bookmark</h3> <span id="sign-up-name"></span>
     <br>
     <h4 id=chatTitle></h4><span id="onlines"></span>
-    <button onclick="OpenWindow()">ドキュメント</button>
+    <button onclick="OpenDocumentWindow()">ドキュメント</button>
 
   </header>
 
@@ -57,7 +57,6 @@
       return element;
     }
 
-
     const messageLists = $('messageLists');
     const chatForm = $('chatForm');
     const chatInput = $('chatInput');
@@ -71,17 +70,19 @@
     socket.emit('sign-up', myName);
     $('sign-up-name').textContent = 'ログイン名： ' + myName;
 
-    let randomString, docURL;
-    socket.on('randomString', (randomString) => {
-      randomString = randomString;
-      console.log(randomString);
-      docURL = `/${randomString}/document`;
-      console.log(docURL);
+    let docURL;
+    socket.on('randomString', (receivedString) => {
+      console.log('receivedString: ', receivedString);
+      docURL = `/${receivedString}/document`;
+      console.log('docURL: ', docURL);
     });
 
-    function OpenWindow() {
-      console.log(docURL);
-      window.open(docURL, '_blank');
+    function OpenDocumentWindow() {
+      if (docURL) {
+        window.open(docURL, '_blank');
+      } else {
+        console.log('docURL is not set');
+      }
     }
 
     // オンラインメンバー
@@ -151,24 +152,15 @@
       const surveyContainer = document.createElement('div');
       surveyContainer.classList.add('survey-container');
       for (let i = 0; i < message.options.length; i++) {
-        //[button]要素を作成・クラスを追加・選択肢テキストを追加
-        const surveyOption = document.createElement('button');
-        surveyOption.classList.add('survey-option');
-        surveyOption.textContent = message.options[i];
-
-        //[数字]span要素を作成・インデックス番号をクラス名に追加・投票数を追加
-        const surveyNum = document.createElement('span');
-        surveyNum.classList.add('survey-num-' + (i + 1));
-        surveyNum.textContent = message.voteSums[i];
-
-        //buttonにクリックイベントを追加・サーバーに投票を送信
+        const surveyOption = createElementWithClass('button', 'survey-option', message.options[i]);
+        
         surveyOption.addEventListener('click', () => {
           socket.emit('survey', message._id, i);
         });
-
-        //div要素にbutton要素を追加・span要素にspan要素を追加
-        surveyContainer.appendChild(surveyOption);
-        surveyContainer.appendChild(surveyNum);
+        
+        const surveyNum = createElementWithClass('span', 'survey-num-' + (i + 1), message.voteSums[i]);
+        
+        surveyContainer.appendChild(surveyOption, surveyNum);
       }
       return surveyContainer;
     }
@@ -216,25 +208,22 @@
       }
     }
 
-    // チャットメッセージをサーバーに送信 >
-    chatForm.addEventListener('submit', (event) => {
-      event.preventDefault();
-      socket.emit('chat message', chatInput.value);
-      chatInput.value = '';
-    });
+    function formSubmitHandler(form, input, eventName) {
+      form.addEventListener('submit', (event) => {
+        event.preventDefault();
+        socket.emit(eventName, input.value);
+        input.value = '';
+      });
+    }
+
+    formSubmitHandler(chatForm, chatInput, 'chat message');
+    formSubmitHandler(memoForm, memoInput, 'personal memo');
 
     // < チャット受信
     socket.on('chatLogs', (post) => {
       const item = appendMessageToChatDisplay(post);
       item.id = post._id;
       settingML(item, post);
-    });
-
-    // 自分メモをサーバーに送信 >
-    memoForm.addEventListener('submit', (event) => {
-      event.preventDefault();
-      socket.emit('personal memo', memoInput.value);
-      memoInput.value = '';
     });
 
     // < 自分メモ受信
@@ -297,18 +286,10 @@
       }
     });
 
-    function timeToSeconds(time) {
-      const [hours, minutes, seconds] = time.split(':').map(Number);
-      return hours * 3600 + minutes * 60 + seconds;
-    }
-
     function checkIsBefore(target, compare) {
-      const targetSec = timeToSeconds(target);
-      const compareSec = timeToSeconds(compare);
-
-      const isBefore = targetSec < compareSec;
-      console.log('isBefore: ', isBefore);
-      return isBefore;
+      const targetDate = new Date(`1970-01-01T${target}Z`);
+      const compareDate = new Date(`1970-01-01T${compare}Z`);
+      return targetDate < compareDate;
     }
 
     // アンケート投稿をサーバーに送信 >
