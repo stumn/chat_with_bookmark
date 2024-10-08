@@ -1,6 +1,6 @@
 // dbOperations.js 
 const { mongoose, User, Post, Memo } = require('./db');
-const { handleErrors, organizeLogs, organizeCreatedAt } = require('./utils');
+const { handleErrors, organizeLogs } = require('./utils');
 
 // ユーザーモデルに保存
 async function saveUser(name, socketId, randomString) {
@@ -40,6 +40,14 @@ async function getPastLogs() {
     } catch (error) {
         handleErrors(error, 'getPastLogs 過去ログ取得中にエラーが発生しました');
     }
+}
+
+function organizeCreatedAt(createdAt) {
+    const UTCdate = new Date(createdAt);
+    UTCdate.setHours(UTCdate.getHours() + 9);
+    const organizedCreatedAt = UTCdate.toISOString().match(/T(\d{2}:\d{2}:\d{2})/)[1];
+    createdAt = organizedCreatedAt;
+    return createdAt;
 }
 
 // データベースにレコードを保存
@@ -169,13 +177,4 @@ async function fetchPosts(randomString) {
     }
 }
 
-module.exports = {
-    saveUser,
-    getUserInfo,
-    getPastLogs,
-    SaveChatMessage,
-    SavePersonalMemo,
-    SaveSurveyMessage,
-    findPost,
-    fetchPosts
-};
+module.exports = { saveUser, getUserInfo, getPastLogs, organizeCreatedAt, SaveChatMessage, SavePersonalMemo, SaveSurveyMessage, findPost, fetchPosts };
