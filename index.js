@@ -14,11 +14,10 @@ const server = http.createServer(app);
 const { Server } = require("socket.io");
 const io = new Server(server);
 
-// const { mongoose, Post, Memo } = require('./db');
+const { mongoose, Post, Memo } = require('./db');
 const {
   saveUser,
   getPastLogs,
-  organizeCreatedAt,
   SaveChatMessage,
   SavePersonalMemo,
   SaveSurveyMessage
@@ -26,9 +25,10 @@ const {
 
 const {
   handleErrors,
+  organizeCreatedAt,
   generateRandomString,
   processVoteEvent,
-  receiveSendEvent
+  receiveSendButtonEvent
 } = require('./utils');
 
 const { error } = require('console');
@@ -93,7 +93,7 @@ io.on('connection', async (socket) => {
 
     // < ボタンイベント (up, down, bookmark) >
     socket.on('event', async (eventType, msgId) => {
-      await receiveSendEvent(eventType, msgId, name, socket);
+      await receiveSendButtonEvent(eventType, msgId, name, socket);
     });
 
     // 伏せカードオープン
@@ -111,9 +111,7 @@ io.on('connection', async (socket) => {
       }
 
       io.emit('downCard', organizedPost);
-    })
-
-
+    });
   });
 
   // < 切断時 >
