@@ -152,15 +152,19 @@
       const surveyContainer = document.createElement('div');
       surveyContainer.classList.add('survey-container');
       for (let i = 0; i < message.options.length; i++) {
-        const surveyOption = createElementWithClass('button', 'survey-option', message.options[i]);
+        const surveyOption = createElementWithClass('button', 'survey-option', message.options[i] || '');
         
         surveyOption.addEventListener('click', () => {
           socket.emit('survey', message._id, i);
         });
         
-        const surveyNum = createElementWithClass('span', 'survey-num-' + (i + 1), message.voteSums[i]);
+        const tentativeSums = message.voteSums ? message.voteSums : [0, 0, 0];
+
+        console.log('tentativeSums[i]: ', tentativeSums[i]);
+        const surveyNum = createElementWithClass('span', 'survey-num-' + (i + 1), tentativeSums[i]);
         
-        surveyContainer.appendChild(surveyOption, surveyNum);
+        surveyContainer.appendChild(surveyOption);
+        surveyContainer.appendChild(surveyNum);
       }
       return surveyContainer;
     }
@@ -191,7 +195,8 @@
         socket.emit('event', eventType, message._id);
       });
 
-      container.appendChild(button, count);
+      container.appendChild(button);
+      container.appendChild(count);
       return container;
     }
 
@@ -267,7 +272,6 @@
             console.log("target は 最新");
             const item = appendMessageToChatDisplay(msg);
             settingML(item, msg);
-            item.classList.add('downCard', 'visible');
             return;
           }
           continue;
@@ -314,7 +318,7 @@
     socket.on('survey_post', (surveyPost) => {
       const item = appendMessageToChatDisplay(surveyPost);
       item.id = surveyPost._id;
-      settingML(item, message);
+      settingML(item, surveyPost);
     });
 
     // < 投票を受信
