@@ -68,7 +68,7 @@ h3 {
 }
 
 .downCard {
-    position: fixed;
+    position: relative;
     right: 0;
     top: 50%;
     transform: translateY(-50%);
@@ -78,12 +78,10 @@ h3 {
     border-radius: 8px;
     opacity: 0;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
-    transition: opacity 0.3s ease-in-out;
 }
 
 .downCard.visible {
     animation: slideInWithImpact 0.4s cubic-bezier(0.25, 1, 0.5, 1) forwards;
-    /* カスタムイージング: 最初は速く、最後はゆっくり */
 }
 
 /* chatForm */
