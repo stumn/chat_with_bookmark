@@ -70,6 +70,8 @@
     socket.emit('sign-up', myName);
     $('sign-up-name').textContent = 'ログイン名： ' + myName;
 
+
+
     let docURL;
     socket.on('randomString', (receivedString) => {
       console.log('receivedString: ', receivedString);
@@ -100,7 +102,113 @@
       const item = document.createElement('div');
       item.textContent = '-----⇊ ここから参加 ⇊-----';
       settingML(item);
+      const y = messageLists.getElementsByClassName("ml");
+      console.log('y: ', y);
+      console.log('start for...of');
+
+      // Make each .ml element draggable
+      for (let element of y) {
+        element.classList.add('draggable');
+      }
+
+      const elements = document.querySelectorAll(".draggable");
+      let draggedElement = null;
+
+      console.log('elements: ', elements);
+      console.log('elements[3]: ', elements[3]);
+
+      elements.forEach((element, index) => {
+        element.setAttribute('draggable', 'true');
+
+        // Drag start event
+        element.addEventListener('dragstart', function (event) {
+          event.dataTransfer.effectAllowed = "move";
+          console.log(element);
+          console.log(index); // Log the index of the element being dragged
+          draggedElement = event.target;
+          setTimeout(() => {
+            event.target.style.visibility = 'hidden'; // Hide the element during the drag
+          }, 0);
+        });
+
+        // Drag end event
+        element.addEventListener('dragend', function (event) {
+          event.target.style.visibility = ''; // Restore visibility
+          draggedElement = null;
+        });
+
+        // Drag over event
+        element.addEventListener('dragover', function (event) {
+          console.log('dragover');
+
+          // Restrict drop targets based on classes
+          if (event.target.classList.contains("name-time-msg") || event.target.classList.contains("buttons")) {
+            event.dataTransfer.dropEffect = "none"; // Disable drop for invalid targets
+            return;
+          }
+
+          event.preventDefault();  // Allow dropping by preventing default behavior
+
+          // Provide visual feedback for valid targets
+          this.style.border = '3px solid';
+          this.style.color = 'lightgreen';
+        });
+
+        // Drag leave event
+        element.addEventListener('dragleave', function (event) {
+          console.log('dragleave');
+          this.style.border = ""; // Reset visual feedback
+          this.style.color = '';
+        });
+
+        // Drop event
+        element.addEventListener('drop', function (event) {
+          event.preventDefault();
+          if (draggedElement) {
+            const dropElement = event.target; // The element where the drop occurs
+            console.log('dropElement: ', dropElement);
+
+            let stackedMl = dropElement.parentNode;
+            console.log('start stackedMl: ', stackedMl);
+
+            if (stackedMl.classList.contains('kasane')) {
+              console.log('end stackedMl.classList.contains(kasane)');
+              stackedMl.appendChild(draggedElement);
+              return;
+            }
+
+            for (let i = 0; i < 10; i++) {
+              if (stackedMl.classList.contains('ml')) {
+                console.log('end stackedMl.classList.contains(ml)');
+                break;
+              } else {
+                stackedMl = stackedMl.parentNode;
+                console.log('continue stackedMl: ', stackedMl);
+              }
+            }
+
+            // Create a new div with the class 'kasane'
+            const kasaneDiv = createElementWithClass('div', 'kasane');
+            kasaneDiv.textContent = '▼';
+            console.log('kasaneDiv: ', kasaneDiv);
+
+            messageLists.insertBefore(kasaneDiv, stackedMl); // Insert the kasane div before the dropElement
+            kasaneDiv.appendChild(stackedMl); // Append the dropElement
+            kasaneDiv.appendChild(draggedElement); // Append the dragged element
+
+            // Restore visibility and reset styles
+            draggedElement.style.visibility = '';
+            dropElement.style.border = "";
+            dropElement.style.color = '';
+          }
+        });
+
+        console.log(element);
+      });
+
+      console.log('end for...of');
     });
+
 
     function appendMessageToChatDisplay(message, userName = message.name) {
 
@@ -153,16 +261,16 @@
       surveyContainer.classList.add('survey-container');
       for (let i = 0; i < message.options.length; i++) {
         const surveyOption = createElementWithClass('button', 'survey-option', message.options[i] || '');
-        
+
         surveyOption.addEventListener('click', () => {
           socket.emit('survey', message._id, i);
         });
-        
+
         const tentativeSums = message.voteSums ? message.voteSums : [0, 0, 0];
 
         console.log('tentativeSums[i]: ', tentativeSums[i]);
         const surveyNum = createElementWithClass('span', 'survey-num-' + (i + 1), tentativeSums[i]);
-        
+
         surveyContainer.appendChild(surveyOption);
         surveyContainer.appendChild(surveyNum);
       }
@@ -202,6 +310,7 @@
 
     function settingML(item, message = {}, shouldScroll = true) {
       item.classList.add('ml');
+      item.setAttribute('draggable', 'true');
       messageLists.appendChild(item);
 
       if (message._id) {

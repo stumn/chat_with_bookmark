@@ -24,7 +24,7 @@ async function getUserInfo(name) {
     }
 }
 
-const PAST_POST = 5; // 過去ログ取得数
+const PAST_POST = 10 // 過去ログ取得数
 
 // ログイン時・過去ログをDBから取得
 async function getPastLogs() {

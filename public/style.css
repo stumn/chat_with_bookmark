@@ -1,43 +1,73 @@
-   body {
-       margin-top: 6rem;
-       padding-bottom: 6rem;
-       /* body の下を決めるFooter height */
-       background-color: #f0f0f0;
-       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-   }
+.draggable {
+    cursor: grab;
+    /* ドラッグ可能であることを示すカーソル */
+    transition: all 0.2s;
+    /* スムーズな移動 */
+}
 
-   header {
-       background-color: #c2eddb;
-       color: black;
-       position: fixed;
-       top: 0;
-       left: 0;
-       right: 0;
-       z-index: 100;
-       display: flex;
-       justify-content: space-between;
-       align-items: center;
-       padding: 0.5rem 1rem;
-       box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-   }
+.draggable:active {
+    cursor: grabbing;
+    /* ドラッグ中のカーソル */
+}
 
-   h1,
-   h3 {
-       display: inline;
-   }
+.ml:has(+.indent) {
+    border: #c2eddb solid 5px;
+}
 
-   @keyframes slideInWithImpact {
+.indent {
+    border: #c2eddb solid 3px;
+    margin-left: 20px;
+    padding: 0.25rem 0.5rem;
+    position: relative;
+    display: flex;
+    align-items: center;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.03);
+}
+
+
+body {
+    margin-top: 6rem;
+    padding-bottom: 6rem;
+    /* body の下を決めるFooter height */
+    background-color: #f0f0f0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+header {
+    background-color: #c2eddb;
+    color: black;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 100;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 1rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+h1,
+h3 {
+    display: inline;
+}
+
+@keyframes slideInWithImpact {
     0% {
-      transform: translateX(100%) scale(0.8); /* 画面外、少し縮んでいる */
-      opacity: 0;
+        transform: translateX(100%) scale(0.8);
+        /* 画面外、少し縮んでいる */
+        opacity: 0;
     }
+
     100% {
-      transform: translateX(0) scale(1); /* 画面内にスライドインしつつ、通常サイズに */
-      opacity: 1;
+        transform: translateX(0) scale(1);
+        /* 画面内にスライドインしつつ、通常サイズに */
+        opacity: 1;
     }
-  }
-  
-  .downCard {
+}
+
+.downCard {
     position: fixed;
     right: 0;
     top: 50%;
@@ -47,251 +77,252 @@
     margin: 0.5rem;
     border-radius: 8px;
     opacity: 0;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
     transition: opacity 0.3s ease-in-out;
-  }
-  
-  .downCard.visible {
+}
+
+.downCard.visible {
     animation: slideInWithImpact 0.4s cubic-bezier(0.25, 1, 0.5, 1) forwards;
     /* カスタムイージング: 最初は速く、最後はゆっくり */
-  }
-  
-   /* chatForm */
-   #chatForm {
-       background: rgba(0, 0, 0, 0.15);
-       padding: 0.25rem;
-       position: fixed;
-       bottom: 3rem;
-       left: 0;
-       right: 0;
-       display: flex;
-       height: 3rem;
-       box-sizing: border-box;
-       backdrop-filter: blur(10px);
-   }
+}
 
-   #chatInput {
-       border: none;
-       padding: 0 1rem;
-       flex-basis: 100%;
-       border-radius: 2rem;
-       margin: 0.25rem;
-   }
+/* chatForm */
+#chatForm {
+    background: rgba(0, 0, 0, 0.15);
+    padding: 0.25rem;
+    position: fixed;
+    bottom: 3rem;
+    left: 0;
+    right: 0;
+    display: flex;
+    height: 3rem;
+    box-sizing: border-box;
+    backdrop-filter: blur(10px);
+}
 
-   #chatInput:focus {
-       outline: none;
-   }
+#chatInput {
+    border: none;
+    padding: 0 1rem;
+    flex-basis: 100%;
+    border-radius: 2rem;
+    margin: 0.25rem;
+}
 
-   #chatForm>button {
-       background: #385CA8;
-       border: none;
-       padding: 0 1rem;
-       margin: 0.25rem;
-       border-radius: 3px;
-       outline: none;
-       color: #fff;
-   }
+#chatInput:focus {
+    outline: none;
+}
 
-   /* 自分メモ */
+#chatForm>button {
+    background: #385CA8;
+    border: none;
+    padding: 0 1rem;
+    margin: 0.25rem;
+    border-radius: 3px;
+    outline: none;
+    color: #fff;
+}
 
-   #memoForm {
-       background: rgba(0, 0, 0, 0.15);
-       padding: 0.25rem;
-       position: fixed;
-       bottom: 0;
-       left: 0;
-       right: 0;
-       display: flex;
-       height: 3rem;
-       box-sizing: border-box;
-       backdrop-filter: blur(10px);
-   }
+/* 自分メモ */
 
-   #memoInput {
-       border: none;
-       padding: 0 1rem;
-       flex-basis: 100%;
-       border-radius: 2rem;
-       margin: 0.25rem;
-   }
+#memoForm {
+    background: rgba(0, 0, 0, 0.15);
+    padding: 0.25rem;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    display: flex;
+    height: 3rem;
+    box-sizing: border-box;
+    backdrop-filter: blur(10px);
+}
 
-   #memoInput:focus {
-       outline: none;
-   }
+#memoInput {
+    border: none;
+    padding: 0 1rem;
+    flex-basis: 100%;
+    border-radius: 2rem;
+    margin: 0.25rem;
+}
 
-   #memoForm>button {
-       background: lightseagreen;
-       border: none;
-       padding: 0 1rem;
-       margin: 0.25rem;
-       border-radius: 3px;
-       outline: none;
-       color: #fff;
-   }
+#memoInput:focus {
+    outline: none;
+}
 
-   /* アンケート投稿 */
+#memoForm>button {
+    background: lightseagreen;
+    border: none;
+    padding: 0 1rem;
+    margin: 0.25rem;
+    border-radius: 3px;
+    outline: none;
+    color: #fff;
+}
 
-   /* MSG */
-   #messageLists {
-       list-style-type: none;
-       margin: 0;
-       padding: 0;
-   }
+/* アンケート投稿 */
 
-   #messageLists>div {
-       padding: 0.5rem 1rem;
-       position: relative;
-       display: flex;
-       align-items: center;
-   }
+/* MSG */
+#messageLists {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+}
 
-   #messageLists>div.userName-time-msg {
-       display: flex;
-       justify-content: flex-start;
-   }
+#messageLists>div .ml {
+    padding: 0.5rem 1rem;
+    position: relative;
+    display: flex;
+    align-items: center;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.03);
+}
 
-   #messageLists>div div.userName-time-msg div.userName-time span.userName {
-       font-weight: bold;
-       color: black;
-   }
+#messageLists>div.userName-time-msg {
+    display: flex;
+    justify-content: flex-start;
+}
 
-   #messageLists>div div.userName-time-msg div.userName-time span.time {
-       font-size: small;
-       color: gray;
-   }
+#messageLists>div div.userName-time-msg div.userName-time span.userName {
+    font-weight: bold;
+    color: black;
+}
 
-   #messageLists>div div.message-text {
-       flex: 1;
-       justify-content: flex-start;
-       align-items: center;
-       margin-right: 10px;
-       font-size: medium;
-   }
+#messageLists>div div.userName-time-msg div.userName-time span.time {
+    font-size: small;
+    color: gray;
+}
 
-   #messageLists>div span.survey-container {
-       flex: auto;
-       align-items: left;
-   }
+#messageLists>div div.message-text {
+    flex: 1;
+    justify-content: flex-start;
+    align-items: center;
+    margin-right: 10px;
+    font-size: medium;
+}
 
-   #messageLists>div span.survey-container button {
-       background-color: blue;
-       border: none;
-       color: white;
-       padding: 0.25rem 0.5rem;
-       border-radius: 5px;
-       cursor: pointer;
-       outline: none;
-   }
+#messageLists>div span.survey-container {
+    flex: auto;
+    align-items: left;
+}
 
-   #messageLists>div span.survey-num span {
-       margin-left: 5px;
-       font-weight: bold;
-       color: blue;
-   }
+#messageLists>div span.survey-container button {
+    background-color: blue;
+    border: none;
+    color: white;
+    padding: 0.25rem 0.5rem;
+    border-radius: 5px;
+    cursor: pointer;
+    outline: none;
+}
 
-   #messageLists>div div.buttons {
-       display: flex;
-       justify-content: flex-end;
-       margin-left: auto;
-   }
+#messageLists>div span.survey-num span {
+    margin-left: 5px;
+    font-weight: bold;
+    color: blue;
+}
 
-   /* up */
-   #messageLists>div div.up-container {
-       display: flex;
-       justify-content: flex-end
-   }
+#messageLists>div div.buttons {
+    display: flex;
+    justify-content: flex-end;
+    margin-left: auto;
+}
 
-   #messageLists>div div.up-container button {
-       background-color: #ff9669;
-       border: none;
-       color: white;
-       padding: 0.25rem 0.5rem;
-       margin-right: 10px;
-       border-radius: 5px;
-       cursor: pointer;
-       outline: none;
-   }
+/* up */
+#messageLists>div div.up-container {
+    display: flex;
+    justify-content: flex-end
+}
 
-   #messageLists>div div.up-container button.active {
-       border: 4px solid red;
-   }
+#messageLists>div div.up-container button {
+    background-color: #ff9669;
+    border: none;
+    color: white;
+    padding: 0.25rem 0.5rem;
+    margin-right: 10px;
+    border-radius: 5px;
+    cursor: pointer;
+    outline: none;
+}
 
-   #messageLists>div span.up-count {
-       font-weight: bold;
-       color: #ff9669;
-       display: flex;
-       justify-content: flex-end;
-   }
+#messageLists>div div.up-container button.active {
+    border: 4px solid red;
+}
 
-   /* down */
-   #messageLists>div div.down-container {
-       display: flex;
-       justify-content: flex-end
-   }
+#messageLists>div span.up-count {
+    font-weight: bold;
+    color: #ff9669;
+    display: flex;
+    justify-content: flex-end;
+}
+
+/* down */
+#messageLists>div div.down-container {
+    display: flex;
+    justify-content: flex-end
+}
 
 
-   #messageLists>div div.down-container button {
-       background-color: #699eff;
-       border: none;
-       color: white;
-       padding: 0.25rem 0.5rem;
-       margin-right: 10px;
-       border-radius: 5px;
-       cursor: pointer;
-       outline: none;
-   }
+#messageLists>div div.down-container button {
+    background-color: #699eff;
+    border: none;
+    color: white;
+    padding: 0.25rem 0.5rem;
+    margin-right: 10px;
+    border-radius: 5px;
+    cursor: pointer;
+    outline: none;
+}
 
-   #messageLists>div div.down-container button.active {
-       border: 4px solid blue;
-   }
+#messageLists>div div.down-container button.active {
+    border: 4px solid blue;
+}
 
-   #messageLists>div span.down-count {
-       font-weight: bold;
-       color: #699eff;
-       display: flex;
-       justify-content: flex-end;
-   }
+#messageLists>div span.down-count {
+    font-weight: bold;
+    color: #699eff;
+    display: flex;
+    justify-content: flex-end;
+}
 
-   /* bookmark */
-   #messageLists>div div.bookmark-container {
-       display: flex;
-       justify-content: flex-end
-   }
+/* bookmark */
+#messageLists>div div.bookmark-container {
+    display: flex;
+    justify-content: flex-end
+}
 
-   #messageLists>div div.bookmark-container button {
-       background-color: #c2eddb;
-       border: none;
-       color: white;
-       padding: 0.25rem 0.5rem;
-       margin-right: 10px;
-       border-radius: 5px;
-       cursor: pointer;
-       outline: none;
-   }
+#messageLists>div div.bookmark-container button {
+    background-color: #c2eddb;
+    border: none;
+    color: white;
+    padding: 0.25rem 0.5rem;
+    margin-right: 10px;
+    border-radius: 5px;
+    cursor: pointer;
+    outline: none;
+}
 
-   #messageLists>div div.bookmark-container button.active {
-       border: 4px solid green;
-   }
+#messageLists>div div.bookmark-container button.active {
+    border: 4px solid green;
+}
 
-   #messageLists>div span.bookmark-count {
-       font-weight: bold;
-       color: red;
-       display: flex;
-       justify-content: flex-end;
-   }
+#messageLists>div span.bookmark-count {
+    font-weight: bold;
+    color: red;
+    display: flex;
+    justify-content: flex-end;
+}
 
-   /* memoSend */
-   #messageLists>div span.memoSend-container button {
-       background-color: whitesmoke;
-       border: 1px solid gray;
-       color: black;
-       padding: 0.25rem 0.5rem;
-       margin-right: 10px;
-       border-radius: 5px;
-       cursor: pointer;
-       outline: none;
-   }
+/* memoSend */
+#messageLists>div span.memoSend-container button {
+    background-color: whitesmoke;
+    border: 1px solid gray;
+    color: black;
+    padding: 0.25rem 0.5rem;
+    margin-right: 10px;
+    border-radius: 5px;
+    cursor: pointer;
+    outline: none;
+}
 
-   #messageLists>div span.memoSend-container button.active {
-       border: 4px solid gray;
-   }
+#messageLists>div span.memoSend-container button.active {
+    border: 4px solid gray;
+}
