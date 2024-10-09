@@ -6,15 +6,18 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <title>chat with bookmark</title>
+  <title>Face-Down Chat</title>
   <link rel="stylesheet" type="text/css" href="/style.css">
 </head>
 
 <body>
   <header>
-    <h3>chat with bookmark</h3> <span id="sign-up-name"></span>
-    <br>
-    <h4 id=chatTitle></h4><span id="onlines"></span>
+    <h2>Chat with Personal Memo</h2>
+    <div>
+      <span id="sign-up-name"></span>
+      <br>
+      <span id="onlines"></span>
+    </div>
     <button onclick="OpenDocumentWindow()">ドキュメント</button>
 
   </header>
@@ -68,8 +71,7 @@
     // プロンプト　ログインで名前を入力・サーバーに送信
     const myName = prompt("名前を入力してください", "");
     socket.emit('sign-up', myName);
-    $('sign-up-name').textContent = 'ログイン名： ' + myName;
-
+    $('sign-up-name').textContent = 'あなたのログイン名： ' + myName;
 
 
     let docURL;
@@ -89,7 +91,7 @@
 
     // オンラインメンバー
     socket.on('onlineUsers', (onlines) => {
-      $('onlines').textContent = onlines;
+      $('onlines').textContent = '接続中のメンバー: ' + onlines;
     });
 
     // 過去ログ受信
@@ -151,7 +153,7 @@
 
           // Provide visual feedback for valid targets
           this.style.border = '3px solid';
-          this.style.color = 'lightgreen';
+          this.style.color = '#227B94';
         });
 
         // Drag leave event
@@ -166,6 +168,7 @@
           event.preventDefault();
           if (draggedElement) {
             const dropElement = event.target; // The element where the drop occurs
+            console.log('draggedElement: ', draggedElement);
             console.log('dropElement: ', dropElement);
 
             let stackedMl = dropElement.parentNode;
@@ -388,9 +391,14 @@
         else if (isBefore === true) {
           console.log("target は compare の前に入る");
           // ここで、messageLists に入れ込む
+          console.log('messageLists: ', messageLists);
+
           const item = appendMessageToChatDisplay(msg);
+          console.log('item: ', item);
 
           const parentDIV = timeSpans[i].parentNode.parentNode.parentNode;
+          console.log('parentDIV: ', parentDIV);
+
           messageLists.insertBefore(item, parentDIV);
 
           item.id = msg._id;
