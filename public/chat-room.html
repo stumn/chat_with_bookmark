@@ -25,14 +25,15 @@
   <main>
     <div id="messageLists"></div>
 
-    <form id="chatForm" action="">
-      <input id="chatInput" autocomplete="off" placeholder="メッセージ みんなに表示" pattern=".*\S+.*" required>
-      <button>Send</button>
-    </form>
-
-    <form id="memoForm" action="">
-      <input id="memoInput" autocomplete="off" placeholder="自分メモ 他の人には表示されません" pattern=".*\S+.*" required>
-      <button>Save</button>
+    <form id="form" action="">
+      <input id="input" autocomplete="off" placeholder="メッセージ みんなに表示" pattern=".*\S+.*" required>
+      <button id="formButton">Send</button>
+      <div class="slider-container">
+        <label class="slider">
+          <input type="checkbox">
+          <span class="slider-button"></span>
+        </label>
+      </div>
     </form>
 
     <button onclick="toggleSurveyFormVisibility()">アンケート作成</button>
@@ -61,10 +62,9 @@
     }
 
     const messageLists = $('messageLists');
-    const chatForm = $('chatForm');
-    const chatInput = $('chatInput');
-    const memoForm = $('memoForm');
-    const memoInput = $('memoInput');
+    const form = $('form');
+    const input = $('input');
+    const formButton = $('formButton');
     const surveyForm = $('surveyForm');
 
     // ★ログイン時
@@ -325,16 +325,37 @@
       }
     }
 
-    function formSubmitHandler(form, input, eventName) {
-      form.addEventListener('submit', (event) => {
-        event.preventDefault();
-        socket.emit(eventName, input.value);
-        input.value = '';
-      });
-    }
+    const checkbox = document.querySelector('input[type="checkbox"]');
+    checkbox.addEventListener('change', function () {
+      if (this.checked) {
+        console.log('スイッチがONになりました⇒メモモード');
+        input.placeholder = 'メモ あなただけに表示';
+        console.log('formButton: ', formButton);
+        formButton.textContent = 'Memo';
+        formButton.classList.add('memoButton');
+      } else {
+        console.log('スイッチがOFFになりました⇒チャットモード');
+        input.placeholder = 'メッセージ みんなに表示';        
+        console.log('formButton: ', formButton);
+        formButton.textContent = 'Send';
+        formButton.classList.remove('memoButton');
+      }
+    });
 
-    formSubmitHandler(chatForm, chatInput, 'chat message');
-    formSubmitHandler(memoForm, memoInput, 'personal memo');
+    form.addEventListener('submit', (event) => {
+      event.preventDefault();
+
+      const isChecked = checkbox.checked;
+
+      console.log('input.value: ', input.value);
+      console.log('チェックボックスの状態: ', isChecked);
+
+      const eventName = isChecked ? 'personal memo' : 'chat message';
+      socket.emit(eventName, input.value);
+
+      input.value = '';
+    });
+
 
     // < チャット受信
     socket.on('chatLogs', (post) => {
