@@ -51,7 +51,7 @@ function organizeCreatedAt(createdAt) {
 }
 
 // データベースにレコードを保存
-async function saveRecord(name, msg, question = '', options = [], ups = [], downs = [], voteOpt0 = [], voteOpt1 = [], voteOpt2 = []) {
+async function saveRecord(name, msg, question = '', options = [], ups = [], downs = [], voteOpt0 = [], voteOpt1 = [], voteOpt2 = [], isStack = false, stackedPostId = []) {
     try {
         const npData = { name, msg, question, options, ups, downs, voteOpt0, voteOpt1, voteOpt2 };
         const newPost = await Post.create(npData);
@@ -177,4 +177,33 @@ async function fetchPosts(randomString) {
     }
 }
 
-module.exports = { saveUser, getUserInfo, getPastLogs, organizeCreatedAt, SaveChatMessage, SavePersonalMemo, SaveSurveyMessage, findPost, fetchPosts };
+async function saveStackRelation(dragedId, dropId) {
+    try {
+        // Find dragged post and handle errors
+        const draggedPost = await findPost(dragedId);
+        if (!draggedPost) throw new Error(`Post with ID ${dragedId} not found.`);
+        console.log('draggedPost: ', draggedPost);
+
+        // Update isStack to true
+        draggedPost.isStack = true;
+        await draggedPost.save();
+
+        // Find drop post and handle errors
+        const dropPost = await findPost(dropId);
+        if (!dropPost) throw new Error(`Post with ID ${dropId} not found.`);
+        console.log('dropPost: ', dropPost);
+
+        // Add draggedId to stackedPostId
+        dropPost.stackedPostId.push(dragedId);
+        await dropPost.save();
+
+        return { draggedPost, dropPost };
+
+    } catch (error) {
+        console.error('Error saving stack relation:', error);
+        throw error;  // Re-throw the error to be handled by the caller
+    }
+}
+
+
+module.exports = { saveUser, getUserInfo, getPastLogs, organizeCreatedAt, SaveChatMessage, SavePersonalMemo, SaveSurveyMessage, findPost, fetchPosts, saveStackRelation };

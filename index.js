@@ -15,7 +15,7 @@ const { Server } = require("socket.io");
 const io = new Server(server);
 
 // const { mongoose, Post, Memo } = require('./db');
-const { saveUser, getUserInfo, getPastLogs, organizeCreatedAt, SaveChatMessage, SavePersonalMemo, SaveSurveyMessage, findPost, fetchPosts } = require('./dbOperations');
+const { saveUser, getUserInfo, getPastLogs, organizeCreatedAt, SaveChatMessage, SavePersonalMemo, SaveSurveyMessage, findPost, fetchPosts, saveStackRelation } = require('./dbOperations');
 const { handleErrors, createVoteArrays, checkVoteStatus, calculate_VoteSum, organize_voteData, checkEventStatus } = require('./utils');
 
 const { error } = require('console');
@@ -132,6 +132,10 @@ io.on('connection', async (socket) => {
       console.log('draggedId: ', kasaneData.draggedId);
       console.log('dropId: ', kasaneData.dropId);
       socket.broadcast.emit('drop', kasaneData); // 操作したユーザ以外に送信
+
+      const { draggedPost, dropPost } = await saveStackRelation(kasaneData.draggedId, kasaneData.dropId);
+      console.log('index draggedPost: ', draggedPost);
+      console.log('index dropPost: ', dropPost);
     });
   });
 
