@@ -126,22 +126,28 @@
         element.addEventListener('dragstart', function (event) {
           event.dataTransfer.effectAllowed = "move";
           console.log(element);
-          console.log(index); // Log the index of the element being dragged
           draggedElement = event.target;
           setTimeout(() => {
             event.target.style.visibility = 'hidden'; // Hide the element during the drag
           }, 0);
+
+          console.log('start js に送信', element.id);
+          socket.emit('dragstart', element.id);
+          console.log('start js に送信できたはず');
         });
 
         // Drag end event
         element.addEventListener('dragend', function (event) {
           event.target.style.visibility = ''; // Restore visibility
           draggedElement = null;
+
+          console.log('end js に送信', element.id);
+          socket.emit('dragend', element.id);
+          console.log('end js に送信できたはず');
         });
 
         // Drag over event
         element.addEventListener('dragover', function (event) {
-          console.log('dragover');
 
           // Restrict drop targets based on classes
           if (event.target.classList.contains("name-time-msg") || event.target.classList.contains("buttons")) {
@@ -158,7 +164,6 @@
 
         // Drag leave event
         element.addEventListener('dragleave', function (event) {
-          console.log('dragleave');
           this.style.border = ""; // Reset visual feedback
           this.style.color = '';
         });
@@ -203,6 +208,15 @@
             draggedElement.style.visibility = '';
             dropElement.style.border = "";
             dropElement.style.color = '';
+
+            const kasaneData = {
+              draggedId: draggedElement.id,
+              dropId: stackedMl.id
+            };
+            console.log('drop js に送信 drag', draggedElement.id);
+            console.log('drop js に送信 drop', stackedMl.id);
+            socket.emit('drop', kasaneData);
+            console.log('drop js に送信できたはず');
           }
         });
 
@@ -335,7 +349,7 @@
         formButton.classList.add('memoButton');
       } else {
         console.log('スイッチがOFFになりました⇒チャットモード');
-        input.placeholder = 'メッセージ みんなに表示';        
+        input.placeholder = 'メッセージ みんなに表示';
         console.log('formButton: ', formButton);
         formButton.textContent = 'Send';
         formButton.classList.remove('memoButton');
@@ -478,6 +492,46 @@
 
     // Map multiple events to the same handler
     ['up', 'down', 'bookmark'].forEach(handleEvent);
+
+    // 重ねる機能
+    // < ドラッグ開始 >
+    socket.on('dragstart', (draggedId) => {
+      console.log('draggedId: ', draggedId);
+      const draggedElement = $(draggedId);
+      console.log('draggedElement: ', draggedElement);
+      draggedElement.style.border = '3px dotted';
+    });
+
+    // < ドラッグ終了 >
+    socket.on('dragend', (draggedId) => {
+      console.log('draggedId: ', draggedId);
+      const draggedElement = $(draggedId);
+      console.log('draggedElement: ', draggedElement);
+      draggedElement.style.border = '';
+    });
+
+    // < ドラッグオーバー >
+    // < ドラッグリーブ >
+
+    // < ドロップ >
+    socket.on('drop', stackedData => {
+      console.log('draggedId: ', stackedData.draggedId);
+      console.log('dropId: ', stackedData.dropId);
+
+      const draggedElement = $(stackedData.draggedId);
+      const stackedMl = $(stackedData.dropId);
+
+      // Create a new div with the class 'kasane'
+      const kasaneDiv = createElementWithClass('div', 'kasane');
+      kasaneDiv.textContent = '▼';
+      console.log('kasaneDiv: ', kasaneDiv);
+
+      messageLists.insertBefore(kasaneDiv, stackedMl); // Insert the kasane div before the dropElement
+      kasaneDiv.appendChild(stackedMl); // Append the dropElement
+      kasaneDiv.appendChild(draggedElement); // Append the dragged element
+      stackedMl.style.border = '3px solid';
+      stackedMl.style.color = '#227B94';
+    });
 
     // < アラート
     socket.on('alert', (alertMsg) => {

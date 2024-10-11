@@ -108,6 +108,31 @@ io.on('connection', async (socket) => {
 
       io.emit('downCard', organizedPost);
     });
+
+    // ドラッグstart
+    socket.on('dragstart', id => {
+      console.log('dragstart');
+      console.log('id: ', id);
+      socket.broadcast.emit('dragstart', id); // 操作したユーザ以外に送信
+    });
+
+    // ドラッグend
+    socket.on('dragend', id => {
+      console.log('dragend');
+      console.log('id: ', id);
+      socket.broadcast.emit('dragend', id); // 操作したユーザ以外に送信
+    });
+
+    // ドラッグover
+    // ドラッグリーブ
+
+    // ドラッグドロップ
+    socket.on('drop', async (kasaneData) => {
+      console.log('drop');
+      console.log('draggedId: ', kasaneData.draggedId);
+      console.log('dropId: ', kasaneData.dropId);
+      socket.broadcast.emit('drop', kasaneData); // 操作したユーザ以外に送信
+    });
   });
 
   // < 切断時 >
