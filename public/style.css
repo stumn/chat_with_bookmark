@@ -77,15 +77,28 @@ body {
 
 
 #messageLists {
-    /* メッセージリスト全体 */
-    list-style-type: none;
     margin: 0;
     padding: 0;
 }
 
 #messageLists>div .ml {
     /* チャット投稿 まとめdiv */
+    font-size: 1rem;
     padding: 0.5rem 1rem;
+    position: relative;
+    display: flex;
+    align-items: center;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.03);
+}
+
+#messageLists>div.kasane {
+    font-size: 1rem;
+    padding: 0.3rem 0.7rem;
+}
+
+#messageLists>div.kasane .ml {
+    font-size: 0.7rem;
+    padding: 0.3rem 0.7rem;
     position: relative;
     display: flex;
     align-items: center;
