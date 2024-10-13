@@ -51,7 +51,7 @@ function organizeCreatedAt(createdAt) {
 }
 
 // データベースにレコードを保存
-async function saveRecord(name, msg, question = '', options = [], ups = [], downs = [], voteOpt0 = [], voteOpt1 = [], voteOpt2 = [], isStack = false, stackedPostId = []) {
+async function saveRecord(name, msg, question = '', options = [], ups = [], downs = [], voteOpt0 = [], voteOpt1 = [], voteOpt2 = [], isStackingOn = false, stackedPostId = []) {
     try {
         const npData = { name, msg, question, options, ups, downs, voteOpt0, voteOpt1, voteOpt2 };
         const newPost = await Post.create(npData);
@@ -184,8 +184,8 @@ async function saveStackRelation(dragedId, dropId) {
         if (!draggedPost) throw new Error(`Post with ID ${dragedId} not found.`);
         console.log('draggedPost: ', draggedPost);
 
-        // Update isStack to true
-        draggedPost.isStack = true;
+        // Update isStackingOn to true
+        draggedPost.isStackingOn = true;
         await draggedPost.save();
 
         // Find drop post and handle errors

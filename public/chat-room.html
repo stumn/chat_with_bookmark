@@ -30,7 +30,7 @@
       <button id="formButton">Send</button>
       <div class="slider-container">
         <label class="slider">
-          <input type="checkbox">
+          <input type="checkbox" id=sliderButton>
           <span class="slider-button"></span>
         </label>
       </div>
@@ -345,7 +345,7 @@
       }
     }
 
-    const checkbox = document.querySelector('input[type="checkbox"]');
+    const checkbox = document.getElementById('sliderButton');
     checkbox.addEventListener('change', function () {
       if (this.checked) {
         console.log('スイッチがONになりました⇒メモモード');
@@ -382,7 +382,6 @@
       const item = appendMessageToChatDisplay(post);
       item.id = post._id;
       settingML(item, post);
-      setDraggable();
     });
 
     // < 自分メモ受信
