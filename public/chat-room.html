@@ -104,6 +104,12 @@
       const item = document.createElement('div');
       item.textContent = '-----⇊ ここから参加 ⇊-----';
       settingML(item);
+
+      setDraggable();
+
+    });
+
+    function setDraggable() {
       const y = messageLists.getElementsByClassName("ml");
       console.log('y: ', y);
       console.log('start for...of');
@@ -221,10 +227,10 @@
         });
 
         console.log(element);
-      });
 
-      console.log('end for...of');
-    });
+        console.log('end for...of');
+      });
+    }
 
 
     function appendMessageToChatDisplay(message, userName = message.name) {
@@ -376,6 +382,7 @@
       const item = appendMessageToChatDisplay(post);
       item.id = post._id;
       settingML(item, post);
+      setDraggable();
     });
 
     // < 自分メモ受信
