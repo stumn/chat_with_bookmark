@@ -33,12 +33,9 @@ if (!myName) {
 socket.emit('sign-up', myName);
 $('sign-up-name').textContent = 'あなたのログイン名： ' + myName;
 
-
 let docURL;
 socket.on('randomString', (receivedString) => {
-    console.log('receivedString: ', receivedString);
     docURL = `/${receivedString}/document`;
-    console.log('docURL: ', docURL);
 });
 
 function OpenDocumentWindow() {
@@ -56,6 +53,90 @@ socket.on('onlineUsers', (onlines) => {
 
 // 過去ログ受信
 socket.on('pastLogs', ({ pastLogs, stackLogs }) => {
+    handlePastLogs(pastLogs, stackLogs);
+});
+
+// < チャット受信
+socket.on('chatLogs', (post) => {
+    const item = createMessageElement(post);
+    item.id = post._id;
+    settingML(item, post);
+    // setChatLogsDraggable(item);
+});
+
+// < 自分メモ受信
+socket.on('memoLogs', (memo) => {
+    handleMemoLogs(memo);
+});
+
+// 伏せカード登場！
+socket.on('downCard', (msg) => {
+    handleDownCard(msg);
+});
+
+// < アンケート投稿をサーバーから受信
+socket.on('survey_post', (surveyPost) => {
+    const item = createMessageElement(surveyPost);
+    item.id = surveyPost._id;
+    settingML(item, surveyPost);
+});
+
+// < 投票を受信
+socket.on('updateVote', (voteData) => {
+    const item = $(voteData._id);
+    for (let i = 0; i < 3; i++) {
+        const surveyNum = item.querySelector(`.survey-container .survey-num-${i + 1}`);
+        surveyNum.textContent = voteData[`count${i}`];
+    }
+});
+
+function handleEvent(eventType) {
+    socket.on(eventType, (data) => {
+        const item = $(data._id);
+        const countElement = item.querySelector(`.${eventType}-container span`);
+        countElement.textContent = data.count;
+    });
+}
+
+// Map multiple events to the same handler
+['up', 'down', 'bookmark'].forEach(handleEvent);
+
+// 重ねる機能
+// < ドラッグ開始 >
+socket.on('dragstart', (draggedId) => {
+    console.log('draggedId: ', draggedId);
+    const draggedElement = $(draggedId);
+    console.log('draggedElement: ', draggedElement);
+    draggedElement.style.border = '3px dotted';
+});
+
+// < ドラッグ終了 >
+socket.on('dragend', (draggedId) => {
+    console.log('draggedId: ', draggedId);
+    const draggedElement = $(draggedId);
+    console.log('draggedElement: ', draggedElement);
+    draggedElement.style.border = '';
+});
+
+// < ドラッグオーバー >
+// < ドラッグリーブ >
+
+// < ドロップ >
+socket.on('drop', stackedData => {
+    handleDrop(stackedData);
+});
+
+// < アラート
+socket.on('alert', (alertMsg) => {
+    alert(alertMsg);
+});
+
+// < ダイアログ >
+socket.on('dialog_to_html', (dialogMsg) => {
+    socket.emit('dialog_to_js', confirm(dialogMsg) ? true : false);
+});
+
+function handlePastLogs(pastLogs, stackLogs) {
     console.log('pastLogs: ', pastLogs); // isStackingOn: false (重ね子分ではない)
     console.log('stackLogs: ', stackLogs); // isStackingOn: true (重ね子分)
 
@@ -106,7 +187,7 @@ socket.on('pastLogs', ({ pastLogs, stackLogs }) => {
 
     setPastLogsDraggable();
 
-});
+}
 
 function setPastLogsDraggable() {
     // Get all .ml elements
@@ -355,18 +436,7 @@ form.addEventListener('submit', (event) => {
     input.value = '';
 });
 
-
-// < チャット受信
-socket.on('chatLogs', (post) => {
-    const item = createMessageElement(post);
-    item.id = post._id;
-    settingML(item, post);
-    // setChatLogsDraggable(item);
-});
-
-// < 自分メモ受信
-socket.on('memoLogs', (memo) => {
-
+function handleMemoLogs(memo) {
     const item = createElement('div'); // div要素を作成
     const { userNameTimeMsg, isSurvey } = createNameTimeMsg(memo, '[memo]');
 
@@ -387,10 +457,10 @@ socket.on('memoLogs', (memo) => {
     item.appendChild(memoSendContainer);
 
     settingML(item, memo);
-});
+}
 
-// 伏せカード登場！
-socket.on('downCard', (msg) => {
+
+function handleDownCard(msg) {
     let timeSpans = document.querySelectorAll("#messageLists div span.time");
     for (let i = 0; i < timeSpans.length; i++) {
         const targetCreatedAt = msg.createdAt;
@@ -416,9 +486,16 @@ socket.on('downCard', (msg) => {
             const item = createMessageElement(msg);
             console.log('item: ', item);
 
-            const parentDIV = timeSpans[i].parentNode.parentNode.parentNode;
+            let parentDIV = timeSpans[i].closest('.ml');
+
+            // const parentDIV = timeSpans[i+1].closest('.ml');
             console.log('parentDIV: ', parentDIV);
 
+            if (parentDIV.parentNode.classList.contains('kasane')) {
+                parentDIV = parentDIV.parentNode;
+
+                console.log('changed parentDIV: ', parentDIV);
+            }
             messageLists.insertBefore(item, parentDIV);
 
             item.id = msg._id;
@@ -426,7 +503,7 @@ socket.on('downCard', (msg) => {
             return;
         }
     }
-});
+}
 
 function checkIsBefore(target, compare) {
     const targetDate = new Date(`1970-01-01T${target}Z`);
@@ -446,55 +523,10 @@ function toggleSurveyFormVisibility() {
     surveyFormElement.style.display = surveyFormElement.style.display === 'none' ? 'block' : 'none';
 }
 
-// < アンケート投稿をサーバーから受信
-socket.on('survey_post', (surveyPost) => {
-    const item = createMessageElement(surveyPost);
-    item.id = surveyPost._id;
-    settingML(item, surveyPost);
-});
 
-// < 投票を受信
-socket.on('updateVote', (voteData) => {
-    const item = $(voteData._id);
-    for (let i = 0; i < 3; i++) {
-        const surveyNum = item.querySelector(`.survey-container .survey-num-${i + 1}`);
-        surveyNum.textContent = voteData[`count${i}`];
-    }
-});
 
-function handleEvent(eventType) {
-    socket.on(eventType, (data) => {
-        const item = $(data._id);
-        const countElement = item.querySelector(`.${eventType}-container span`);
-        countElement.textContent = data.count;
-    });
-}
 
-// Map multiple events to the same handler
-['up', 'down', 'bookmark'].forEach(handleEvent);
-
-// 重ねる機能
-// < ドラッグ開始 >
-socket.on('dragstart', (draggedId) => {
-    console.log('draggedId: ', draggedId);
-    const draggedElement = $(draggedId);
-    console.log('draggedElement: ', draggedElement);
-    draggedElement.style.border = '3px dotted';
-});
-
-// < ドラッグ終了 >
-socket.on('dragend', (draggedId) => {
-    console.log('draggedId: ', draggedId);
-    const draggedElement = $(draggedId);
-    console.log('draggedElement: ', draggedElement);
-    draggedElement.style.border = '';
-});
-
-// < ドラッグオーバー >
-// < ドラッグリーブ >
-
-// < ドロップ >
-socket.on('drop', stackedData => {
+function handleDrop(stackedData) {
     console.log('draggedId: ', stackedData.draggedId);
     console.log('dropId: ', stackedData.dropId);
 
@@ -510,14 +542,6 @@ socket.on('drop', stackedData => {
     nestedMessageContainer.appendChild(draggedElement); // Append the dragged element
     stackedMl.style.border = '3px solid';
     stackedMl.style.color = '#227B94';
-});
+}
 
-// < アラート
-socket.on('alert', (alertMsg) => {
-    alert(alertMsg);
-});
 
-// < ダイアログ >
-socket.on('dialog_to_html', (dialogMsg) => {
-    socket.emit('dialog_to_js', confirm(dialogMsg) ? true : false);
-});
