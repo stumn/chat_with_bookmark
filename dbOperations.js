@@ -24,19 +24,22 @@ async function getUserInfo(name) {
     }
 }
 
-const PAST_POST = 10 // 過去ログ取得数
+// const PAST_POST = 10 // 過去ログ取得数
 
 // ログイン時・過去ログをDBから取得
 async function getPastLogs() {
     try {
-        const posts = await Post.find({}).limit(PAST_POST).sort({ createdAt: -1 });
+        // const posts = await Post.find({}).limit(PAST_POST).sort({ createdAt: -1 });
+        let posts = await Post.find({}).sort({ createdAt: -1 });
+        const stackLogs = posts.filter(e => e.isStackingOn === true);
+        posts = posts.filter(e => e.isStackingOn === false);
         posts.reverse();
         const pastLogs = await Promise.all(posts.map(organizeLogs));
         pastLogs.forEach(e => {
             e.createdAt = organizeCreatedAt(e.createdAt);
         });
         console.log('過去ログ整理完了');
-        return pastLogs;
+        return { pastLogs, stackLogs };
     } catch (error) {
         handleErrors(error, 'getPastLogs 過去ログ取得中にエラーが発生しました');
     }
@@ -51,7 +54,7 @@ function organizeCreatedAt(createdAt) {
 }
 
 // データベースにレコードを保存
-async function saveRecord(name, msg, question = '', options = [], ups = [], downs = [], voteOpt0 = [], voteOpt1 = [], voteOpt2 = [], isStackingOn = false, stackedPostId = []) {
+async function saveRecord(name, msg, question = '', options = [], ups = [], downs = [], voteOpt0 = [], voteOpt1 = [], voteOpt2 = [], isStackingOn = false, stackedPostIds = []) {
     try {
         const npData = { name, msg, question, options, ups, downs, voteOpt0, voteOpt1, voteOpt2 };
         const newPost = await Post.create(npData);
@@ -193,8 +196,8 @@ async function saveStackRelation(dragedId, dropId) {
         if (!dropPost) throw new Error(`Post with ID ${dropId} not found.`);
         console.log('dropPost: ', dropPost);
 
-        // Add draggedId to stackedPostId
-        dropPost.stackedPostId.push(dragedId);
+        // Add draggedId to stackedPostIds
+        dropPost.stackedPostIds.push(dragedId);
         await dropPost.save();
 
         return { draggedPost, dropPost };

@@ -95,10 +95,50 @@
     });
 
     // 過去ログ受信
-    socket.on('pastLogs', (pastArray) => {
-      pastArray.forEach(element => {
-        const item = appendMessageToChatDisplay(element);
-        settingML(item, element);
+    socket.on('pastLogs', ({ pastLogs, stackLogs }) => {
+      console.log('pastLogs: ', pastLogs); // isStackingOn: false (重ね子分ではない)
+      console.log('stackLogs: ', stackLogs); // isStackingOn: true (重ね子分)
+
+      pastLogs.forEach((pastElement) => {
+        console.log('pastElement: ', pastElement);
+
+        if (pastElement.stackedPostIds.length > 0) {
+          console.log('pastElement.stackedPostIds: ', pastElement.stackedPostIds);
+
+          const item = appendMessageToChatDisplay(pastElement);
+          settingML(item, pastElement);
+
+          const kasaneDiv = createElementWithClass('div', 'kasane');
+          kasaneDiv.textContent = '▼';
+          kasaneDiv.appendChild(item);
+
+          let kobuns = [];
+          stackLogs.forEach(stackElement => {
+            console.log('stackElement._id: ', stackElement._id);
+            
+            for (let i = 0; i < pastElement.stackedPostIds.length; i++) {
+              if (stackElement._id == pastElement.stackedPostIds[i]) {
+                kobuns.push(stackElement);
+                console.log('合致: ', kobuns);
+              } else {
+                console.log('不一致');
+              }
+            }
+          });
+
+          console.log('kobuns: ', kobuns);
+          kobuns.forEach(kobun => {
+            const item = appendMessageToChatDisplay(kobun);
+            settingML(item, kobun);
+            kasaneDiv.appendChild(item);
+          });
+
+          messageLists.appendChild(kasaneDiv);
+          
+        } else {
+          const item = appendMessageToChatDisplay(pastElement);
+          settingML(item, pastElement);
+        }
       });
 
       const item = document.createElement('div');
@@ -268,24 +308,7 @@
           }
           console.log('dropElement: ', dropElement);
 
-          // Create a new div with the class 'kasane'
-          const kasaneDiv = createElementWithClass('div', 'kasane');
-          kasaneDiv.textContent = '▼';
-          console.log('kasaneDiv: ', kasaneDiv);
-          console.log('dropElement: ', dropElement);
-          console.log("dropElement parent: ", dropElement.parentNode);
-
-          // Insert the kasaneDiv before the dropElement
-          messageLists.insertBefore(kasaneDiv, dropElement);
-
-          // Append the dropElement and the dragged element to the kasaneDiv
-          kasaneDiv.appendChild(dropElement);
-          kasaneDiv.appendChild(draggedElement);
-
-          // Restore visibility and reset styles
-          draggedElement.style.visibility = '';
-          dropElement.style.border = "";
-          dropElement.style.color = '';
+          createKasaneDiv(draggedElement, dropElement);
 
           const kasaneData = {
             draggedId: draggedElement.id,
@@ -294,6 +317,27 @@
           socket.emit('drop', kasaneData);
         }
       });
+    }
+
+    function createKasaneDiv(draggedElement, dropElement) {
+      // Create a new div with the class 'kasane'
+      const kasaneDiv = createElementWithClass('div', 'kasane');
+      kasaneDiv.textContent = '▼';
+      console.log('kasaneDiv: ', kasaneDiv);
+      console.log('dropElement: ', dropElement);
+      console.log("dropElement parent: ", dropElement.parentNode);
+
+      // Insert the kasaneDiv before the dropElement
+      messageLists.insertBefore(kasaneDiv, dropElement);
+
+      // Append the dropElement and the dragged element to the kasaneDiv
+      kasaneDiv.appendChild(dropElement);
+      kasaneDiv.appendChild(draggedElement);
+
+      // Restore visibility and reset styles
+      draggedElement.style.visibility = '';
+      dropElement.style.border = "";
+      dropElement.style.color = '';
     }
 
     function appendMessageToChatDisplay(message, userName = message.name) {

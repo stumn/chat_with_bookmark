@@ -51,7 +51,7 @@ const postSchema = new mongoose.Schema({
     // voteOptions: [[voteSchema]]　2次元配列の拡張案
     // voteOptions: { type: Array, default: () => [[]] }
     isStackingOn: { type: Boolean, default: false }, // スタックしているか（このポストは子分）
-    stackedPostId: [String] // スタックされているポストのID（このポストが親分、id は子分たち）
+    stackedPostIds: [String] // スタックされているポストのID（このポストが親分、id は子分たち）
 }, options);
 
 const Post = mongoose.model("Post", postSchema);
