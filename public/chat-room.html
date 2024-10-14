@@ -30,7 +30,7 @@
       <button id="formButton">Send</button>
       <div class="slider-container">
         <label class="slider">
-          <input type="checkbox" id=sliderButton>
+          <input type="checkbox" id=switchButton>
           <span class="slider-button"></span>
         </label>
       </div>
@@ -66,6 +66,13 @@
     const input = $('input');
     const formButton = $('formButton');
     const surveyForm = $('surveyForm');
+    const switchButton = $('switchButton');
+    const question = $('surveyQuestion').value;
+    const optionText_1 = $('option1').value;
+    const optionText_2 = $('option2').value;
+    const optionText_3 = $('option3').value;
+    const surveyFormElement = $('surveyForm');
+
 
     // ★ログイン時
     // プロンプト　ログインで名前を入力・サーバーに送信
@@ -85,7 +92,7 @@
       if (docURL) {
         window.open(docURL, '_blank');
       } else {
-        console.log('docURL is not set');
+        alert('ドキュメントURLが設定されていません。しばらくしてからもう一度お試しください。');
       }
     }
 
@@ -105,12 +112,12 @@
         if (pastElement.stackedPostIds.length > 0) {
           console.log('pastElement.stackedPostIds: ', pastElement.stackedPostIds);
 
-          const item = appendMessageToChatDisplay(pastElement);
+          const item = createMessageElement(pastElement);
           settingML(item, pastElement);
 
-          const kasaneDiv = createElementWithClass('div', 'kasane');
-          kasaneDiv.textContent = '▼';
-          kasaneDiv.appendChild(item);
+          const nestedMessageContainer = createElement('div', 'kasane');
+          nestedMessageContainer.textContent = '▼';
+          nestedMessageContainer.appendChild(item);
 
           let kobuns = [];
           stackLogs.forEach(stackElement => {
@@ -128,21 +135,20 @@
 
           console.log('kobuns: ', kobuns);
           kobuns.forEach(kobun => {
-            const item = appendMessageToChatDisplay(kobun);
+            const item = createMessageElement(kobun);
             settingML(item, kobun);
-            kasaneDiv.appendChild(item);
+            nestedMessageContainer.appendChild(item);
           });
 
-          messageLists.appendChild(kasaneDiv);
+          messageLists.appendChild(nestedMessageContainer);
 
         } else {
-          const item = appendMessageToChatDisplay(pastElement);
+          const item = createMessageElement(pastElement);
           settingML(item, pastElement);
         }
       });
 
-      const item = document.createElement('div');
-      item.textContent = '-----⇊ ここから参加 ⇊-----';
+      const item = createElement('div', 'ml', '-----⇊ ここから参加 ⇊-----');
       settingML(item);
 
       setPastLogsDraggable();
@@ -219,116 +225,30 @@
       if (draggedElement) {
         console.log('draggedElement: ', draggedElement);
 
-        const x = event.target; // The element where the drop occurs(name-time-msgtとか) 
-        console.log('x: ', x);
-
-        let dropElement;
-        switch (x.classList[0]) {
-          case 'name-time-msg':
-            console.log('case name-time-msg');
-            dropElement = x.parentNode;
-            break;
-          case 'userName-time':
-            console.log('case userName-time');
-            dropElement = x.parentNode.parentNode;
-            break;
-          case 'userName':
-            console.log('case userName');
-            dropElement = x.parentNode.parentNode.parentNode;
-            break;
-          case 'time':
-            console.log('case time');
-            dropElement = x.parentNode.parentNode.parentNode;
-            break;
-          case 'message-text':
-            console.log('case message-text');
-            dropElement = x.parentNode.parentNode;
-            break;
-          case 'survey-container':
-            console.log('case survey-container');
-            dropElement = x.parentNode;
-            break;
-          case 'survey-option':
-            console.log('case survey-option');
-            dropElement = x.parentNode.parentNode;
-            break;
-          case 'survey-num-1':
-            console.log('case survey-num-1');
-            dropElement = x.parentNode.parentNode.parentNode;
-            break;
-          case 'survey-num-2':
-            console.log('case survey-num-2');
-            dropElement = x.parentNode.parentNode.parentNode;
-            break;
-          case 'survey-num-3':
-            console.log('case survey-num-3');
-            dropElement = x.parentNode.parentNode.parentNode;
-            break;
-          case 'buttons':
-            console.log('case buttons');
-            dropElement = x.parentNode;
-            break;
-          case 'up-container':
-            console.log('case up-container');
-            dropElement = x.parentNode.parentNode;
-            break;
-          case 'up-count':
-            console.log('case upcount');
-            dropElement = x.parentNode.parentNode.parentNode;
-            break;
-          case 'down-container':
-            console.log('case down-container');
-            dropElement = x.parentNode.parentNode;
-            break;
-          case 'down-count':
-            console.log('case down-count');
-            dropElement = x.parentNode.parentNode.parentNode;
-            break;
-          case 'bookmark-container':
-            console.log('case bookmark-container');
-            dropElement = x.parentNode.parentNode;
-            break;
-          case 'bookmark-count':
-            console.log('case bookmark-count');
-            dropElement = x.parentNode.parentNode.parentNode;
-            break;
-          case 'actionButton':
-            console.log('case actionButton');
-            dropElement = x.parentNode.parentNode.parentNode;
-            break;
-          default:
-            console.log('default case');
-            for (let i = 0; i < x.classList.length; i++) {
-              console.log('x.classList[i]: ', x.classList[i]);
-            }
-            break;
+        const dropElement = event.target.closest('.ml');
+        if (dropElement) {
+          createKasaneDiv(draggedElement, dropElement);
+          socket.emit('drop', { draggedId: draggedElement.id, dropId: dropElement.id });
+        } else {
+          console.log('dropElement: ', dropElement);
         }
-        console.log('dropElement: ', dropElement);
-
-        createKasaneDiv(draggedElement, dropElement);
-
-        const kasaneData = {
-          draggedId: draggedElement.id,
-          dropId: dropElement.id
-        };
-        socket.emit('drop', kasaneData);
       }
     }
 
     function createKasaneDiv(draggedElement, dropElement) {
       // Create a new div with the class 'kasane'
-      const kasaneDiv = createElementWithClass('div', 'kasane');
-      kasaneDiv.textContent = '▼';
-      console.log('kasaneDiv: ', kasaneDiv);
+      const nestedMessageContainer = createElement('div', 'kasane');
+      nestedMessageContainer.textContent = '▼';
+      console.log('nestedMessageContainer: ', nestedMessageContainer);
       console.log('dropElement: ', dropElement);
       console.log("dropElement parent: ", dropElement.parentNode);
 
-      // Insert the kasaneDiv before the dropElement
-      messageLists.insertBefore(kasaneDiv, dropElement);
+      // Insert the nestedMessageContainer before the dropElement
+      messageLists.insertBefore(nestedMessageContainer, dropElement);
 
-      // Append the dropElement and the dragged element to the kasaneDiv
-      kasaneDiv.appendChild(dropElement);
-      kasaneDiv.appendChild(draggedElement);
+      // Append the dropElement and the dragged element to the nestedMessageContainer
+      nestedMessageContainer.appendChild(dropElement);
+      nestedMessageContainer.appendChild(draggedElement);
 
       // Restore visibility and reset styles
       draggedElement.style.visibility = '';
@@ -336,9 +256,9 @@
       dropElement.style.color = '';
     }
 
-    function appendMessageToChatDisplay(message, userName = message.name) {
+    function createMessageElement(message, userName = message.name) {
 
-      const item = document.createElement('div');
+      const item = createElement('div', 'ml');
 
       // 1 nameTiemMsg
       const { userNameTimeMsg, isSurvey } = createNameTimeMsg(message, userName);
@@ -357,24 +277,29 @@
       return item;
     }
 
-    function createElementWithClass(tagName, className, textContent = '') {
-      const element = document.createElement(tagName);
-      element.classList.add(className);
-      element.textContent = textContent;
-      return element;
+    function createElement(tag, className = '', text = '') {
+      try {
+        const element = document.createElement(tag);
+        if (className) element.classList.add(className);
+        if (text) element.textContent = text;
+        return element;
+      } catch (error) {
+        console.error(`Invalid element creation: ${error.message}`);
+        return null;  // 要素の作成に失敗した場合、nullを返す
+      }
     }
 
     // 1 userName + time + message
     function createNameTimeMsg(message, nameText = message.name) {
-      const userNameTimeMsg = createElementWithClass('div', 'userName-time-msg');
-      const userName_time = createElementWithClass('div', 'userName-time');
-      const userName = createElementWithClass('span', 'userName', nameText);
-      const time = createElementWithClass('span', 'time', message.createdAt);
+      const userNameTimeMsg = createElement('div', 'userName-time-msg');
+      const userName_time = createElement('div', 'userName-time');
+      const userName = createElement('span', 'userName', nameText);
+      const time = createElement('span', 'time', message.createdAt);
 
       userName_time.append(userName, time);
       userNameTimeMsg.appendChild(userName_time);
 
-      const message_div = createElementWithClass('div', 'message-text', message.question || message.msg);
+      const message_div = createElement('div', 'message-text', message.question || message.msg);
       userNameTimeMsg.appendChild(message_div);
 
       const isSurvey = Boolean(message.question);
@@ -383,10 +308,9 @@
 
     // (2)
     function makeSurveyContainerElement(message) {
-      const surveyContainer = document.createElement('div');
-      surveyContainer.classList.add('survey-container');
+      const surveyContainer = createElement('div', 'survey-container');
       for (let i = 0; i < message.options.length; i++) {
-        const surveyOption = createElementWithClass('button', 'survey-option', message.options[i] || '');
+        const surveyOption = createElement('button', 'survey-option', message.options[i] || '');
 
         surveyOption.addEventListener('click', () => {
           socket.emit('survey', message._id, i);
@@ -395,7 +319,7 @@
         const tentativeSums = message.voteSums ? message.voteSums : [0, 0, 0];
 
         console.log('tentativeSums[i]: ', tentativeSums[i]);
-        const surveyNum = createElementWithClass('span', 'survey-num-' + (i + 1), tentativeSums[i]);
+        const surveyNum = createElement('span', 'survey-num-' + (i + 1), tentativeSums[i]);
 
         surveyContainer.appendChild(surveyOption);
         surveyContainer.appendChild(surveyNum);
@@ -405,7 +329,7 @@
 
     // 3 buttons
     function createActionButtons(message) {
-      const buttons = createElementWithClass('div', 'buttons');
+      const buttons = createElement('div', 'buttons');
       ['up', 'down', 'bookmark'].forEach(eventType => {
         buttons.appendChild(makeActionButtonContainer(eventType, message));
       });
@@ -420,9 +344,9 @@
         bookmark: { className: 'bookmark-container', emoji: '🔖', count: message.bookmarks || 0 }
       }[eventType];
 
-      const container = createElementWithClass('div', eventData.className);
-      const button = createElementWithClass('button', 'actionButton', eventData.emoji);
-      const count = createElementWithClass('span', `${eventType}-count`, eventData.count);
+      const container = createElement('div', eventData.className);
+      const button = createElement('button', 'actionButton', eventData.emoji);
+      const count = createElement('span', `${eventType}-count`, eventData.count);
 
       button.addEventListener('click', e => {
         button.classList.toggle("active");
@@ -435,8 +359,6 @@
     }
 
     function settingML(item, message = {}, shouldScroll = true) {
-      item.classList.add('ml');
-
       item.classList.add('draggable');
       item.setAttribute('draggable', 'true');
       addDragAndDropListeners(item);
@@ -452,27 +374,24 @@
       }
     }
 
-    const checkbox = document.getElementById('sliderButton');
-    checkbox.addEventListener('change', function () {
-      if (this.checked) {
-        console.log('スイッチがONになりました⇒メモモード');
+    switchButton.addEventListener('change', toggleMemoMode);
+
+    function toggleMemoMode() {
+      if (switchButton.checked) {
         input.placeholder = 'メモ あなただけに表示';
-        console.log('formButton: ', formButton);
         formButton.textContent = 'Memo';
         formButton.classList.add('memoButton');
       } else {
-        console.log('スイッチがOFFになりました⇒チャットモード');
         input.placeholder = 'メッセージ みんなに表示';
-        console.log('formButton: ', formButton);
         formButton.textContent = 'Send';
         formButton.classList.remove('memoButton');
       }
-    });
+    }
 
     form.addEventListener('submit', (event) => {
       event.preventDefault();
 
-      const isChecked = checkbox.checked;
+      const isChecked = switchButton.checked;
 
       console.log('input.value: ', input.value);
       console.log('チェックボックスの状態: ', isChecked);
@@ -486,7 +405,7 @@
 
     // < チャット受信
     socket.on('chatLogs', (post) => {
-      const item = appendMessageToChatDisplay(post);
+      const item = createMessageElement(post);
       item.id = post._id;
       settingML(item, post);
       // setChatLogsDraggable(item);
@@ -495,16 +414,15 @@
     // < 自分メモ受信
     socket.on('memoLogs', (memo) => {
 
-      const item = document.createElement('div'); // div要素を作成
+      const item = createElement('div'); // div要素を作成
       const { userNameTimeMsg, isSurvey } = createNameTimeMsg(memo, '[memo]');
 
       item.appendChild(userNameTimeMsg);
 
-      const memoSendContainer = document.createElement('span');
-      memoSendContainer.classList.add('memoSend-container');
+      const memoSendContainer = createElement('div', 'memoSend-container');
 
-      const button = document.createElement('button');
-      button.textContent = '➤';
+      const button = createElement('button', 'memoSendButton', '➤');
+
       button.addEventListener('click', e => {
         button.classList.add("active");
         event.preventDefault();
@@ -531,7 +449,7 @@
           console.log("target は compare の前ではない");
           if (i === timeSpans.length - 1) {
             console.log("target は 最新");
-            const item = appendMessageToChatDisplay(msg);
+            const item = createMessageElement(msg);
             settingML(item, msg);
             return;
           }
@@ -542,7 +460,7 @@
           // ここで、messageLists に入れ込む
           console.log('messageLists: ', messageLists);
 
-          const item = appendMessageToChatDisplay(msg);
+          const item = createMessageElement(msg);
           console.log('item: ', item);
 
           const parentDIV = timeSpans[i].parentNode.parentNode.parentNode;
@@ -566,23 +484,18 @@
     // アンケート投稿をサーバーに送信 >
     surveyForm.addEventListener('submit', (event) => {
       event.preventDefault();
-      const question = $('surveyQuestion').value;
-      const optionText_1 = $('option1').value;
-      const optionText_2 = $('option2').value;
-      const optionText_3 = $('option3').value;
       socket.emit('submitSurvey', { question: question, options: [optionText_1, optionText_2, optionText_3] });
       toggleSurveyFormVisibility();
     });
 
     // アンケート作成の表示切り替え関数
     function toggleSurveyFormVisibility() {
-      const surveyFormElement = $('surveyForm');
       surveyFormElement.style.display = surveyFormElement.style.display === 'none' ? 'block' : 'none';
     }
 
     // < アンケート投稿をサーバーから受信
     socket.on('survey_post', (surveyPost) => {
-      const item = appendMessageToChatDisplay(surveyPost);
+      const item = createMessageElement(surveyPost);
       item.id = surveyPost._id;
       settingML(item, surveyPost);
     });
@@ -636,13 +549,12 @@
       const stackedMl = $(stackedData.dropId);
 
       // Create a new div with the class 'kasane'
-      const kasaneDiv = createElementWithClass('div', 'kasane');
-      kasaneDiv.textContent = '▼';
-      console.log('kasaneDiv: ', kasaneDiv);
+      const nestedMessageContainer = createElement('div', 'kasane');
+      nestedMessageContainer.textContent = '▼';
 
-      messageLists.insertBefore(kasaneDiv, stackedMl); // Insert the kasane div before the dropElement
-      kasaneDiv.appendChild(stackedMl); // Append the dropElement
-      kasaneDiv.appendChild(draggedElement); // Append the dragged element
+      messageLists.insertBefore(nestedMessageContainer, stackedMl); // Insert the kasane div before the dropElement
+      nestedMessageContainer.appendChild(stackedMl); // Append the dropElement
+      nestedMessageContainer.appendChild(draggedElement); // Append the dragged element
       stackedMl.style.border = '3px solid';
       stackedMl.style.color = '#227B94';
     });
