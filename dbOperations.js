@@ -31,11 +31,15 @@ async function getPastLogs() {
     try {
         // const posts = await Post.find({}).limit(PAST_POST).sort({ createdAt: -1 });
         let posts = await Post.find({}).sort({ createdAt: -1 });
-        const stackLogs = posts.filter(e => e.isStackingOn === true);
+        let stacks = posts.filter(e => e.isStackingOn === true);
         posts = posts.filter(e => e.isStackingOn === false);
         posts.reverse();
         const pastLogs = await Promise.all(posts.map(organizeLogs));
         pastLogs.forEach(e => {
+            e.createdAt = organizeCreatedAt(e.createdAt);
+        });
+        const stackLogs = await Promise.all(stacks.map(organizeLogs));
+        stackLogs.forEach(e => {
             e.createdAt = organizeCreatedAt(e.createdAt);
         });
         console.log('過去ログ整理完了');
