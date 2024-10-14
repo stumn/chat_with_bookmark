@@ -105,133 +105,211 @@
       item.textContent = '-----⇊ ここから参加 ⇊-----';
       settingML(item);
 
-      setDraggable();
+      setPastLogsDraggable();
 
     });
 
-    function setDraggable() {
-      const y = messageLists.getElementsByClassName("ml");
-      console.log('y: ', y);
-      console.log('start for...of');
+    function setPastLogsDraggable() {
+      // Get all .ml elements
+      const mlArray = messageLists.getElementsByClassName("ml");
+      console.log('mlArray: ', mlArray);
 
       // Make each .ml element draggable
-      for (let element of y) {
+      for (let element of mlArray) {
         element.classList.add('draggable');
       }
 
+      // Get all .draggable elements
       const elements = document.querySelectorAll(".draggable");
-      let draggedElement = null;
 
-      console.log('elements: ', elements);
-      console.log('elements[3]: ', elements[3]);
-
-      elements.forEach((element, index) => {
+      // Add event listeners to each .draggable element
+      elements.forEach(element => {
         element.setAttribute('draggable', 'true');
-
-        // Drag start event
-        element.addEventListener('dragstart', function (event) {
-          event.dataTransfer.effectAllowed = "move";
-          console.log(element);
-          draggedElement = event.target;
-          setTimeout(() => {
-            event.target.style.visibility = 'hidden'; // Hide the element during the drag
-          }, 0);
-
-          console.log('start js に送信', element.id);
-          socket.emit('dragstart', element.id);
-          console.log('start js に送信できたはず');
-        });
-
-        // Drag end event
-        element.addEventListener('dragend', function (event) {
-          event.target.style.visibility = ''; // Restore visibility
-          draggedElement = null;
-
-          console.log('end js に送信', element.id);
-          socket.emit('dragend', element.id);
-          console.log('end js に送信できたはず');
-        });
-
-        // Drag over event
-        element.addEventListener('dragover', function (event) {
-
-          // Restrict drop targets based on classes
-          if (event.target.classList.contains("name-time-msg") || event.target.classList.contains("buttons")) {
-            event.dataTransfer.dropEffect = "none"; // Disable drop for invalid targets
-            return;
-          }
-
-          event.preventDefault();  // Allow dropping by preventing default behavior
-
-          // Provide visual feedback for valid targets
-          this.style.border = '3px solid';
-          this.style.color = '#227B94';
-        });
-
-        // Drag leave event
-        element.addEventListener('dragleave', function (event) {
-          this.style.border = ""; // Reset visual feedback
-          this.style.color = '';
-        });
-
-        // Drop event
-        element.addEventListener('drop', function (event) {
-          event.preventDefault();
-          if (draggedElement) {
-            const dropElement = event.target; // The element where the drop occurs
-            console.log('draggedElement: ', draggedElement);
-            console.log('dropElement: ', dropElement);
-
-            let stackedMl = dropElement.parentNode;
-            console.log('start stackedMl: ', stackedMl);
-
-            if (stackedMl.classList.contains('kasane')) {
-              console.log('end stackedMl.classList.contains(kasane)');
-              stackedMl.appendChild(draggedElement);
-              return;
-            }
-
-            for (let i = 0; i < 10; i++) {
-              if (stackedMl.classList.contains('ml')) {
-                console.log('end stackedMl.classList.contains(ml)');
-                break;
-              } else {
-                stackedMl = stackedMl.parentNode;
-                console.log('continue stackedMl: ', stackedMl);
-              }
-            }
-
-            // Create a new div with the class 'kasane'
-            const kasaneDiv = createElementWithClass('div', 'kasane');
-            kasaneDiv.textContent = '▼';
-            console.log('kasaneDiv: ', kasaneDiv);
-
-            messageLists.insertBefore(kasaneDiv, stackedMl); // Insert the kasane div before the dropElement
-            kasaneDiv.appendChild(stackedMl); // Append the dropElement
-            kasaneDiv.appendChild(draggedElement); // Append the dragged element
-
-            // Restore visibility and reset styles
-            draggedElement.style.visibility = '';
-            dropElement.style.border = "";
-            dropElement.style.color = '';
-
-            const kasaneData = {
-              draggedId: draggedElement.id,
-              dropId: stackedMl.id
-            };
-            console.log('drop js に送信 drag', draggedElement.id);
-            console.log('drop js に送信 drop', stackedMl.id);
-            socket.emit('drop', kasaneData);
-            console.log('drop js に送信できたはず');
-          }
-        });
-
-        console.log(element);
-
-        console.log('end for...of');
+        addEventListenerToDraggableElements(element);
       });
     }
 
+    // function setChatLogsDraggable(item) {
+    //   item.classList.add('draggable');
+    //   item.setAttribute('draggable', 'true');
+    //   addEventListenerToDraggableElements(item);
+    // }
+
+    // Initialize the dragged element
+    let draggedElement = null;
+    function addEventListenerToDraggableElements(element) {
+      // Drag start event
+      element.addEventListener('dragstart', function (event) {
+        event.dataTransfer.effectAllowed = "move";
+        draggedElement = event.target;
+        setTimeout(() => {
+          event.target.style.visibility = 'hidden'; // Hide the element during the drag
+        }, 0);
+        socket.emit('dragstart', element.id);
+      });
+
+      // Drag end event
+      element.addEventListener('dragend', function (event) {
+        event.target.style.visibility = ''; // Restore visibility
+        draggedElement = null;
+        socket.emit('dragend', element.id);
+      });
+
+      // Drag over event
+      element.addEventListener('dragover', function (event) {
+        // Restrict drop targets based on classes
+        if (event.target.classList.contains("name-time-msg") || event.target.classList.contains("buttons")) {
+          event.dataTransfer.dropEffect = "none"; // Disable drop for invalid targets
+          return;
+        }
+
+        event.preventDefault();  // Allow dropping by preventing default behavior
+
+        // Provide visual feedback for valid targets
+        this.style.border = '3px solid';
+        this.style.color = '#227B94';
+      });
+
+      // Drag leave event
+      element.addEventListener('dragleave', function (event) {
+        this.style.border = ""; // Reset visual feedback
+        this.style.color = '';
+      });
+
+      // Drop event
+      element.addEventListener('drop', function (event) {
+        event.preventDefault();
+        if (draggedElement) {
+          console.log('draggedElement: ', draggedElement);
+
+          const x = event.target; // The element where the drop occurs(name-time-msgtとか) 
+          console.log('x: ', x);
+
+          let dropElement;
+          switch (x.classList[0]) {
+            case 'name-time-msg':
+              console.log('case name-time-msg');
+              dropElement = x.parentNode;
+              break;
+            case 'userName-time':
+              console.log('case userName-time');
+              dropElement = x.parentNode.parentNode;
+              break;
+            case 'userName':
+              console.log('case userName');
+              dropElement = x.parentNode.parentNode.parentNode;
+              break;
+            case 'time':
+              console.log('case time');
+              dropElement = x.parentNode.parentNode.parentNode;
+              break;
+            case 'message-text':
+              console.log('case message-text');
+              dropElement = x.parentNode.parentNode;
+              break;
+            case 'survey-container':
+              console.log('case survey-container');
+              dropElement = x.parentNode;
+              break;
+            case 'survey-option':
+              console.log('case survey-option');
+              dropElement = x.parentNode.parentNode;
+              break;
+            case 'survey-num-1':
+              console.log('case survey-num-1');
+              dropElement = x.parentNode.parentNode.parentNode;
+              break;
+            case 'survey-num-2':
+              console.log('case survey-num-2');
+              dropElement = x.parentNode.parentNode.parentNode;
+              break;
+            case 'survey-num-3':
+              console.log('case survey-num-3');
+              dropElement = x.parentNode.parentNode.parentNode;
+              break;
+            case 'buttons':
+              console.log('case buttons');
+              dropElement = x.parentNode;
+              break;
+            case 'up-container':
+              console.log('case up-container');
+              dropElement = x.parentNode.parentNode;
+              break;
+            case 'up-count':
+              console.log('case upcount');
+              dropElement = x.parentNode.parentNode.parentNode;
+              break;
+            case 'down-container':
+              console.log('case down-container');
+              dropElement = x.parentNode.parentNode;
+              break;
+            case 'down-count':
+              console.log('case down-count');
+              dropElement = x.parentNode.parentNode.parentNode;
+              break;
+            case 'bookmark-container':
+              console.log('case bookmark-container');
+              dropElement = x.parentNode.parentNode;
+              break;
+            case 'bookmark-count':
+              console.log('case bookmark-count');
+              dropElement = x.parentNode.parentNode.parentNode;
+              break;
+            case 'actionButton':
+              console.log('case actionButton');
+              dropElement = x.parentNode.parentNode.parentNode;
+              break;
+            default:
+              console.log('default case');
+              for (let i = 0; i < x.classList.length; i++) {
+                console.log('x.classList[i]: ', x.classList[i]);
+              }
+              for (let i = 0; i < 10; i++) {
+                console.log('x.parentNode: ', x.parentNode);
+                x = x.parentNode;
+                if (x.classList.contains('ml')) {
+                  dropElement = x;
+                  break;
+                }
+              }
+              break;
+          }
+          console.log('dropElement: ', dropElement);
+
+          // Create a new div with the class 'kasane'
+          const kasaneDiv = createElementWithClass('div', 'kasane');
+          kasaneDiv.textContent = '▼';
+          console.log('kasaneDiv: ', kasaneDiv);
+          console.log('dropElement: ', dropElement);
+          console.log("dropElement parent: ", dropElement.parentNode);
+
+          // Append the dropElement and the dragged element to the kasaneDiv
+          kasaneDiv.appendChild(dropElement);
+          kasaneDiv.appendChild(draggedElement);
+
+          // Insert the kasane div before the dropElement only if it is still in messageLists
+          if (dropElement.parentNode === messageLists) {
+            messageLists.insertBefore(kasaneDiv, dropElement); // ここで正しく kasaneDiv を追加
+          } else {
+            console.error("dropElement is not a child of messageLists");
+            return; // ここで処理を中断
+          }
+
+
+
+          // Restore visibility and reset styles
+          draggedElement.style.visibility = '';
+          dropElement.style.border = "";
+          dropElement.style.color = '';
+
+          const kasaneData = {
+            draggedId: draggedElement.id,
+            dropId: dropElement.id
+          };
+          socket.emit('drop', kasaneData);
+        }
+      });
+    }
 
     function appendMessageToChatDisplay(message, userName = message.name) {
 
@@ -333,7 +411,11 @@
 
     function settingML(item, message = {}, shouldScroll = true) {
       item.classList.add('ml');
+
+      item.classList.add('draggable');
       item.setAttribute('draggable', 'true');
+      addEventListenerToDraggableElements(item);
+
       messageLists.appendChild(item);
 
       if (message._id) {
@@ -382,6 +464,7 @@
       const item = appendMessageToChatDisplay(post);
       item.id = post._id;
       settingML(item, post);
+      // setChatLogsDraggable(item);
     });
 
     // < 自分メモ受信
