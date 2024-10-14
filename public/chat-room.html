@@ -264,14 +264,6 @@
               for (let i = 0; i < x.classList.length; i++) {
                 console.log('x.classList[i]: ', x.classList[i]);
               }
-              for (let i = 0; i < 10; i++) {
-                console.log('x.parentNode: ', x.parentNode);
-                x = x.parentNode;
-                if (x.classList.contains('ml')) {
-                  dropElement = x;
-                  break;
-                }
-              }
               break;
           }
           console.log('dropElement: ', dropElement);
@@ -283,19 +275,12 @@
           console.log('dropElement: ', dropElement);
           console.log("dropElement parent: ", dropElement.parentNode);
 
+          // Insert the kasaneDiv before the dropElement
+          messageLists.insertBefore(kasaneDiv, dropElement);
+
           // Append the dropElement and the dragged element to the kasaneDiv
           kasaneDiv.appendChild(dropElement);
           kasaneDiv.appendChild(draggedElement);
-
-          // Insert the kasane div before the dropElement only if it is still in messageLists
-          if (dropElement.parentNode === messageLists) {
-            messageLists.insertBefore(kasaneDiv, dropElement); // ここで正しく kasaneDiv を追加
-          } else {
-            console.error("dropElement is not a child of messageLists");
-            return; // ここで処理を中断
-          }
-
-
 
           // Restore visibility and reset styles
           draggedElement.style.visibility = '';
