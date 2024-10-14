@@ -115,7 +115,7 @@
           let kobuns = [];
           stackLogs.forEach(stackElement => {
             console.log('stackElement._id: ', stackElement._id);
-            
+
             for (let i = 0; i < pastElement.stackedPostIds.length; i++) {
               if (stackElement._id == pastElement.stackedPostIds[i]) {
                 kobuns.push(stackElement);
@@ -134,7 +134,7 @@
           });
 
           messageLists.appendChild(kasaneDiv);
-          
+
         } else {
           const item = appendMessageToChatDisplay(pastElement);
           settingML(item, pastElement);
@@ -165,158 +165,154 @@
       // Add event listeners to each .draggable element
       elements.forEach(element => {
         element.setAttribute('draggable', 'true');
-        addEventListenerToDraggableElements(element);
+        addDragAndDropListeners(element);
       });
     }
 
-    // function setChatLogsDraggable(item) {
-    //   item.classList.add('draggable');
-    //   item.setAttribute('draggable', 'true');
-    //   addEventListenerToDraggableElements(item);
-    // }
-
     // Initialize the dragged element
     let draggedElement = null;
-    function addEventListenerToDraggableElements(element) {
-      // Drag start event
-      element.addEventListener('dragstart', function (event) {
-        event.dataTransfer.effectAllowed = "move";
-        draggedElement = event.target;
-        setTimeout(() => {
-          event.target.style.visibility = 'hidden'; // Hide the element during the drag
-        }, 0);
-        socket.emit('dragstart', element.id);
-      });
 
-      // Drag end event
-      element.addEventListener('dragend', function (event) {
-        event.target.style.visibility = ''; // Restore visibility
-        draggedElement = null;
-        socket.emit('dragend', element.id);
-      });
+    function addDragAndDropListeners(element) {
+      element.addEventListener('dragstart', handleDragStart);
+      element.addEventListener('dragend', handleDragEnd);
+      element.addEventListener('dragover', handleDragOver);
+      element.addEventListener('dragleave', handleDragLeave);
+      element.addEventListener('drop', handleDrop);
+    }
 
-      // Drag over event
-      element.addEventListener('dragover', function (event) {
-        // Restrict drop targets based on classes
-        if (event.target.classList.contains("name-time-msg") || event.target.classList.contains("buttons")) {
-          event.dataTransfer.dropEffect = "none"; // Disable drop for invalid targets
-          return;
+    function handleDragStart(event) {
+      event.dataTransfer.effectAllowed = "move";
+      draggedElement = event.target;
+      setTimeout(() => {
+        event.target.style.visibility = 'hidden'; // Hide the element during the drag
+      }, 0);
+      socket.emit('dragstart', event.target.id);
+    }
+
+    function handleDragEnd(event) {
+      event.target.style.visibility = ''; // Restore visibility
+      draggedElement = null;
+      socket.emit('dragend', event.target.id);
+    }
+
+    function handleDragOver(event) {
+      // Restrict drop targets based on classes
+      if (event.target.classList.contains("name-time-msg") || event.target.classList.contains("buttons")) {
+        event.dataTransfer.dropEffect = "none"; // Disable drop for invalid targets
+        return;
+      }
+
+      event.preventDefault();  // Allow dropping by preventing default behavior
+
+      // Provide visual feedback for valid targets
+      this.style.border = '3px solid';
+      this.style.color = '#227B94';
+    }
+
+    function handleDragLeave(event) {
+      this.style.border = ""; // Reset visual feedback
+      this.style.color = '';
+    }
+
+    function handleDrop(event) {
+      event.preventDefault();
+      if (draggedElement) {
+        console.log('draggedElement: ', draggedElement);
+
+        const x = event.target; // The element where the drop occurs(name-time-msgtとか) 
+        console.log('x: ', x);
+
+        let dropElement;
+        switch (x.classList[0]) {
+          case 'name-time-msg':
+            console.log('case name-time-msg');
+            dropElement = x.parentNode;
+            break;
+          case 'userName-time':
+            console.log('case userName-time');
+            dropElement = x.parentNode.parentNode;
+            break;
+          case 'userName':
+            console.log('case userName');
+            dropElement = x.parentNode.parentNode.parentNode;
+            break;
+          case 'time':
+            console.log('case time');
+            dropElement = x.parentNode.parentNode.parentNode;
+            break;
+          case 'message-text':
+            console.log('case message-text');
+            dropElement = x.parentNode.parentNode;
+            break;
+          case 'survey-container':
+            console.log('case survey-container');
+            dropElement = x.parentNode;
+            break;
+          case 'survey-option':
+            console.log('case survey-option');
+            dropElement = x.parentNode.parentNode;
+            break;
+          case 'survey-num-1':
+            console.log('case survey-num-1');
+            dropElement = x.parentNode.parentNode.parentNode;
+            break;
+          case 'survey-num-2':
+            console.log('case survey-num-2');
+            dropElement = x.parentNode.parentNode.parentNode;
+            break;
+          case 'survey-num-3':
+            console.log('case survey-num-3');
+            dropElement = x.parentNode.parentNode.parentNode;
+            break;
+          case 'buttons':
+            console.log('case buttons');
+            dropElement = x.parentNode;
+            break;
+          case 'up-container':
+            console.log('case up-container');
+            dropElement = x.parentNode.parentNode;
+            break;
+          case 'up-count':
+            console.log('case upcount');
+            dropElement = x.parentNode.parentNode.parentNode;
+            break;
+          case 'down-container':
+            console.log('case down-container');
+            dropElement = x.parentNode.parentNode;
+            break;
+          case 'down-count':
+            console.log('case down-count');
+            dropElement = x.parentNode.parentNode.parentNode;
+            break;
+          case 'bookmark-container':
+            console.log('case bookmark-container');
+            dropElement = x.parentNode.parentNode;
+            break;
+          case 'bookmark-count':
+            console.log('case bookmark-count');
+            dropElement = x.parentNode.parentNode.parentNode;
+            break;
+          case 'actionButton':
+            console.log('case actionButton');
+            dropElement = x.parentNode.parentNode.parentNode;
+            break;
+          default:
+            console.log('default case');
+            for (let i = 0; i < x.classList.length; i++) {
+              console.log('x.classList[i]: ', x.classList[i]);
+            }
+            break;
         }
+        console.log('dropElement: ', dropElement);
 
-        event.preventDefault();  // Allow dropping by preventing default behavior
+        createKasaneDiv(draggedElement, dropElement);
 
-        // Provide visual feedback for valid targets
-        this.style.border = '3px solid';
-        this.style.color = '#227B94';
-      });
-
-      // Drag leave event
-      element.addEventListener('dragleave', function (event) {
-        this.style.border = ""; // Reset visual feedback
-        this.style.color = '';
-      });
-
-      // Drop event
-      element.addEventListener('drop', function (event) {
-        event.preventDefault();
-        if (draggedElement) {
-          console.log('draggedElement: ', draggedElement);
-
-          const x = event.target; // The element where the drop occurs(name-time-msgtとか) 
-          console.log('x: ', x);
-
-          let dropElement;
-          switch (x.classList[0]) {
-            case 'name-time-msg':
-              console.log('case name-time-msg');
-              dropElement = x.parentNode;
-              break;
-            case 'userName-time':
-              console.log('case userName-time');
-              dropElement = x.parentNode.parentNode;
-              break;
-            case 'userName':
-              console.log('case userName');
-              dropElement = x.parentNode.parentNode.parentNode;
-              break;
-            case 'time':
-              console.log('case time');
-              dropElement = x.parentNode.parentNode.parentNode;
-              break;
-            case 'message-text':
-              console.log('case message-text');
-              dropElement = x.parentNode.parentNode;
-              break;
-            case 'survey-container':
-              console.log('case survey-container');
-              dropElement = x.parentNode;
-              break;
-            case 'survey-option':
-              console.log('case survey-option');
-              dropElement = x.parentNode.parentNode;
-              break;
-            case 'survey-num-1':
-              console.log('case survey-num-1');
-              dropElement = x.parentNode.parentNode.parentNode;
-              break;
-            case 'survey-num-2':
-              console.log('case survey-num-2');
-              dropElement = x.parentNode.parentNode.parentNode;
-              break;
-            case 'survey-num-3':
-              console.log('case survey-num-3');
-              dropElement = x.parentNode.parentNode.parentNode;
-              break;
-            case 'buttons':
-              console.log('case buttons');
-              dropElement = x.parentNode;
-              break;
-            case 'up-container':
-              console.log('case up-container');
-              dropElement = x.parentNode.parentNode;
-              break;
-            case 'up-count':
-              console.log('case upcount');
-              dropElement = x.parentNode.parentNode.parentNode;
-              break;
-            case 'down-container':
-              console.log('case down-container');
-              dropElement = x.parentNode.parentNode;
-              break;
-            case 'down-count':
-              console.log('case down-count');
-              dropElement = x.parentNode.parentNode.parentNode;
-              break;
-            case 'bookmark-container':
-              console.log('case bookmark-container');
-              dropElement = x.parentNode.parentNode;
-              break;
-            case 'bookmark-count':
-              console.log('case bookmark-count');
-              dropElement = x.parentNode.parentNode.parentNode;
-              break;
-            case 'actionButton':
-              console.log('case actionButton');
-              dropElement = x.parentNode.parentNode.parentNode;
-              break;
-            default:
-              console.log('default case');
-              for (let i = 0; i < x.classList.length; i++) {
-                console.log('x.classList[i]: ', x.classList[i]);
-              }
-              break;
-          }
-          console.log('dropElement: ', dropElement);
-
-          createKasaneDiv(draggedElement, dropElement);
-
-          const kasaneData = {
-            draggedId: draggedElement.id,
-            dropId: dropElement.id
-          };
-          socket.emit('drop', kasaneData);
-        }
-      });
+        const kasaneData = {
+          draggedId: draggedElement.id,
+          dropId: dropElement.id
+        };
+        socket.emit('drop', kasaneData);
+      }
     }
 
     function createKasaneDiv(draggedElement, dropElement) {
@@ -443,7 +439,7 @@
 
       item.classList.add('draggable');
       item.setAttribute('draggable', 'true');
-      addEventListenerToDraggableElements(item);
+      addDragAndDropListeners(item);
 
       messageLists.appendChild(item);
 
