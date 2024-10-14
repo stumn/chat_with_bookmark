@@ -6,6 +6,9 @@ const express = require('express');
 const app = express();
 const routes = require('./routes');
 
+// 静的ファイルを提供（JS, CSSなど）
+app.use(express.static('public'));
+
 app.use('/', routes);
 
 const http = require('http');
@@ -176,10 +179,10 @@ async function logInFunction(rawname, socket) {
   }
 
   try { // 過去ログを取得・送信
-    const {pastLogs, stackLogs} = await getPastLogs();
+    const { pastLogs, stackLogs } = await getPastLogs();
     console.log('過去ログ取得完了', pastLogs);
     console.log('stackLogs', stackLogs);
-    socket.emit('pastLogs', {pastLogs, stackLogs});
+    socket.emit('pastLogs', { pastLogs, stackLogs });
   } catch (error) {
     handleErrors(error, 'LogInFunction 過去ログ取得中にエラーが発生しました');
   }
