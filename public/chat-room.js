@@ -79,7 +79,8 @@ socket.on('updateVote', (voteData) => {
     handleUpdateVote(voteData);
 });
 
-function handleEvent(eventType) {
+// < インタラクティブイベントを受信
+function setUpInteractiveEventHandler(eventType) {
     socket.on(eventType, (data) => {
         const item = $(data._id);
         const countElement = item.querySelector(`.${eventType}-container span`);
@@ -87,28 +88,22 @@ function handleEvent(eventType) {
     });
 }
 
-// Map multiple events to the same handler
-['up', 'down', 'bookmark'].forEach(handleEvent);
+['up', 'down', 'bookmark'].forEach(setUpInteractiveEventHandler);
 
-// 重ねる機能
-// < ドラッグ開始 >
-socket.on('dragstart', (draggedId) => {
-    const draggedElement = $(draggedId);
-    draggedElement.style.border = '3px dotted';
+// 重ねる
+socket.on('dragstart', (draggedId) => {// < ドラッグ開始 >
+    $(draggedId).style.border = '3px dotted';
 });
 
-// < ドラッグ終了 >
-socket.on('dragend', (draggedId) => {
-    const draggedElement = $(draggedId);
-    draggedElement.style.border = '';
+socket.on('dragend', (draggedId) => {// < ドラッグ終了 >
+    $(draggedId).style.border = '';
 });
 
 // < ドラッグオーバー >
 // < ドラッグリーブ >
 
-// < ドロップ >
-socket.on('drop', (stackedData) => {
-    handleDrop(stackedData);
+socket.on('drop', (stackedData) => {// < ドロップ >
+    handleDrop_Display(stackedData);
 });
 
 // < アラート
@@ -121,9 +116,13 @@ socket.on('dialog_to_html', (dialogMsg) => {
     socket.emit('dialog_to_js', confirm(dialogMsg) ? true : false);
 });
 
+
+// ↓↓↓ handle function ↓↓↓
+
+// handlePastLogs(pastLogs, stackLogs);
 function handlePastLogs(pastLogs, stackLogs) {
-    console.log('pastLogs: ', pastLogs); // isStackingOn: false (重ね子分ではない)
-    console.log('stackLogs: ', stackLogs); // isStackingOn: true (重ね子分)
+    // console.log('pastLogs: ', pastLogs); // isStackingOn: false (重ね子分ではない)
+    // console.log('stackLogs: ', stackLogs); // isStackingOn: true (重ね子分)
 
     pastLogs.forEach((pastElement) => {
         console.log('pastElement: ', pastElement);
@@ -131,7 +130,7 @@ function handlePastLogs(pastLogs, stackLogs) {
         if (pastElement.stackedPostIds.length > 0) {
             console.log('pastElement.stackedPostIds: ', pastElement.stackedPostIds);
 
-            const item = createMessageElement(pastElement);
+            const item = buildMlElement(pastElement);
             settingML(item, pastElement);
 
             const nestedMessageContainer = createElement('div', 'kasane');
@@ -154,7 +153,7 @@ function handlePastLogs(pastLogs, stackLogs) {
 
             console.log('kobuns: ', kobuns);
             kobuns.forEach(kobun => {
-                const item = createMessageElement(kobun);
+                const item = buildMlElement(kobun);
                 settingML(item, kobun);
                 nestedMessageContainer.appendChild(item);
             });
@@ -162,7 +161,7 @@ function handlePastLogs(pastLogs, stackLogs) {
             messageLists.appendChild(nestedMessageContainer);
 
         } else {
-            const item = createMessageElement(pastElement);
+            const item = buildMlElement(pastElement);
             settingML(item, pastElement);
         }
     });
@@ -173,6 +172,120 @@ function handlePastLogs(pastLogs, stackLogs) {
     setPastLogsDraggable();
 
 }
+
+// handleChatLogs(post);
+function handleChatLogs(post) {
+    const item = buildMlElement(post);
+    item.id = post._id;
+    settingML(item, post);
+}
+
+// handleMemoLogs(memo);
+function handleMemoLogs(memo) {
+    const item = createElement('div'); // div要素を作成
+    const { userNameTimeMsg, isSurvey } = createNameTimeMsg(memo, '[memo]');
+
+    item.appendChild(userNameTimeMsg);
+
+    const memoSendContainer = createElement('div', 'memoSend-container');
+
+    const button = createElement('button', 'memoSendButton', '➤');
+
+    button.addEventListener('click', e => {
+        button.classList.add("active");
+        event.preventDefault();
+        socket.emit('open_downCard', memo);
+        button.disabled = true;
+    });
+
+    memoSendContainer.appendChild(button);
+    item.appendChild(memoSendContainer);
+
+    settingML(item, memo);
+}
+
+// handleDownCard(msg);
+function handleDownCard(msg) {
+    let timeSpans = document.querySelectorAll("#messageLists div span.time");
+    for (let i = 0; i < timeSpans.length; i++) {
+        const targetCreatedAt = msg.createdAt;
+        const compare = timeSpans[i].textContent;
+
+        const isBefore = checkIsBefore(targetCreatedAt, compare);
+
+        if (isBefore === false) {
+            console.log("target は compare の前ではない");
+            if (i === timeSpans.length - 1) {
+                console.log("target は 最新");
+                const item = buildMlElement(msg);
+                settingML(item, msg);
+                return;
+            }
+            continue;
+        }
+        else if (isBefore === true) {
+            console.log("target は compare の前に入る");
+            // ここで、messageLists に入れ込む
+            console.log('messageLists: ', messageLists);
+
+            const item = buildMlElement(msg);
+            console.log('item: ', item);
+
+            let parentDIV = timeSpans[i].closest('.ml');
+
+            // const parentDIV = timeSpans[i+1].closest('.ml');
+            console.log('parentDIV: ', parentDIV);
+
+            if (parentDIV.parentNode.classList.contains('kasane')) {
+                parentDIV = parentDIV.parentNode;
+
+                console.log('changed parentDIV: ', parentDIV);
+            }
+            messageLists.insertBefore(item, parentDIV);
+
+            item.id = msg._id;
+            item.classList.add('ml', 'downCard', 'visible');
+            return;
+        }
+    }
+}
+
+// handleSurveyPost(surveyPost);
+function handleSurveyPost(surveyPost) {
+    const item = buildMlElement(surveyPost);
+    item.id = surveyPost._id;
+    settingML(item, surveyPost);
+}
+
+// handleUpdateVote(voteData);
+function handleUpdateVote(voteData) {
+    const item = $(voteData._id);
+    for (let i = 0; i < 3; i++) {
+        const surveyNum = item.querySelector(`.survey-container .survey-num-${i + 1}`);
+        surveyNum.textContent = voteData[`count${i}`];
+    }
+}
+
+// handleDrop_Display(stackedData);
+function handleDrop_Display(stackedData) {
+    console.log('draggedId: ', stackedData.draggedId);
+    console.log('dropId: ', stackedData.dropId);
+
+    const draggedElement = $(stackedData.draggedId);
+    const stackedMl = $(stackedData.dropId);
+
+    // Create a new div with the class 'kasane'
+    const nestedMessageContainer = createElement('div', 'kasane');
+    nestedMessageContainer.textContent = '▼';
+
+    messageLists.insertBefore(nestedMessageContainer, stackedMl); // Insert the kasane div before the dropElement
+    nestedMessageContainer.appendChild(stackedMl); // Append the dropElement
+    nestedMessageContainer.appendChild(draggedElement); // Append the dragged element
+    stackedMl.style.border = '3px solid';
+    stackedMl.style.color = '#227B94';
+}
+
+// ↓↓↓ sub function ↓↓↓
 
 function setPastLogsDraggable() {
     // Get all .ml elements
@@ -202,7 +315,7 @@ function addDragAndDropListeners(element) {
     element.addEventListener('dragend', handleDragEnd);
     element.addEventListener('dragover', handleDragOver);
     element.addEventListener('dragleave', handleDragLeave);
-    element.addEventListener('drop', handleDrop);
+    element.addEventListener('drop', handleDrop_Now);
 }
 
 function handleDragStart(event) {
@@ -239,7 +352,7 @@ function handleDragLeave(event) {
     this.style.color = '';
 }
 
-function handleDrop(event) {
+function handleDrop_Now(event) {
     event.preventDefault();
     if (draggedElement) {
         console.log('draggedElement: ', draggedElement);
@@ -275,27 +388,19 @@ function createKasaneDiv(draggedElement, dropElement) {
     dropElement.style.color = '';
 }
 
-function handleChatLogs(post) {
-    const item = createMessageElement(post);
-    item.id = post._id;
-    settingML(item, post);
-}
-
-function handleSurveyPost(surveyPost) {
-    const item = createMessageElement(surveyPost);
-    item.id = surveyPost._id;
-    settingML(item, surveyPost);
-}
-
-function handleUpdateVote(voteData) {
-    const item = $(voteData._id);
-    for (let i = 0; i < 3; i++) {
-        const surveyNum = item.querySelector(`.survey-container .survey-num-${i + 1}`);
-        surveyNum.textContent = voteData[`count${i}`];
+function createElement(tag, className = '', text = '') {
+    try {
+        const element = document.createElement(tag);
+        if (className) element.classList.add(className);
+        if (text) element.textContent = text;
+        return element;
+    } catch (error) {
+        console.error(`Invalid element creation: ${error.message}`);
+        return null;  // 要素の作成に失敗した場合、nullを返す
     }
 }
 
-function createMessageElement(message, userName = message.name) {
+function buildMlElement(message, userName = message.name) {
 
     const item = createElement('div', 'ml');
 
@@ -314,18 +419,6 @@ function createMessageElement(message, userName = message.name) {
     item.appendChild(buttons);
 
     return item;
-}
-
-function createElement(tag, className = '', text = '') {
-    try {
-        const element = document.createElement(tag);
-        if (className) element.classList.add(className);
-        if (text) element.textContent = text;
-        return element;
-    } catch (error) {
-        console.error(`Invalid element creation: ${error.message}`);
-        return null;  // 要素の作成に失敗した場合、nullを返す
-    }
 }
 
 // 1 userName + time + message
@@ -441,78 +534,9 @@ form.addEventListener('submit', (event) => {
     input.value = '';
 });
 
-function handleMemoLogs(memo) {
-    const item = createElement('div'); // div要素を作成
-    const { userNameTimeMsg, isSurvey } = createNameTimeMsg(memo, '[memo]');
-
-    item.appendChild(userNameTimeMsg);
-
-    const memoSendContainer = createElement('div', 'memoSend-container');
-
-    const button = createElement('button', 'memoSendButton', '➤');
-
-    button.addEventListener('click', e => {
-        button.classList.add("active");
-        event.preventDefault();
-        socket.emit('open_downCard', memo);
-        button.disabled = true;
-    });
-
-    memoSendContainer.appendChild(button);
-    item.appendChild(memoSendContainer);
-
-    settingML(item, memo);
-}
-
-
-function handleDownCard(msg) {
-    let timeSpans = document.querySelectorAll("#messageLists div span.time");
-    for (let i = 0; i < timeSpans.length; i++) {
-        const targetCreatedAt = msg.createdAt;
-        const compare = timeSpans[i].textContent;
-
-        const isBefore = checkIsBefore(targetCreatedAt, compare);
-
-        if (isBefore === false) {
-            console.log("target は compare の前ではない");
-            if (i === timeSpans.length - 1) {
-                console.log("target は 最新");
-                const item = createMessageElement(msg);
-                settingML(item, msg);
-                return;
-            }
-            continue;
-        }
-        else if (isBefore === true) {
-            console.log("target は compare の前に入る");
-            // ここで、messageLists に入れ込む
-            console.log('messageLists: ', messageLists);
-
-            const item = createMessageElement(msg);
-            console.log('item: ', item);
-
-            let parentDIV = timeSpans[i].closest('.ml');
-
-            // const parentDIV = timeSpans[i+1].closest('.ml');
-            console.log('parentDIV: ', parentDIV);
-
-            if (parentDIV.parentNode.classList.contains('kasane')) {
-                parentDIV = parentDIV.parentNode;
-
-                console.log('changed parentDIV: ', parentDIV);
-            }
-            messageLists.insertBefore(item, parentDIV);
-
-            item.id = msg._id;
-            item.classList.add('ml', 'downCard', 'visible');
-            return;
-        }
-    }
-}
-
 function checkIsBefore(target, compare) {
-    const targetDate = new Date(`1970-01-01T${target}Z`);
-    const compareDate = new Date(`1970-01-01T${compare}Z`);
+    const targetDate = new Date(target);
+    const compareDate = new Date(compare);
     return targetDate < compareDate;
 }
 
@@ -527,26 +551,3 @@ surveyForm.addEventListener('submit', (event) => {
 function toggleSurveyFormVisibility() {
     surveyFormElement.style.display = surveyFormElement.style.display === 'none' ? 'block' : 'none';
 }
-
-
-
-
-function handleDrop(stackedData) {
-    console.log('draggedId: ', stackedData.draggedId);
-    console.log('dropId: ', stackedData.dropId);
-
-    const draggedElement = $(stackedData.draggedId);
-    const stackedMl = $(stackedData.dropId);
-
-    // Create a new div with the class 'kasane'
-    const nestedMessageContainer = createElement('div', 'kasane');
-    nestedMessageContainer.textContent = '▼';
-
-    messageLists.insertBefore(nestedMessageContainer, stackedMl); // Insert the kasane div before the dropElement
-    nestedMessageContainer.appendChild(stackedMl); // Append the dropElement
-    nestedMessageContainer.appendChild(draggedElement); // Append the dragged element
-    stackedMl.style.border = '3px solid';
-    stackedMl.style.color = '#227B94';
-}
-
-
