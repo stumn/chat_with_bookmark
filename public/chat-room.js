@@ -22,8 +22,6 @@ const optionText_2 = $('option2').value;
 const optionText_3 = $('option3').value;
 const surveyFormElement = $('surveyForm');
 
-
-// ★ログイン時
 // プロンプト　ログインで名前を入力・サーバーに送信
 const myName = prompt("名前を入力してください", "");
 if (!myName) {
@@ -58,10 +56,7 @@ socket.on('pastLogs', ({ pastLogs, stackLogs }) => {
 
 // < チャット受信
 socket.on('chatLogs', (post) => {
-    const item = createMessageElement(post);
-    item.id = post._id;
-    settingML(item, post);
-    // setChatLogsDraggable(item);
+    handleChatLogs(post);
 });
 
 // < 自分メモ受信
@@ -76,18 +71,12 @@ socket.on('downCard', (msg) => {
 
 // < アンケート投稿をサーバーから受信
 socket.on('survey_post', (surveyPost) => {
-    const item = createMessageElement(surveyPost);
-    item.id = surveyPost._id;
-    settingML(item, surveyPost);
+    handleSurveyPost(surveyPost);
 });
 
 // < 投票を受信
 socket.on('updateVote', (voteData) => {
-    const item = $(voteData._id);
-    for (let i = 0; i < 3; i++) {
-        const surveyNum = item.querySelector(`.survey-container .survey-num-${i + 1}`);
-        surveyNum.textContent = voteData[`count${i}`];
-    }
+    handleUpdateVote(voteData);
 });
 
 function handleEvent(eventType) {
@@ -104,17 +93,13 @@ function handleEvent(eventType) {
 // 重ねる機能
 // < ドラッグ開始 >
 socket.on('dragstart', (draggedId) => {
-    console.log('draggedId: ', draggedId);
     const draggedElement = $(draggedId);
-    console.log('draggedElement: ', draggedElement);
     draggedElement.style.border = '3px dotted';
 });
 
 // < ドラッグ終了 >
 socket.on('dragend', (draggedId) => {
-    console.log('draggedId: ', draggedId);
     const draggedElement = $(draggedId);
-    console.log('draggedElement: ', draggedElement);
     draggedElement.style.border = '';
 });
 
@@ -122,7 +107,7 @@ socket.on('dragend', (draggedId) => {
 // < ドラッグリーブ >
 
 // < ドロップ >
-socket.on('drop', stackedData => {
+socket.on('drop', (stackedData) => {
     handleDrop(stackedData);
 });
 
@@ -288,6 +273,26 @@ function createKasaneDiv(draggedElement, dropElement) {
     draggedElement.style.visibility = '';
     dropElement.style.border = "";
     dropElement.style.color = '';
+}
+
+function handleChatLogs(post) {
+    const item = createMessageElement(post);
+    item.id = post._id;
+    settingML(item, post);
+}
+
+function handleSurveyPost(surveyPost) {
+    const item = createMessageElement(surveyPost);
+    item.id = surveyPost._id;
+    settingML(item, surveyPost);
+}
+
+function handleUpdateVote(voteData) {
+    const item = $(voteData._id);
+    for (let i = 0; i < 3; i++) {
+        const surveyNum = item.querySelector(`.survey-container .survey-num-${i + 1}`);
+        surveyNum.textContent = voteData[`count${i}`];
+    }
 }
 
 function createMessageElement(message, userName = message.name) {
