@@ -51,10 +51,8 @@ async function getPastLogs() {
 
 function organizeCreatedAt(createdAt) {
     const UTCdate = new Date(createdAt);
-    UTCdate.setHours(UTCdate.getHours() + 9);
-    const organizedCreatedAt = UTCdate.toISOString().match(/T(\d{2}:\d{2}:\d{2})/)[1];
-    createdAt = organizedCreatedAt;
-    return createdAt;
+    const formattedCreatedAt = UTCdate.toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' });
+    return formattedCreatedAt;
 }
 
 // データベースにレコードを保存
