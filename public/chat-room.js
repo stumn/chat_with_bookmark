@@ -14,13 +14,7 @@ const messageLists = $('messageLists');
 const form = $('form');
 const input = $('input');
 const formButton = $('formButton');
-const surveyForm = $('surveyForm');
 const switchButton = $('switchButton');
-const question = $('surveyQuestion').value;
-const optionText_1 = $('option1').value;
-const optionText_2 = $('option2').value;
-const optionText_3 = $('option3').value;
-const surveyFormElement = $('surveyForm');
 
 // プロンプト　ログインで名前を入力・サーバーに送信
 const myName = prompt("名前を入力してください", "");
@@ -59,6 +53,11 @@ socket.on('chatLogs', (post) => {
     handleChatLogs(post);
 });
 
+// < アンケート投稿をサーバーから受信
+socket.on('survey_post', (post) => {
+    handleChatLogs(post);
+});
+
 // < 自分メモ受信
 socket.on('memoLogs', (memo) => {
     handleMemoLogs(memo);
@@ -67,11 +66,6 @@ socket.on('memoLogs', (memo) => {
 // 伏せカード登場！
 socket.on('downCard', (msg) => {
     handleDownCard(msg);
-});
-
-// < アンケート投稿をサーバーから受信
-socket.on('survey_post', (surveyPost) => {
-    handleSurveyPost(surveyPost);
 });
 
 // < 投票を受信
@@ -121,140 +115,134 @@ socket.on('dialog_to_html', (dialogMsg) => {
 
 // handlePastLogs(pastLogs, stackLogs);
 function handlePastLogs(pastLogs, stackLogs) {
-    // console.log('pastLogs: ', pastLogs); // isStackingOn: false (重ね子分ではない)
-    // console.log('stackLogs: ', stackLogs); // isStackingOn: true (重ね子分)
 
     pastLogs.forEach((pastElement) => {
-        console.log('pastElement: ', pastElement);
 
+        // 重ね子分が存在する場合
         if (pastElement.stackedPostIds.length > 0) {
-            console.log('pastElement.stackedPostIds: ', pastElement.stackedPostIds);
-
+            appendNestedContainer_fromPastLogs(pastElement, stackLogs);
+        }
+        else { // 重ね子分が存在しない場合
             const item = buildMlElement(pastElement);
-            settingML(item, pastElement);
-
-            const nestedMessageContainer = createElement('div', 'kasane');
-            nestedMessageContainer.textContent = '▼';
-            nestedMessageContainer.appendChild(item);
-
-            let kobuns = [];
-            stackLogs.forEach(stackElement => {
-                console.log('stackElement._id: ', stackElement._id);
-
-                for (let i = 0; i < pastElement.stackedPostIds.length; i++) {
-                    if (stackElement._id == pastElement.stackedPostIds[i]) {
-                        kobuns.push(stackElement);
-                        console.log('合致: ', kobuns);
-                    } else {
-                        console.log('不一致');
-                    }
-                }
-            });
-
-            console.log('kobuns: ', kobuns);
-            kobuns.forEach(kobun => {
-                const item = buildMlElement(kobun);
-                settingML(item, kobun);
-                nestedMessageContainer.appendChild(item);
-            });
-
-            messageLists.appendChild(nestedMessageContainer);
-
-        } else {
-            const item = buildMlElement(pastElement);
-            settingML(item, pastElement);
+            enableDragDrop_appendWithId(item, pastElement);
         }
     });
 
+    // ここから参加
     const item = createElement('div', 'ml', '-----⇊ ここから参加 ⇊-----');
-    settingML(item);
+    enableDragDrop_appendWithId(item);
 
+    // 過去ログ全てをドラッグ可能にする
     setPastLogsDraggable();
+}
 
+function appendNestedContainer_fromPastLogs(pastElement, stackLogs) {
+
+    // まず、親分を作る
+    const item = buildMlElement(pastElement);
+    enableDragDrop_appendWithId(item, pastElement);
+
+    // ▼ コンテナを作る
+    const nestedMessageContainer = createElement('div', 'kasane', '▼');
+    nestedMessageContainer.appendChild(item);
+
+    // 重ね子分を配列に格納
+    let kobuns = [];
+    stackLogs.forEach(stackElement => {
+        for (let i = 0; i < pastElement.stackedPostIds.length; i++) {
+            if (stackElement._id == pastElement.stackedPostIds[i]) {
+                kobuns.push(stackElement);
+            }
+        }
+    });
+
+    // 重ね子分を表示
+    kobuns.forEach(kobun => {
+        const item = buildMlElement(kobun);
+        enableDragDrop_appendWithId(item, kobun);
+        nestedMessageContainer.appendChild(item);
+    });
+
+    // コンテナをmessageListsに追加
+    messageLists.appendChild(nestedMessageContainer);
 }
 
 // handleChatLogs(post);
 function handleChatLogs(post) {
     const item = buildMlElement(post);
     item.id = post._id;
-    settingML(item, post);
+    enableDragDrop_appendWithId(item, post);
 }
 
 // handleMemoLogs(memo);
-function handleMemoLogs(memo) {
-    const item = createElement('div'); // div要素を作成
-    const { userNameTimeMsg, isSurvey } = createNameTimeMsg(memo, '[memo]');
+function handleMemoLogs(memo) { // buildMlElement(message);に近い
 
+    const item = createElement('div'); // div要素を作成
+
+    // nameTimeMsg
+    const { userNameTimeMsg, isSurvey } = createNameTimeMsg(memo, '[memo]');
     item.appendChild(userNameTimeMsg);
 
+    // memoSendContainer
+    const memoSendContainer = buildMemoSendContainer(memo);
+    item.appendChild(memoSendContainer);
+
+    enableDragDrop_appendWithId(item, memo);
+}
+
+function buildMemoSendContainer(memo) {
     const memoSendContainer = createElement('div', 'memoSend-container');
 
     const button = createElement('button', 'memoSendButton', '➤');
-
     button.addEventListener('click', e => {
         button.classList.add("active");
-        event.preventDefault();
+        e.preventDefault();
         socket.emit('open_downCard', memo);
         button.disabled = true;
     });
 
     memoSendContainer.appendChild(button);
-    item.appendChild(memoSendContainer);
-
-    settingML(item, memo);
+    return memoSendContainer;
 }
 
 // handleDownCard(msg);
 function handleDownCard(msg) {
-    let timeSpans = document.querySelectorAll("#messageLists div span.time");
+    const targetCreatedAt = msg.createdAt;
+    const timeSpans = document.querySelectorAll("#messageLists div span.time");
+
     for (let i = 0; i < timeSpans.length; i++) {
-        const targetCreatedAt = msg.createdAt;
         const compare = timeSpans[i].textContent;
 
         const isBefore = checkIsBefore(targetCreatedAt, compare);
 
         if (isBefore === false) {
-            console.log("target は compare の前ではない");
             if (i === timeSpans.length - 1) {
                 console.log("target は 最新");
                 const item = buildMlElement(msg);
-                settingML(item, msg);
+                enableDragDrop_appendWithId(item, msg);
                 return;
             }
             continue;
         }
-        else if (isBefore === true) {
-            console.log("target は compare の前に入る");
-            // ここで、messageLists に入れ込む
-            console.log('messageLists: ', messageLists);
-
-            const item = buildMlElement(msg);
-            console.log('item: ', item);
-
-            let parentDIV = timeSpans[i].closest('.ml');
-
-            // const parentDIV = timeSpans[i+1].closest('.ml');
-            console.log('parentDIV: ', parentDIV);
-
-            if (parentDIV.parentNode.classList.contains('kasane')) {
-                parentDIV = parentDIV.parentNode;
-
-                console.log('changed parentDIV: ', parentDIV);
-            }
-            messageLists.insertBefore(item, parentDIV);
-
-            item.id = msg._id;
-            item.classList.add('ml', 'downCard', 'visible');
+        else if (isBefore === true) { // ここで、messageLists に挿入
+            insertDownCard(msg, timeSpans, i);
             return;
         }
     }
 }
 
-// handleSurveyPost(surveyPost);
-function handleSurveyPost(surveyPost) {
-    const item = buildMlElement(surveyPost);
-    item.id = surveyPost._id;
-    settingML(item, surveyPost);
+function insertDownCard(msg, timeSpans, i) {
+    const item = buildMlElement(msg);
+
+    let parentDIV = timeSpans[i].closest('.ml');
+
+    if (parentDIV.parentNode.classList.contains('kasane')) {
+        parentDIV = parentDIV.parentNode;
+    }
+    messageLists.insertBefore(item, parentDIV);
+
+    item.id = msg._id;
+    item.classList.add('ml', 'downCard', 'visible');
 }
 
 // handleUpdateVote(voteData);
@@ -275,8 +263,7 @@ function handleDrop_Display(stackedData) {
     const stackedMl = $(stackedData.dropId);
 
     // Create a new div with the class 'kasane'
-    const nestedMessageContainer = createElement('div', 'kasane');
-    nestedMessageContainer.textContent = '▼';
+    const nestedMessageContainer = createElement('div', 'kasane', '▼');
 
     messageLists.insertBefore(nestedMessageContainer, stackedMl); // Insert the kasane div before the dropElement
     nestedMessageContainer.appendChild(stackedMl); // Append the dropElement
@@ -290,7 +277,6 @@ function handleDrop_Display(stackedData) {
 function setPastLogsDraggable() {
     // Get all .ml elements
     const mlArray = messageLists.getElementsByClassName("ml");
-    console.log('mlArray: ', mlArray);
 
     // Make each .ml element draggable
     for (let element of mlArray) {
@@ -368,17 +354,11 @@ function handleDrop_Now(event) {
 }
 
 function createKasaneDiv(draggedElement, dropElement) {
-    // Create a new div with the class 'kasane'
-    const nestedMessageContainer = createElement('div', 'kasane');
-    nestedMessageContainer.textContent = '▼';
-    console.log('nestedMessageContainer: ', nestedMessageContainer);
-    console.log('dropElement: ', dropElement);
-    console.log("dropElement parent: ", dropElement.parentNode);
 
-    // Insert the nestedMessageContainer before the dropElement
+    const nestedMessageContainer = createElement('div', 'kasane', '▼');
+    
     messageLists.insertBefore(nestedMessageContainer, dropElement);
 
-    // Append the dropElement and the dragged element to the nestedMessageContainer
     nestedMessageContainer.appendChild(dropElement);
     nestedMessageContainer.appendChild(draggedElement);
 
@@ -400,9 +380,9 @@ function createElement(tag, className = '', text = '') {
     }
 }
 
-function buildMlElement(message, userName = message.name) {
-
-    const item = createElement('div', 'ml');
+function buildMlElement(message) {
+    const userName = message.name;
+    const item = createElement('div', 'ml'); // div.ml を作成
 
     // 1 nameTiemMsg
     const { userNameTimeMsg, isSurvey } = createNameTimeMsg(message, userName);
@@ -490,11 +470,13 @@ function makeActionButtonContainer(eventType, message) {
     return container;
 }
 
-function settingML(item, message = {}, shouldScroll = true) {
+function enableDragDrop_appendWithId(item, message = {}, shouldScroll = true) {
+    // enable drag & drop
     item.classList.add('draggable');
     item.setAttribute('draggable', 'true');
     addDragAndDropListeners(item);
 
+    // messageLists に追加
     messageLists.appendChild(item);
 
     if (message._id) {
@@ -525,9 +507,6 @@ form.addEventListener('submit', (event) => {
 
     const isChecked = switchButton.checked;
 
-    console.log('input.value: ', input.value);
-    console.log('チェックボックスの状態: ', isChecked);
-
     const eventName = isChecked ? 'personal memo' : 'chat message';
     socket.emit(eventName, input.value);
 
@@ -540,14 +519,20 @@ function checkIsBefore(target, compare) {
     return targetDate < compareDate;
 }
 
+const surveyForm = $('surveyForm');
 // アンケート投稿をサーバーに送信 >
 surveyForm.addEventListener('submit', (event) => {
     event.preventDefault();
+    const question = $('surveyQuestion').value;
+    const optionText_1 = $('option1').value;
+    const optionText_2 = $('option2').value;
+    const optionText_3 = $('option3').value;
+    console.log('survey: ', question);
     socket.emit('submitSurvey', { question: question, options: [optionText_1, optionText_2, optionText_3] });
     toggleSurveyFormVisibility();
 });
 
 // アンケート作成の表示切り替え関数
 function toggleSurveyFormVisibility() {
-    surveyFormElement.style.display = surveyFormElement.style.display === 'none' ? 'block' : 'none';
+    surveyForm.style.display = surveyForm.style.display === 'none' ? 'block' : 'none';
 }
