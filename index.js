@@ -30,6 +30,7 @@ const ANONYMOUS_NAME = '匿名';
 // オンラインユーザーのリスト
 let onlineUsers = [];
 let idsOnlineUsers = [];
+let memoCount = 0;
 
 // クライアントから接続があったときのイベントハンドラ
 io.on('connection', async (socket) => {
@@ -66,8 +67,26 @@ io.on('connection', async (socket) => {
         createdAt: organizeCreatedAt(m.createdAt)
       }
       console.log('organizedMemo', organizedMemo);
+
       socket.emit('memoLogs', organizedMemo); // 自分だけに送信
+
+      memoCount++;
+      console.log('memoCount', memoCount);
+      if (memoCount >= 1) {
+        io.emit('memoCount', memoCount);
+      }
+
     });
+
+    function decreaseMemoCount() {
+      if (memoCount > 0) {
+        memoCount -= 1;
+        console.log('decrease memoCount: ', memoCount);
+        socket.emit('memoCount', memoCount);
+      }
+    }
+
+    setInterval(decreaseMemoCount, 1000 * 5);
 
     // < アンケートメッセージ >
     socket.on('submitSurvey', async data => {

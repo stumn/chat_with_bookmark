@@ -1,4 +1,3 @@
-
 const socket = io();
 
 // html要素の取得 ($は短縮形の関数名 = DOM要素の操作で使うと便利) 
@@ -61,6 +60,19 @@ socket.on('survey_post', (post) => {
 // < 自分メモ受信
 socket.on('memoLogs', (memo) => {
     handleMemoLogs(memo);
+});
+
+socket.on('memoCount', (memoCount) => {
+    console.log('memoCount: ', memoCount);
+
+    const header = document.querySelector('header');
+    const redIntensity = Math.min(240 + memoCount * 1, 255);
+    const greenIntensity = Math.max(240 - memoCount * 10, 0);
+    const blueIntensity = Math.max(240 - memoCount * 10, 0);
+
+    console.log(redIntensity, greenIntensity, blueIntensity);
+    header.style.backgroundColor = `rgb(${redIntensity}, ${greenIntensity}, ${blueIntensity})`;
+    return memoCount;
 });
 
 // 伏せカード登場！
@@ -176,17 +188,9 @@ function handleChatLogs(post) {
 
 // handleMemoLogs(memo);
 function handleMemoLogs(memo) { // buildMlElement(message);に近い
-
-    const item = createElement('div'); // div要素を作成
-
-    // nameTimeMsg
-    const { userNameTimeMsg, isSurvey } = createNameTimeMsg(memo, '[memo]');
-    item.appendChild(userNameTimeMsg);
-
-    // memoSendContainer
+    const item = buildMlBaseStructure(memo, '[memo]');
     const memoSendContainer = buildMemoSendContainer(memo);
     item.appendChild(memoSendContainer);
-
     enableDragDrop_appendWithId(item, memo);
 }
 
@@ -356,7 +360,7 @@ function handleDrop_Now(event) {
 function createKasaneDiv(draggedElement, dropElement) {
 
     const nestedMessageContainer = createElement('div', 'kasane', '▼');
-    
+
     messageLists.insertBefore(nestedMessageContainer, dropElement);
 
     nestedMessageContainer.appendChild(dropElement);
@@ -380,16 +384,21 @@ function createElement(tag, className = '', text = '') {
     }
 }
 
-function buildMlElement(message) {
-    const userName = message.name;
-    const item = createElement('div', 'ml'); // div.ml を作成
+function buildMlBaseStructure(data, nameText) {
+    const item = createElement('div', 'ml');
 
-    // 1 nameTiemMsg
-    const { userNameTimeMsg, isSurvey } = createNameTimeMsg(message, userName);
+    const userNameTimeMsg = createNameTimeMsg(data, nameText);
     item.appendChild(userNameTimeMsg);
 
+    return item;
+}
+
+
+function buildMlElement(message) { // chat
+    const item = buildMlBaseStructure(message, message.name);
+
     // (2) case survey => options and votes
-    if (isSurvey) {
+    if (message.question) {
         const surveyContainer = makeSurveyContainerElement(message);
         item.appendChild(surveyContainer);
     }
@@ -414,8 +423,7 @@ function createNameTimeMsg(message, nameText = message.name) {
     const message_div = createElement('div', 'message-text', message.question || message.msg);
     userNameTimeMsg.appendChild(message_div);
 
-    const isSurvey = Boolean(message.question);
-    return { userNameTimeMsg, isSurvey };
+    return userNameTimeMsg;
 }
 
 // (2)
