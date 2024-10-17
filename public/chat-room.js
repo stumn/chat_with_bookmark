@@ -514,10 +514,19 @@ form.addEventListener('submit', (event) => {
     event.preventDefault();
 
     const isChecked = switchButton.checked;
-
-    const eventName = isChecked ? 'personal memo' : 'chat message';
-    socket.emit(eventName, input.value);
-
+    if (isChecked) {
+        console.log('メモモード');
+        socket.emit('personal memo', input.value);
+    } else {
+        // 連続した2つのコロン "::" が2つ以上あるかを判別する
+        if ((input.value.match(/::/g) || []).length >= 2) {
+            console.log("2つ以上の連続したコロン '::' が含まれています。");
+            socket.emit('submitSurvey', input.value);
+        } else {
+            console.log("連続したコロン '::' が2つ以上含まれていません。");
+            socket.emit('chat message', input.value);
+        }
+    }
     input.value = '';
 });
 
@@ -525,22 +534,4 @@ function checkIsBefore(target, compare) {
     const targetDate = new Date(target);
     const compareDate = new Date(compare);
     return targetDate < compareDate;
-}
-
-const surveyForm = $('surveyForm');
-// アンケート投稿をサーバーに送信 >
-surveyForm.addEventListener('submit', (event) => {
-    event.preventDefault();
-    const question = $('surveyQuestion').value;
-    const optionText_1 = $('option1').value;
-    const optionText_2 = $('option2').value;
-    const optionText_3 = $('option3').value;
-    console.log('survey: ', question);
-    socket.emit('submitSurvey', { question: question, options: [optionText_1, optionText_2, optionText_3] });
-    toggleSurveyFormVisibility();
-});
-
-// アンケート作成の表示切り替え関数
-function toggleSurveyFormVisibility() {
-    surveyForm.style.display = surveyForm.style.display === 'none' ? 'block' : 'none';
 }
