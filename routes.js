@@ -25,15 +25,15 @@ router.get('/style.css', (_, res) => {
 });
 
 // ドキュメントページHTML
-router.get('/:randomString/document', (req, res) => {
+router.get('/:randomString/:myName/document', (req, res) => {
     res.sendFile(__dirname + '/public/document.html');
 });
 
 // ドキュメントページ用 DBアクセスAPI
 router.get('/api/:randomString/messages', async (req, res) => {
     try {
-        const apiName = req.params.randomString;
-        const messages = await fetchPosts(apiName);
+        const apiString = req.params.randomString;
+        const messages = await fetchPosts(apiString);
         res.json(messages);
     } catch (error) {
         res.status(500).json({ error: 'Failed to fetch messages in API' });

@@ -13,6 +13,16 @@ header {
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
+#docsButton {
+    background-color: #f0f0f0;
+    color: #263165;
+    border: none;
+    padding: 0.25rem 0.5rem;
+    border-radius: 5px;
+    cursor: pointer;
+    outline: none;
+}
+
 body {
     margin-top: 6rem;
     padding-bottom: 5rem;
@@ -23,6 +33,7 @@ body {
 
 /* スライダーのコンテナ */
 .slider-container {
+    margin: 0.5rem;
     display: inline-block;
     width: 60px;
     height: 34px;

@@ -26,7 +26,7 @@ $('sign-up-name').textContent = 'あなたのログイン名： ' + myName;
 
 let docURL;
 socket.on('randomString', (receivedString) => {
-    docURL = `/${receivedString}/document`;
+    docURL = `/${receivedString}/${myName}/document`;
 });
 
 function OpenDocumentWindow() {

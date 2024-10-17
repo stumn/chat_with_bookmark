@@ -10,10 +10,14 @@
 <body>
   <header>
     <h1>Chat Documents</h1><span id="login-name"></span>
+    <span id = "name"></span>
+    <br>
+    <button id="backButton" onclick="BackToChatRoom()">チャットページに戻る</button>
+    <button id="CopyButton" onclick="copyText()">テキストをコピー</button>
   </header>
 
   <main>
-    <ul id="documents"></ul>
+    <ul id="textToCopy"></ul>
   </main>
 
   <!-- ブラウザ側のスクリプト -->
@@ -22,14 +26,18 @@
     // const socket = io();
 
     // ドキュメントリスト要素の取得
-    const documentList = document.getElementById('documents');
+    const documentList = document.getElementById('textToCopy');
 
     document.addEventListener('DOMContentLoaded', () => {
       const pathname = window.location.pathname;
 
+      const loginName = decodeURIComponent(pathname.split('/')[2]);
+      console.log('loginName: ' + loginName);
+      document.getElementById('login-name').textContent = loginName + ' さん';
+
       const randomString = decodeURIComponent(pathname.split('/')[1]);
       console.log('randomString: ' + randomString);
-      
+
       // APIに接続して、ブックマークされたポストだけ取得
       fetch(`/api/${randomString}/messages`)
         .then(response => response.json())
@@ -46,6 +54,26 @@
           });
         });
     });
+
+    function copyText() {
+      // テキストを取得
+      var text = document.getElementById('textToCopy').innerText;
+
+      // テキストをクリップボードにコピー
+      navigator.clipboard.writeText(text).then(function () {
+        alert("テキストがコピーされました！");
+      }).catch(function (error) {
+        alert("コピーに失敗しました: " + error);
+      });
+    }
+
+    function BackToChatRoom() {
+      // const pathname = window.location.pathname;
+      // const randomString = decodeURIComponent(pathname.split('/')[1]);
+      // const loginName = decodeURIComponent(pathname.split('/')[2]);
+      // window.location.href = `/chat/${randomString}/${loginName}`;
+      window.location.href = `/`; // 今のところ、別人になっちゃう
+    }
 
 
   </script>

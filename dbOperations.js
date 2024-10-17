@@ -138,7 +138,7 @@ async function getUserInfo_rsnm(randomString) {
 }
 
 // ドキュメントページ用 DBからの過去ログ取得の関数
-async function fetchPosts(randomString) {
+async function fetchPosts(randomString, myName) {
 
     // まずユーザー情報のDBから、nameTomatchを取得
     const nameToMatch = await getUserInfo_rsnm(randomString);
