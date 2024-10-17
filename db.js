@@ -41,15 +41,11 @@ const postSchema = new mongoose.Schema({
     name: String,
     msg: String,
     question: String,
-    options: Array,
+    options: [String],
     ups: [{ type: bookmarkSchema, default: () => ({}) }],
     downs: [{ type: bookmarkSchema, default: () => ({}) }],
     bookmarks: [{ type: bookmarkSchema, default: () => ({}) }],
-    voteOpt0: [String],
-    voteOpt1: [String],
-    voteOpt2: [String],
-    // voteOptions: [[voteSchema]]　2次元配列の拡張案
-    // voteOptions: { type: Array, default: () => [[]] }
+    voteOptions: [[String]],
     isStackingOn: { type: Boolean, default: false }, // スタックしているか（このポストは子分）
     stackedPostIds: [String] // スタックされているポストのID（このポストが親分、id は子分たち）
 }, options);

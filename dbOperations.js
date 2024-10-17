@@ -56,9 +56,9 @@ function organizeCreatedAt(createdAt) {
 }
 
 // データベースにレコードを保存
-async function saveRecord(name, msg, question = '', options = [], ups = [], downs = [], voteOpt0 = [], voteOpt1 = [], voteOpt2 = [], isStackingOn = false, stackedPostIds = []) {
+async function saveRecord(name, msg, question = '', options = [], voteOptions = [], ups = [], downs = [], bookmarks = [], isStackingOn = false, stackedPostIds = []) {
     try {
-        const npData = { name, msg, question, options, ups, downs, voteOpt0, voteOpt1, voteOpt2 };
+        const npData = { name, msg, question, options, voteOptions, ups, downs, bookmarks, isStackingOn, stackedPostIds };
         const newPost = await Post.create(npData);
         return newPost;
     } catch (error) {
@@ -105,13 +105,13 @@ async function saveMemo(name, msg) {
 }
 
 // アンケートメッセージ受送信
-async function SaveSurveyMessage(data, name) {
-    const Q = data.question;
-    const optionTexts = [data.options[0], data.options[1], data.options[2]];
+async function SaveSurveyMessage(formattedQuestion, options, name) {
+    const voteOptions = options.map(() => []); // 選択肢数分の空配列を作成
+    console.log('voteOptions: ', voteOptions);
     try {
-        const surveyPost = await saveRecord(name, '', Q, optionTexts);
-        const xxx = organizeLogs(surveyPost);
-        return xxx;
+        const surveyPost = await saveRecord(name, '', formattedQuestion, options, voteOptions);
+        console.log('surveyPost: ', surveyPost);
+        return organizeLogs(surveyPost);
     } catch (error) {
         handleErrors(error, 'アンケート受送信中にエラーが発生しました');
     }

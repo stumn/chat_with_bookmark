@@ -252,10 +252,11 @@ function insertDownCard(msg, timeSpans, i) {
 // handleUpdateVote(voteData);
 function handleUpdateVote(voteData) {
     const item = $(voteData._id);
-    for (let i = 0; i < 3; i++) {
-        const surveyNum = item.querySelector(`.survey-container .survey-num-${i + 1}`);
-        surveyNum.textContent = voteData[`count${i}`];
-    }
+    voteData.voteSums.forEach((voteSum, i) => {
+        const surveyNum = item.querySelector(`.survey-container .survey-num-${i}`);
+        console.log('surveyNum: ', surveyNum);
+        surveyNum.textContent = voteSum;
+    });
 }
 
 // handleDrop_Display(stackedData);
@@ -393,8 +394,8 @@ function buildMlBaseStructure(data, nameText) {
     return item;
 }
 
-
 function buildMlElement(message) { // chat
+    console.log('buildMLElement message: ', message);
     const item = buildMlBaseStructure(message, message.name);
 
     // (2) case survey => options and votes
@@ -429,17 +430,18 @@ function createNameTimeMsg(message, nameText = message.name) {
 // (2)
 function makeSurveyContainerElement(message) {
     const surveyContainer = createElement('div', 'survey-container');
+
     for (let i = 0; i < message.options.length; i++) {
         const surveyOption = createElement('button', 'survey-option', message.options[i] || '');
 
         surveyOption.addEventListener('click', () => {
+            // console.log(i);
             socket.emit('survey', message._id, i);
         });
 
-        const tentativeSums = message.voteSums ? message.voteSums : [0, 0, 0];
+        console.log('message.voteSums: ', message.voteSums);
 
-        console.log('tentativeSums[i]: ', tentativeSums[i]);
-        const surveyNum = createElement('span', 'survey-num-' + (i + 1), tentativeSums[i]);
+        const surveyNum = createElement('span', 'survey-num-' + (i), `${message.voteSums[i]}`);
 
         surveyContainer.appendChild(surveyOption);
         surveyContainer.appendChild(surveyNum);

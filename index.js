@@ -19,7 +19,7 @@ const io = new Server(server);
 
 // const { mongoose, Post, Memo } = require('./db');
 const { saveUser, getUserInfo, getPastLogs, organizeCreatedAt, SaveChatMessage, SavePersonalMemo, SaveSurveyMessage, findPost, fetchPosts, saveStackRelation } = require('./dbOperations');
-const { handleErrors, createVoteArrays, checkVoteStatus, calculate_VoteSum, organize_voteData, checkEventStatus } = require('./utils');
+const { handleErrors, checkVoteStatus, calculate_VoteSum, checkEventStatus } = require('./utils');
 
 const { error } = require('console');
 
@@ -90,13 +90,21 @@ io.on('connection', async (socket) => {
 
     // < アンケートメッセージ >
     socket.on('submitSurvey', async data => {
-      const s = await SaveSurveyMessage(data, name);
+      console.log('data', data); // data Q:: a:: b:: c:: d:: e
+
+      // 文字列を最初に出現する "::" で分割して、質問部分と選択肢部分に分ける
+      const { formattedQuestion, options } = parseQuestionOptions(data);
+
+      const s = await SaveSurveyMessage(formattedQuestion, options, name);
+
+      console.log(s.voteSums);
 
       const organizedSurvey = {
         _id: s._id,
         name: s.name,
         question: s.question,
         options: s.options,
+        voteSums: s.voteSums,
         createdAt: organizeCreatedAt(s.createdAt)
       }
       console.log('organizedSurvey', organizedSurvey);
@@ -106,7 +114,7 @@ io.on('connection', async (socket) => {
     // < アンケート投票 >
     socket.on('survey', async (msgId, option) => {
       const voteData = await processVoteEvent(msgId, option, socket.id, socket);
-      io.emit('updateVote', voteData);
+      io.emit('updateVote', voteData); // id とcount を送信
     });
 
     // < ボタンイベント (up, down, bookmark) >
@@ -167,6 +175,19 @@ io.on('connection', async (socket) => {
   });
 });
 
+function parseQuestionOptions(data) {
+  const [question, ...rest] = data.split('::');
+
+  // 残りの部分をまとめて再び "::" で分割して、選択肢の配列を作成
+  const options = rest.join('::').split('::').map(option => option.trim());
+
+  const formattedQuestion = question.trim();
+  // 結果を確認
+  console.log("質問:", formattedQuestion);
+  console.log("選択肢:", options);
+  return { formattedQuestion, options };
+}
+
 function generateRandomString(length) {
   const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
   let result = '';
@@ -212,21 +233,29 @@ async function logInFunction(rawname, socket) {
 async function processVoteEvent(msgId, option, userSocketId, socket) {
   try {
     const surveyPost = await findPost(msgId); // ポストを特定
-    let voteArrays = createVoteArrays(surveyPost);  // 投票配列
+    const voteArrays = surveyPost.voteOptions;  // 投票配列
+    console.log('voteArrays', voteArrays);
 
     let { userHasVoted, hasVotedOption } = checkVoteStatus(userSocketId, voteArrays); // ユーザーが投票済みか否か
 
     if (userHasVoted === true) { // 投票済み（関数切り分け済み）
+      console.log('投票済み');
       await handle_Voted_User(option, hasVotedOption, socket, voteArrays, surveyPost);
     }
     else { // 未投票(処理が短いので関数に切り分けていない)
+      console.log('未投票');
       voteArrays[option].push(userSocketId);
+      surveyPost.markModified('voteOptions');
       await surveyPost.save();
+      console.log(surveyPost);
     }
 
     let voteSums = calculate_VoteSum(voteArrays); // 投票合計を計算
 
-    return organize_voteData(surveyPost, voteSums); //返り値
+    return {
+      _id: surveyPost._id,
+      voteSums: voteSums
+    };
 
   } catch (error) {
     handleErrors(error, 'processVoteEvent  投票処理中にエラーが発生しました');
@@ -248,8 +277,12 @@ async function handle_Voted_User(option, hasVotedOption, socket, voteArrays, sur
 
   // answer 変更希望 => 投票済みの選択肢を1減らし、新しい選択肢に1増やす
   if (answer === true) {
+    console.log('投票変更');
+    console.log('voteArrays[hasVotedOption]', voteArrays[hasVotedOption]);
     voteArrays[hasVotedOption].pull(socket.id);
+    console.log('voteArrays[option]', voteArrays[option]);
     voteArrays[option].push(socket.id);
+    surveyPost.markModified('voteOptions');
     await surveyPost.save();
   }
 }

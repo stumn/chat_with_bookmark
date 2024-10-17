@@ -13,7 +13,7 @@ function organizeLogs(post) {
     const pastDownSum = post.downs.length;
     const pastBookmarkSum = post.bookmarks.length;
 
-    const voteSums = calculate_VoteSum(createVoteArrays(post));// 投票合計
+    const voteSums = calculate_VoteSum(post.voteOptions);// 投票合計
 
     // 返り値
     return {
@@ -26,7 +26,7 @@ function organizeLogs(post) {
         downs: pastDownSum,
         bookmarks: pastBookmarkSum,
         voteSums: voteSums,
-        createdAt : post.createdAt,
+        createdAt: post.createdAt,
         isStackingOn: post.isStackingOn,
         stackedPostIds: post.stackedPostIds
     };
@@ -37,20 +37,15 @@ function organizeLogs(post) {
 
 // ~~~投票関連 processVoteEvent で使う関数~~~
 
-// -投票配列を作成(二次元配列[[ken_id, takashi_id][naknao_id][okamoto_id]])
-function createVoteArrays(surveyPost) {
-    let voteArrays = [];
-    voteArrays.push(surveyPost.voteOpt0);
-    voteArrays.push(surveyPost.voteOpt1);
-    voteArrays.push(surveyPost.voteOpt2);
-    return voteArrays;
-}
-
 // -ユーザーが既にvoteしているか確認
 function checkVoteStatus(userSocketId, voteArrays) { // voteArrays は二次元配列
     for (let index = 0; index < voteArrays.length; index++) { // i = 0, 1, 2
         const voteOptArray = voteArrays[index];
+        console.log('voteOptArray: ', voteOptArray);
+
         for (const voteOpt of voteOptArray) {
+            console.log('voteOpt: ', voteOpt);
+
             if (Array.isArray(voteOpt)) { // 選択肢i の投票者配列が、配列の場合
                 if (voteOpt.some(obj => obj.id === userSocketId)) {
                     return { userHasVoted: true, hasVotedOption: index }; // 投票済み
@@ -80,16 +75,6 @@ function calculate_VoteSum(voteArrays) {
     return voteSums;
 }
 
-// -投票データを整理
-function organize_voteData(surveyPost, voteSums) {
-    return {
-        _id: surveyPost._id,
-        count0: voteSums[0],
-        count1: voteSums[1],
-        count2: voteSums[2]
-    };
-}
-
 // ~~~イベント関連 processEvent で使う関数~~~
 
 // ユーザーのイベント状況を確認
@@ -99,9 +84,10 @@ async function checkEventStatus(events, userSocketId) {
         const existingUser = events.find(obj => obj.userSocketId === userSocketId);
         if (existingUser) {
             isAlert = true;
+
         }
     }
     return isAlert;
 }
 
-module.exports = { handleErrors, organizeLogs, createVoteArrays, checkVoteStatus, calculate_VoteSum, organize_voteData, checkEventStatus };
+module.exports = { handleErrors, organizeLogs, checkVoteStatus, calculate_VoteSum, checkEventStatus };
