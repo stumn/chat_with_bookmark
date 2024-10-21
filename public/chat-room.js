@@ -62,18 +62,72 @@ socket.on('memoLogs', (memo) => {
     handleMemoLogs(memo);
 });
 
+// socket.on('memoCount', (memoCount) => {
+//     console.log('memoCount: ', memoCount);
+
+//     const header = document.querySelector('header');
+//     const redIntensity = Math.min(240 + memoCount * 1, 255);
+//     const greenIntensity = Math.max(240 - memoCount * 10, 0);
+//     const blueIntensity = Math.max(240 - memoCount * 10, 0);
+
+//     console.log(redIntensity, greenIntensity, blueIntensity);
+//     header.style.backgroundColor = `rgb(${redIntensity}, ${greenIntensity}, ${blueIntensity})`;
+//     return memoCount;
+// });
+
+// // anime
+// socket.on('memoCount', (memoCount) => {
+//     console.log('memoCount: ', memoCount);
+
+//     const header = document.querySelector('header');
+
+//     const startColor = { r: 38, g: 49, b: 101 };
+//     const endColor = { r: 184, g: 46, b: 46 };
+
+//     const steps = 100; // 色が変わるステップ数
+//     let step = 0;
+
+//     function animateColorChange() {
+//         const progress = step / steps;
+
+//         const redIntensity = Math.round(startColor.r + (endColor.r - startColor.r) * progress);
+//         const greenIntensity = Math.round(startColor.g + (endColor.g - startColor.g) * progress);
+//         const blueIntensity = Math.round(startColor.b + (endColor.b - startColor.b) * progress);
+
+//         console.log(redIntensity, greenIntensity, blueIntensity);
+//         header.style.backgroundColor = `rgb(${redIntensity}, ${greenIntensity}, ${blueIntensity})`;
+
+//         if (step < steps) {
+//             step++;
+//             requestAnimationFrame(animateColorChange); // 次のフレームで色を更新
+//         }
+//     }
+
+//     animateColorChange();
+// });
+
+let currentColor = { r: 38, g: 49, b: 101 }; // 初期の色
+
 socket.on('memoCount', (memoCount) => {
     console.log('memoCount: ', memoCount);
 
     const header = document.querySelector('header');
-    const redIntensity = Math.min(240 + memoCount * 1, 255);
-    const greenIntensity = Math.max(240 - memoCount * 10, 0);
-    const blueIntensity = Math.max(240 - memoCount * 10, 0);
+
+    const endColor = { r: 184, g: 46, b: 46 }; // 最終的に目指す色
+    const maxMemoCount = 30; // memoCount がこの値に達すると完全に赤になる
+    const progress = Math.min(memoCount / maxMemoCount, 1); // 0から1までの範囲で進捗率を計算
+    console.log('progress: ', progress);
+
+    // memoCount に応じて現在の色を更新
+    const redIntensity = Math.round(currentColor.r + (endColor.r - currentColor.r) * progress);
+    const greenIntensity = Math.round(currentColor.g + (endColor.g - currentColor.g) * progress);
+    const blueIntensity = Math.round(currentColor.b + (endColor.b - currentColor.b) * progress);
 
     console.log(redIntensity, greenIntensity, blueIntensity);
     header.style.backgroundColor = `rgb(${redIntensity}, ${greenIntensity}, ${blueIntensity})`;
-    return memoCount;
 });
+
+
 
 // 伏せカード登場！
 socket.on('downCard', (msg) => {
