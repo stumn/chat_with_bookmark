@@ -241,11 +241,21 @@ function handleChatLogs(post) {
 }
 
 // handleMemoLogs(memo);
-function handleMemoLogs(memo) { // buildMlElement(message);に近い
+function handleMemoLogs(memo, shouldScroll = true) { // buildMlElement(message);に近い
     const item = buildMlBaseStructure(memo, '[memo]');
     const memoSendContainer = buildMemoSendContainer(memo);
     item.appendChild(memoSendContainer);
-    enableDragDrop_appendWithId(item, memo);
+
+    // messageLists に追加
+    messageLists.appendChild(item);
+
+    if (memo._id) {
+        item.id = memo._id;
+    }
+
+    if (shouldScroll) {
+        window.scrollTo(0, document.body.scrollHeight);
+    }
 }
 
 function buildMemoSendContainer(memo) {
@@ -276,28 +286,38 @@ function handleDownCard(msg) {
         if (isBefore === false) {
             if (i === timeSpans.length - 1) {
                 console.log("target は 最新");
-                const item = buildMlElement(msg);
-                enableDragDrop_appendWithId(item, msg);
+                insertDownCard(msg, timeSpans, i, true);
+                // const item = buildMlElement(msg);
+                // enableDragDrop_appendWithId(item, msg);
                 return;
             }
             continue;
         }
-        else if (isBefore === true) { // ここで、messageLists に挿入
+        else { // ここで、messageLists に挿入
             insertDownCard(msg, timeSpans, i);
             return;
         }
     }
 }
 
-function insertDownCard(msg, timeSpans, i) {
+function insertDownCard(msg, timeSpans, index, isLatest = false) {
     const item = buildMlElement(msg);
 
-    let parentDIV = timeSpans[i].closest('.ml');
+    item.classList.add('draggable');
+    item.setAttribute('draggable', 'true');
+    addDragAndDropListeners(item);
 
-    if (parentDIV.parentNode.classList.contains('kasane')) {
-        parentDIV = parentDIV.parentNode;
+    if (isLatest) {
+        messageLists.appendChild(item);
+        window.scrollTo(0, document.body.scrollHeight);
+    } else {
+        let parentDIV = timeSpans[index].closest('.ml');
+
+        if (parentDIV.parentNode.classList.contains('kasane')) {
+            parentDIV = parentDIV.parentNode;
+        }
+        messageLists.insertBefore(item, parentDIV);
     }
-    messageLists.insertBefore(item, parentDIV);
 
     item.id = msg._id;
     item.classList.add('ml', 'downCard', 'visible');
@@ -404,22 +424,33 @@ function handleDrop_Now(event) {
 
         const dropElement = event.target.closest('.ml');
         if (dropElement) {
-            createKasaneDiv(draggedElement, dropElement);
+            console.log('yes dropElement: ', dropElement);
+            if (dropElement.classList.contains('kasane') || dropElement.parentNode.classList.contains('kasane')) {
+                let parentDIV = dropElement.closest('.kasane');
+                parentDIV.appendChild(draggedElement);
+            } else {
+                createKasaneDiv(draggedElement, dropElement);
+            }
             socket.emit('drop', { draggedId: draggedElement.id, dropId: dropElement.id });
         } else {
-            console.log('dropElement: ', dropElement);
+            console.log('no dropElement: ', dropElement);
         }
     }
 }
 
 function createKasaneDiv(draggedElement, dropElement) {
-
+    console.log('start createKasaneDiv');
     const nestedMessageContainer = createElement('div', 'kasane', '▼');
 
+    console.log('nestedMessageContainer 1: ', nestedMessageContainer);
     messageLists.insertBefore(nestedMessageContainer, dropElement);
+
+    console.log('nestedMessageContainer 2: ', nestedMessageContainer);
 
     nestedMessageContainer.appendChild(dropElement);
     nestedMessageContainer.appendChild(draggedElement);
+
+    console.log('nestedMessageContainer 3: ', nestedMessageContainer);
 
     // Restore visibility and reset styles
     draggedElement.style.visibility = '';

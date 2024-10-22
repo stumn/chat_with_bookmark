@@ -300,7 +300,7 @@ async function receiveSendButtonEvent(eventType, msgId, name, socket) {
 
     if (isAlert) {
       console.log('この人は既にアクションがあります');
-      socket.emit('alert', `${eventType}は一度しかできません`);
+      // socket.emit('alert', `${eventType}は一度しかできません`);
     } else {
       events.push({ userSocketId: socket.id, name: name });
       console.log(`新たなユーザーの${eventType}を追加しました: ` + JSON.stringify(events));
