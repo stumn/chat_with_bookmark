@@ -13,7 +13,7 @@ const messageLists = $('messageLists');
 const form = $('form');
 const input = $('input');
 const formButton = $('formButton');
-const switchButton = $('switchButton');
+const checkBox = $('checkBox');
 
 // プロンプト　ログインで名前を入力・サーバーに送信
 const myName = prompt("名前を入力してください", "");
@@ -583,28 +583,31 @@ function enableDragDrop_appendWithId(item, message = {}, shouldScroll = true) {
     }
 }
 
-switchButton.addEventListener('change', toggleMemoMode);
+input.addEventListener('focus', () => {
+    input.style.outlineColor = checkBox.checked ? 'rgb(56, 92, 168)' : 'rgb(32, 178, 170)';
+});
+
+checkBox.addEventListener('change', toggleMemoMode);
 
 function toggleMemoMode() {
-    if (switchButton.checked) {
-        input.placeholder = 'メモ あなただけに表示';
-        formButton.textContent = 'Memo';
-        formButton.classList.add('memoButton');
-    } else {
+    if (checkBox.checked) {
         input.placeholder = 'メッセージ みんなに表示';
+        input.style.outlineColor = 'rgb(56, 92, 168)';
         formButton.textContent = 'Send';
-        formButton.classList.remove('memoButton');
+        formButton.classList.add('chatButton');
+    } else {
+        input.placeholder = 'メモ あなただけに表示';
+        input.style.outlineColor = 'rgb(32, 178, 170)';
+        formButton.textContent = 'Memo';
+        formButton.classList.remove('chatButton');
     }
 }
 
 form.addEventListener('submit', (event) => {
     event.preventDefault();
 
-    const isChecked = switchButton.checked;
+    const isChecked = checkBox.checked;
     if (isChecked) {
-        console.log('メモモード');
-        socket.emit('personal memo', input.value);
-    } else {
         // 連続した2つのコロン "::" が2つ以上あるかを判別する
         if ((input.value.match(/::/g) || []).length >= 2) {
             console.log("2つ以上の連続したコロン '::' が含まれています。");
@@ -613,6 +616,9 @@ form.addEventListener('submit', (event) => {
             console.log("連続したコロン '::' が2つ以上含まれていません。");
             socket.emit('chat message', input.value);
         }
+    } else {
+        console.log('メモモード');
+        socket.emit('personal memo', input.value);
     }
     input.value = '';
 });

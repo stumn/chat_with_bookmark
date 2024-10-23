@@ -18,21 +18,16 @@
       <br>
       <span id="onlines"></span>
     </div>
-    <button id = "docsButton" onclick="OpenDocumentWindow()">ドキュメント</button>
+    <button id="docsButton" onclick="OpenDocumentWindow()">ドキュメント</button>
   </header>
 
   <main>
     <div id="messageLists"></div>
 
     <form id="form" action="">
-      <input id="input" autocomplete="off" placeholder="メッセージ みんなに表示" pattern=".*\S+.*" required>
-      <button id="formButton">Send</button>
-      <div class="slider-container">
-        <label class="slider">
-          <input type="checkbox" id=switchButton>
-          <span class="slider-button"></span>
-        </label>
-      </div>
+      <input id="input" autocomplete="off" placeholder="メモ あなただけに表示" pattern=".*\S+.*" required>
+      <input type="checkbox" id=checkBox>
+      <button id="formButton">Memo</button>
     </form>
 
   </main>

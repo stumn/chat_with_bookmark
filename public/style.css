@@ -27,65 +27,9 @@ body {
     margin-top: 6rem;
     padding-bottom: 5rem;
     /* body の下を決めるFooter height */
-    background-color: (240,240,240);
+    background-color: (240, 240, 240);
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
-
-/* スライダーのコンテナ */
-.slider-container {
-    margin: 0.5rem;
-    display: inline-block;
-    width: 60px;
-    height: 34px;
-}
-
-/* スライダーボタンのスタイル */
-.slider {
-    position: relative;
-    display: inline-block;
-    width: 100%;
-    height: 100%;
-}
-
-.slider input {
-    display: none;
-}
-
-.slider-button {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: #ccc;
-    border-radius: 34px;
-    cursor: pointer;
-    transition: 0.4s;
-}
-
-/* スライダーボタンがチェックされた時のスタイル */
-.slider input:checked+.slider-button {
-    background-color: #4CAF50;
-}
-
-/* スライダーの丸ボタン */
-.slider-button::before {
-    position: absolute;
-    content: "";
-    height: 26px;
-    width: 26px;
-    left: 4px;
-    bottom: 4px;
-    background-color: white;
-    border-radius: 50%;
-    transition: 0.4s;
-}
-
-/* チェックされたときに丸ボタンが右に動く */
-.slider input:checked+.slider-button::before {
-    transform: translateX(26px);
-}
-
 
 #messageLists {
     margin: 0;
@@ -303,9 +247,10 @@ span.bookmark-count {
     height: 4rem;
     box-sizing: border-box;
     backdrop-filter: blur(10px);
+    text-align: center;
 }
 
-#input {
+#form>#input {
     border: none;
     padding: 0 1rem;
     flex-basis: 100%;
@@ -313,22 +258,36 @@ span.bookmark-count {
     margin: 0.25rem;
 }
 
-#input:focus {
-    outline: none;
+#form>#input:focus {
+    outline-color: gray;
+}
+
+#form>#checkBox {
+    margin: 1.5rem;
+    display: flex;
+    transform: scale(5);
 }
 
 #form>button {
-    background: #385CA8;
+    background: rgb(32, 178, 170);
     border: none;
-    padding: 0 1rem;
+    padding: 0 2rem;
     margin: 0.25rem;
     border-radius: 3px;
     outline: none;
     color: #fff;
+    font-size: 1.25rem;
 }
 
-#form>button.memoButton {
-    background: lightseagreen;
+#form>button.chatButton {
+    background: rgb(56, 92, 168);
+    border: none;
+    padding: 0 2rem;
+    margin: 0.25rem;
+    border-radius: 3px;
+    outline: none;
+    color: #fff;
+    font-size: 1.25rem;
 }
 
 /* アンケート投稿 */
