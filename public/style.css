@@ -24,6 +24,7 @@ header {
 }
 
 body {
+    width: 98vw;
     margin-top: 6rem;
     padding-bottom: 5rem;
     /* body の下を決めるFooter height */
@@ -36,6 +37,100 @@ body {
     padding: 0;
 }
 
+#messageLists>div {
+    display: flex;
+    /* Flexboxで子要素を並べる */
+    justify-content: space-between;
+    /* 子要素の間隔を調整 */
+    align-items: center;
+    /* 中央に揃える */
+}
+
+.buttons {
+    white-space: nowrap;
+    /* 改行を防ぐ */
+}
+
+.accordion .buttons {
+    display: flex;
+    justify-content: flex-end;
+    margin-left: auto;
+}
+
+.accordion {
+    margin-bottom: 7px;
+    border: 2px solid #d0d0d0;
+    border-left: #EF7D3C 5px solid;
+    border-radius: 25px;
+}
+
+.accordion summary {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+    padding: 1em 2em;
+    color: #333333;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.accordion summary::-webkit-details-marker {
+    display: none;
+}
+
+.accordion summary::after {
+    transform: translateY(-25%) rotate(45deg);
+    width: 7px;
+    height: 7px;
+    margin-left: 10px;
+    border-bottom: 3px solid #333333b3;
+    border-right: 3px solid #333333b3;
+    content: '';
+    transition: transform .3s;
+}
+
+.accordion[open] summary::after {
+    transform: rotate(225deg);
+}
+
+.accordion .children {
+    box-sizing: border-box;
+    padding: 0 2em;
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.accordion p {
+    display: flex;
+    transform: translateY(-10px);
+    opacity: 0;
+    margin: 0;
+    padding: .3em 2em 1.5em;
+    color: #333333;
+    transition: transform .5s, opacity .5s;
+}
+
+.accordion[open] p {
+    transform: none;
+    opacity: 1;
+}
+
+#messageLists>.memo {
+    /* メモ */
+    font-size: 1rem;
+    /* color: gray; */
+    padding: 0.5rem 1rem;
+    position: relative;
+    display: flex;
+    align-items: center;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+#messageLists>.invisibleMemo {
+    display: none;
+}
+
 #messageLists>div .ml {
     /* チャット投稿 まとめdiv */
     font-size: 1rem;
@@ -43,7 +138,7 @@ body {
     position: relative;
     display: flex;
     align-items: center;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.03);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
 }
 
 #messageLists>div.kasane {

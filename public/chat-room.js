@@ -208,20 +208,63 @@ function handlePastLogs(pastLogs, stackLogs) {
 
 function appendNestedContainer_fromPastLogs(pastElement, stackLogs) {
 
-    // まず、親分を作る
-    const item = buildMlElement(pastElement);
+    function build(message) {
+        const master = createElement('summary', 'ml');
 
-    if (pastElement.isOpenCard) {
-        item.classList.add('downCard', 'visible');
+        const userNameTimeMsg = createElement('div', 'userName-time-msg');
+        const userName_time = createElement('div', 'userName-time');
+        const userName = createElement('span', 'userName', message.name);
+        const time = createElement('span', 'time', message.createdAt);
+
+        userName_time.append(userName, time);
+        userNameTimeMsg.appendChild(userName_time);
+
+        const message_div = createElement('div', 'message-text', message.question || message.msg);
+        userNameTimeMsg.appendChild(message_div);
+        master.appendChild(userNameTimeMsg);
+
+        // (2) case survey => options and votes
+        if (message.question) {
+            const surveyContainer = makeSurveyContainerElement(message);
+            master.appendChild(surveyContainer);
+        }
+
+        // 3 buttons
+        const buttons = createActionButtons(message);
+        master.appendChild(buttons);
+
+        if (pastElement.isOpenCard) {
+            master.classList.add('downCard', 'visible');
+        }
+        enableDragDrop_appendWithId(master, pastElement);
+        return master;
     }
-    console.log('217: ', item);
-    enableDragDrop_appendWithId(item, pastElement);
 
-    // ▼ コンテナを作る
-    const nestedMessageContainer = createElement('div', 'kasane', '▼');
-    nestedMessageContainer.appendChild(item);
+    const master = build(pastElement);
+    console.log('master: ', master);
+
+    const accordionContainer = createElement('details', 'accordion');
+    accordionContainer.appendChild(master);
 
     // 重ね子分を配列に格納
+    let kobuns = makeKobunsArray(stackLogs, pastElement);
+
+    let children = createElement('div', 'children');
+    // 重ね子分を表示
+    kobuns.forEach(kobun => {
+        const item = buildMlElement(kobun);
+        enableDragDrop_appendWithId(item, kobun);
+        const child = createElement('p', 'child');
+        child.appendChild(item);
+        children.appendChild(child);
+    });
+
+    accordionContainer.appendChild(children);
+    // コンテナをmessageListsに追加
+    messageLists.appendChild(accordionContainer);
+}
+
+function makeKobunsArray(stackLogs, pastElement) {
     let kobuns = [];
     stackLogs.forEach(stackElement => {
         for (let i = 0; i < pastElement.stackedPostIds.length; i++) {
@@ -230,16 +273,7 @@ function appendNestedContainer_fromPastLogs(pastElement, stackLogs) {
             }
         }
     });
-
-    // 重ね子分を表示
-    kobuns.forEach(kobun => {
-        const item = buildMlElement(kobun);
-        enableDragDrop_appendWithId(item, kobun);
-        nestedMessageContainer.appendChild(item);
-    });
-
-    // コンテナをmessageListsに追加
-    messageLists.appendChild(nestedMessageContainer);
+    return kobuns;
 }
 
 // handleChatLogs(post);
@@ -252,6 +286,7 @@ function handleChatLogs(post) {
 // handleMemoLogs(memo);
 function handleMemoLogs(memo, shouldScroll = true) { // buildMlElement(message);に近い
     const item = buildMlBaseStructure(memo, '[memo]');
+    item.classList.add('memo');
     const memoSendContainer = buildMemoSendContainer(memo);
     item.appendChild(memoSendContainer);
 
@@ -276,6 +311,7 @@ function buildMemoSendContainer(memo) {
         e.preventDefault();
         socket.emit('open_downCard', memo);
         button.disabled = true;
+        button.closest('.memo').classList.add('invisibleMemo');
     });
 
     memoSendContainer.appendChild(button);
