@@ -548,7 +548,7 @@ function makeActionButtonContainer(eventType, message) {
     const eventData = {
         up: { className: 'up-container', emoji: '⇧', count: message.ups || 0 },
         down: { className: 'down-container', emoji: '⇩', count: message.downs || 0 },
-        bookmark: { className: 'bookmark-container', emoji: '🔖', count: message.bookmarks || 0 }
+        bookmark: { className: 'bookmark-container', emoji: '☆', count: message.bookmarks || 0 }
     }[eventType];
 
     const container = createElement('div', eventData.className);

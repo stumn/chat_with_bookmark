@@ -139,6 +139,7 @@ body {
     border-radius: 5px;
     cursor: pointer;
     outline: none;
+    font-size: 1rem;
 }
 
 span.up-count,
@@ -185,9 +186,6 @@ span.down-count {
 span.bookmark-count {
     color: #2879C2;
 }
-
-
-
 
 /* ドラッグ */
 .draggable {
