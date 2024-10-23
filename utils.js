@@ -27,6 +27,7 @@ function organizeLogs(post) {
         bookmarks: pastBookmarkSum,
         voteSums: voteSums,
         createdAt: post.createdAt,
+        isOpenCard: post.isOpenCard,
         isStackingOn: post.isStackingOn,
         stackedPostIds: post.stackedPostIds
     };

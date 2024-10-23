@@ -46,6 +46,7 @@ const postSchema = new mongoose.Schema({
     downs: [{ type: bookmarkSchema, default: () => ({}) }],
     bookmarks: [{ type: bookmarkSchema, default: () => ({}) }],
     voteOptions: [[String]],
+    isOpenCard: { type: Boolean, default: false }, //
     isStackingOn: { type: Boolean, default: false }, // スタックしているか（このポストは子分）
     stackedPostIds: [String] // スタックされているポストのID（このポストが親分、id は子分たち）
 }, options);

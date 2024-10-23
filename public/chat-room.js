@@ -190,6 +190,10 @@ function handlePastLogs(pastLogs, stackLogs) {
         }
         else { // 重ね子分が存在しない場合
             const item = buildMlElement(pastElement);
+            if (pastElement.isOpenCard) {
+                item.classList.add('downCard', 'visible');
+                console.log(item);
+            }
             enableDragDrop_appendWithId(item, pastElement);
         }
     });
@@ -206,6 +210,11 @@ function appendNestedContainer_fromPastLogs(pastElement, stackLogs) {
 
     // まず、親分を作る
     const item = buildMlElement(pastElement);
+
+    if (pastElement.isOpenCard) {
+        item.classList.add('downCard', 'visible');
+    }
+    console.log('217: ', item);
     enableDragDrop_appendWithId(item, pastElement);
 
     // ▼ コンテナを作る
@@ -591,7 +600,7 @@ checkBox.addEventListener('change', toggleMemoMode);
 
 function toggleMemoMode() {
     if (checkBox.checked) {
-        input.placeholder = 'メッセージ みんなに表示';
+        input.placeholder = 'チャット みんなに表示';
         input.style.outlineColor = 'rgb(56, 92, 168)';
         formButton.textContent = 'Send';
         formButton.classList.add('chatButton');

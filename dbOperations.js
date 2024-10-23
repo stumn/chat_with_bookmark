@@ -32,17 +32,20 @@ async function getPastLogs() {
         // const posts = await Post.find({}).limit(PAST_POST).sort({ createdAt: -1 });
         let posts = await Post.find({}).sort({ createdAt: -1 });
         let stacks = posts.filter(e => e.isStackingOn === true);
+        
         posts = posts.filter(e => e.isStackingOn === false);
         posts.reverse();
+        
         const pastLogs = await Promise.all(posts.map(organizeLogs));
         pastLogs.forEach(e => {
             e.createdAt = organizeCreatedAt(e.createdAt);
         });
+        
         const stackLogs = await Promise.all(stacks.map(organizeLogs));
         stackLogs.forEach(e => {
             e.createdAt = organizeCreatedAt(e.createdAt);
         });
-        console.log('過去ログ整理完了');
+        console.log('過去ログ整理完了', pastLogs[pastLogs.length - 1]);
         return { pastLogs, stackLogs };
     } catch (error) {
         handleErrors(error, 'getPastLogs 過去ログ取得中にエラーが発生しました');
@@ -56,9 +59,10 @@ function organizeCreatedAt(createdAt) {
 }
 
 // データベースにレコードを保存
-async function saveRecord(name, msg, question = '', options = [], voteOptions = [], ups = [], downs = [], bookmarks = [], isStackingOn = false, stackedPostIds = []) {
+async function saveRecord(name, msg, question = '', options = [], voteOptions = [], ups = [], downs = [], bookmarks = [], isOpenCard = false, isStackingOn = false, stackedPostIds = []) {
     try {
-        const npData = { name, msg, question, options, voteOptions, ups, downs, bookmarks, isStackingOn, stackedPostIds };
+        const npData = { name, msg, question, options, voteOptions, ups, downs, bookmarks, isOpenCard, isStackingOn, stackedPostIds };
+        console.log('npData: ', npData);
         const newPost = await Post.create(npData);
         return newPost;
     } catch (error) {
@@ -67,11 +71,12 @@ async function saveRecord(name, msg, question = '', options = [], voteOptions = 
 }
 
 // チャットメッセージ受送信
-async function SaveChatMessage(name, msg) {
+async function SaveChatMessage(name, msg, isOpenCard) {
     try {
         console.log('SCM msg: ', msg);
-        const p = await saveRecord(name, msg);
-        console.log('チャット保存しました💬:' + p.msg + p.id);
+        console.log('SCM isOpenCard: ', isOpenCard);
+        const p = await saveRecord(name, msg, '', [], [], [], [], [], isOpenCard);
+        console.log('チャット保存しました💬:' + p.msg + p.isOpenCard);
         return p;
     }
     catch (error) {

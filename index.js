@@ -42,7 +42,7 @@ io.on('connection', async (socket) => {
 
     // < チャットメッセージ >
     socket.on('chat message', async (msg) => {
-      const p = await SaveChatMessage(name, msg);
+      const p = await SaveChatMessage(name, msg, false);
 
       const organizedPost = {
         _id: p._id,
@@ -125,7 +125,7 @@ io.on('connection', async (socket) => {
     // 伏せカードオープン
     socket.on('open_downCard', async (msg) => {
       console.log('open_downCard', msg);
-      const p = await SaveChatMessage(name, msg.msg);
+      const p = await SaveChatMessage(name, msg.msg, true);
 
       const organizedPost = {
         _id: p._id,
