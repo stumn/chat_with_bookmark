@@ -18,7 +18,7 @@ const { Server } = require("socket.io");
 const io = new Server(server);
 
 // const { mongoose, Post, Memo } = require('./db');
-const { saveUser, getUserInfo, getPastLogs, organizeCreatedAt, SaveChatMessage, SavePersonalMemo, SaveSurveyMessage, findPost, fetchPosts, saveStackRelation } = require('./dbOperations');
+const { saveUser, getUserInfo, getPastLogs, organizeCreatedAt, SaveChatMessage, SavePersonalMemo, SaveSurveyMessage, findPost, findMemo, fetchPosts, saveStackRelation, kasaneteOpen_saveStackRelation } = require('./dbOperations');
 const { handleErrors, checkVoteStatus, calculate_VoteSum, checkEventStatus } = require('./utils');
 
 const { error } = require('console');
@@ -137,6 +137,35 @@ io.on('connection', async (socket) => {
       }
 
       io.emit('downCard', organizedPost);
+    });
+
+    socket.on('kasaneteOpen', async (memoId, dropId) => {
+      console.log('kasaneteOpen');
+      console.log('memoId: ', memoId);
+
+      const memo = await findMemo(memoId);
+      console.log('memo: ', memo);
+
+      const target = await findPost(dropId);
+      console.log('target: ', target);
+
+      const p = await SaveChatMessage(memo.name, memo.msg, true);
+
+      const organizedPost = {
+        _id: p._id,
+        name: p.name,
+        msg: p.msg,
+        question: p.question,
+        options: p.options,
+        createdAt: memo.createdAt
+      }
+
+      const data = { organizedPost, dropId };
+
+      io.emit('kasaneteOpen', data);
+
+      // 重ね関係保存
+      kasaneteOpen_saveStackRelation(p, target);
     });
 
     // ドラッグstart

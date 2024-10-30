@@ -32,15 +32,15 @@ async function getPastLogs() {
         // const posts = await Post.find({}).limit(PAST_POST).sort({ createdAt: -1 });
         let posts = await Post.find({}).sort({ createdAt: -1 });
         let stacks = posts.filter(e => e.isStackingOn === true);
-        
+
         posts = posts.filter(e => e.isStackingOn === false);
         posts.reverse();
-        
+
         const pastLogs = await Promise.all(posts.map(organizeLogs));
         pastLogs.forEach(e => {
             e.createdAt = organizeCreatedAt(e.createdAt);
         });
-        
+
         const stackLogs = await Promise.all(stacks.map(organizeLogs));
         stackLogs.forEach(e => {
             e.createdAt = organizeCreatedAt(e.createdAt);
@@ -124,12 +124,27 @@ async function SaveSurveyMessage(formattedQuestion, options, name) {
 
 // 投稿を見つける関数
 async function findPost(msgId) {
-    const post = await Post.findById(msgId);
-    if (!post) {
+    try {
+        const post = await Post.findById(msgId);
+        if (!post) {
+            throw new Error(`投稿が見つかりません: ${msgId}`);
+        }
+        return post;
+    } catch (error) {
         handleErrors(error, `投稿見つからない${msgId}`);
-        return;
     }
-    return post;
+}
+
+async function findMemo(msgId) {
+    try {
+        const memo = await Memo.findById(msgId);
+        if (!memo) {
+            throw new Error(`メモが見つかりません: ${msgId}`);
+        }
+        return memo;
+    } catch (error) {
+        handleErrors(error, `メモ見つからない${msgId}`);
+    }
 }
 
 async function getUserInfo_rsnm(randomString) {
@@ -215,5 +230,25 @@ async function saveStackRelation(dragedId, dropId) {
     }
 }
 
+async function kasaneteOpen_saveStackRelation(draggedPost, dropPost) {
+    try {
+        console.log('draggedPost: ', draggedPost);
+        console.log('dropPost: ', dropPost);
 
-module.exports = { saveUser, getUserInfo, getPastLogs, organizeCreatedAt, SaveChatMessage, SavePersonalMemo, SaveSurveyMessage, findPost, fetchPosts, saveStackRelation };
+        // Update isStackingOn to true
+        draggedPost.isStackingOn = true;
+        await draggedPost.save();
+
+        // Add draggedId to stackedPostIds
+        dropPost.stackedPostIds.push(draggedPost._id);
+        await dropPost.save();
+
+        // return { draggedPost, dropPost };
+
+    } catch (error) {
+        console.error('Error saving stack relation:', error);
+        throw error;  // Re-throw the error to be handled by the caller
+    }
+}
+
+module.exports = { saveUser, getUserInfo, getPastLogs, organizeCreatedAt, SaveChatMessage, SavePersonalMemo, SaveSurveyMessage, findPost, findMemo, fetchPosts, saveStackRelation, kasaneteOpen_saveStackRelation };
