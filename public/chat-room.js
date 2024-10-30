@@ -285,10 +285,8 @@ function appendNestedContainer_fromPastLogs(pastElement, stackLogs) {
 
     let kobuns = makeKobunsArray(stackLogs, pastElement);
     console.log('kobunsLength: ', kobuns.length);
-    console.log('☆', kobuns.length * 3);
-    const weight = kobuns.length * 2;
-    accordionContainer.style.borderLeft = `${weight}px solid #EF7D3C`;
-    
+    accordionContainer.style.borderLeft = `${kobuns.length * 2}px solid #EF7D3C`;
+
     let children = createElement('div', 'children');
     // 重ね子分を表示
     kobuns.forEach(kobun => {
@@ -593,6 +591,13 @@ function createKasaneDiv(draggedElement, dropElement) {
     child.appendChild(draggedElement);
     children.appendChild(child);
     accordionContainer.appendChild(children);
+
+    const childCount = accordionContainer.children.length; // 要素ノードの数を取得
+    console.log('子タグ', accordionContainer.children);
+    console.log('子タグの数: ', childCount);
+
+    accordionContainer.style.borderLeft = `${(childCount-1) * 2}px solid #EF7D3C`;
+
     draggedElement.style.visibility = '';
     master.style.border = "";
     master.style.color = '';

@@ -235,14 +235,24 @@ details.accordion {
     margin-right: 10px;
 }
 
-.up-container button,
-.down-container button,
-.bookmark-container button,
-.memoSend-container button {
+.bookmark-container button {
     background: transparent;
     box-shadow: none;
     border: none;
     color: gray;
+    border-radius: 5px;
+    cursor: pointer;
+    outline: none;
+    font-size: 1rem;
+}
+
+.up-container button,
+.down-container button,
+.memoSend-container button {
+    background: transparent;
+    box-shadow: none;
+    border: none;
+    color: white;
     border-radius: 5px;
     cursor: pointer;
     outline: none;
