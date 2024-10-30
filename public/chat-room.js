@@ -15,6 +15,8 @@ const input = $('input');
 const formButton = $('formButton');
 const checkBox = $('checkBox');
 
+let dropElement;
+
 // プロンプト　ログインで名前を入力・サーバーに送信
 const myName = prompt("名前を入力してください", "");
 if (!myName) {
@@ -22,7 +24,7 @@ if (!myName) {
     location.reload();
 }
 socket.emit('sign-up', myName);
-$('sign-up-name').textContent = 'あなたのログイン名： ' + myName;
+$('sign-up-name').textContent = 'あなた： ' + myName;
 
 let docURL;
 socket.on('randomString', (receivedString) => {
@@ -39,7 +41,7 @@ function OpenDocumentWindow() {
 
 // オンラインメンバー
 socket.on('onlineUsers', (onlines) => {
-    $('onlines').textContent = '接続中のメンバー: ' + onlines;
+    $('onlines').textContent = '接続中: ' + onlines.length + '人';
 });
 
 // 過去ログ受信
@@ -132,6 +134,41 @@ socket.on('memoCount', (memoCount) => {
 // 伏せカード登場！
 socket.on('downCard', (msg) => {
     handleDownCard(msg);
+});
+
+// 重ねてオープン
+socket.on('kasaneteOpen', (data) => {
+
+    const post = data.organizedPost;
+    const dropId = data.dropId;
+
+    console.log('post: ', post);
+    console.log('dropId: ', dropId);
+
+    const item = buildMlElement(post);
+    item.id = post._id;
+
+    // enable drag & drop
+    item.classList.add('draggable');
+    item.setAttribute('draggable', 'true');
+    addDragAndDropListeners(item);
+
+    if (post._id) {
+        item.id = post._id;
+    }
+
+    const dropElement = $(dropId);
+    console.log('dropElement: ', dropElement);
+    if (dropElement.classList.contains('kasane') || dropElement.parentNode.classList.contains('kasane')) {
+        let parentDIV = dropElement.closest('.kasane');
+        parentDIV.appendChild(draggedElement);
+    } else {
+        createKasaneDiv(draggedElement, dropElement);
+    }
+
+    dropElement.appendChild(item);
+    dropElement = null;
+    // socket.emit('drop', { draggedId: item.id, dropId: dropElement.id });
 });
 
 // < 投票を受信
@@ -290,6 +327,11 @@ function handleMemoLogs(memo, shouldScroll = true) { // buildMlElement(message);
     const memoSendContainer = buildMemoSendContainer(memo);
     item.appendChild(memoSendContainer);
 
+    // enable drag & drop
+    item.classList.add('draggable');
+    item.setAttribute('draggable', 'true');
+    addDragAndDropListeners(item);
+
     // messageLists に追加
     messageLists.appendChild(item);
 
@@ -421,6 +463,7 @@ function setPastLogsDraggable() {
 let draggedElement = null;
 
 function addDragAndDropListeners(element) {
+    console.log('element: ', element);
     element.addEventListener('dragstart', handleDragStart);
     element.addEventListener('dragend', handleDragEnd);
     element.addEventListener('dragover', handleDragOver);
@@ -464,43 +507,91 @@ function handleDragLeave(event) {
 
 function handleDrop_Now(event) {
     event.preventDefault();
+    event.stopPropagation();
+
     if (draggedElement) {
         console.log('draggedElement: ', draggedElement);
 
         const dropElement = event.target.closest('.ml');
         if (dropElement) {
             console.log('yes dropElement: ', dropElement);
-            if (dropElement.classList.contains('kasane') || dropElement.parentNode.classList.contains('kasane')) {
-                let parentDIV = dropElement.closest('.kasane');
-                parentDIV.appendChild(draggedElement);
+            if (draggedElement.classList.contains('memo')) {
+                handleMemoDrop(event, dropElement);
+                return;
             } else {
-                createKasaneDiv(draggedElement, dropElement);
+
+                if (dropElement.classList.contains('kasane') || dropElement.parentNode.classList.contains('kasane')) {
+                    let parentDIV = dropElement.closest('.kasane');
+                    parentDIV.appendChild(draggedElement);
+                } else {
+                    createKasaneDiv(draggedElement, dropElement);
+                }
+                socket.emit('drop', { draggedId: draggedElement.id, dropId: dropElement.id });
             }
-            socket.emit('drop', { draggedId: draggedElement.id, dropId: dropElement.id });
         } else {
             console.log('no dropElement: ', dropElement);
         }
     }
 }
 
+function handleMemoDrop(event, dropElement) {
+    dropElement = dropElement;
+    console.log('start handleMemoDrop');
+    event.preventDefault();
+    event.stopPropagation();
+    console.log('yes dropElement: ', dropElement);
+
+    if (dropElement.classList.contains('kasane') || dropElement.parentNode.classList.contains('kasane')) {
+        console.log('kasane no naka');
+        let parentDIV = dropElement.closest('.kasane');
+        parentDIV.appendChild(draggedElement);
+    } else {
+        console.log('kasane wo tsukuru');
+        createKasaneDiv(draggedElement, dropElement);
+    }
+
+    // メモをポストにする
+    socket.emit('kasaneteOpen', draggedElement.id, dropElement.id);
+
+    draggedElement.classList.remove('memo');
+
+    const memoSendContainer = draggedElement.querySelector('.memoSend-container');
+    // 要素が存在すれば削除
+    if (memoSendContainer) { memoSendContainer.remove(); }
+
+    draggedElement.appendChild(createActionButtons(draggedElement));
+};
+
+function changeTagName(oldElement, newTagName) {
+    // 新しいタグを作成して、元の要素の属性と内容をコピー
+    const newElement = document.createElement(newTagName);
+    [...oldElement.attributes].forEach(attr => newElement.setAttribute(attr.name, attr.value));
+    newElement.innerHTML = oldElement.innerHTML;
+
+    // 元の要素を新しい要素で置き換える
+    oldElement.parentNode.replaceChild(newElement, oldElement);
+
+    return newElement;
+}
+
 function createKasaneDiv(draggedElement, dropElement) {
     console.log('start createKasaneDiv');
-    const nestedMessageContainer = createElement('div', 'kasane', '▼');
 
-    console.log('nestedMessageContainer 1: ', nestedMessageContainer);
-    messageLists.insertBefore(nestedMessageContainer, dropElement);
+    const accordionContainer = createElement('details', 'accordion');
+    messageLists.insertBefore(accordionContainer, dropElement);
 
-    console.log('nestedMessageContainer 2: ', nestedMessageContainer);
+    const master = changeTagName(dropElement, 'summary');
 
-    nestedMessageContainer.appendChild(dropElement);
-    nestedMessageContainer.appendChild(draggedElement);
+    accordionContainer.appendChild(master);
 
-    console.log('nestedMessageContainer 3: ', nestedMessageContainer);
-
-    // Restore visibility and reset styles
+    let children = createElement('div', 'children');
+    const child = createElement('p', 'child');
+    child.appendChild(draggedElement);
+    children.appendChild(child);
+    accordionContainer.appendChild(children);
     draggedElement.style.visibility = '';
-    dropElement.style.border = "";
-    dropElement.style.color = '';
+    master.style.border = "";
+    master.style.color = '';
 }
 
 function createElement(tag, className = '', text = '') {
@@ -582,7 +673,8 @@ function makeSurveyContainerElement(message) {
 // 3 buttons
 function createActionButtons(message) {
     const buttons = createElement('div', 'buttons');
-    ['up', 'down', 'bookmark'].forEach(eventType => {
+    // ['up', 'down', 'bookmark'].forEach(eventType => {
+    ['bookmark'].forEach(eventType => {
         buttons.appendChild(makeActionButtonContainer(eventType, message));
     });
     return buttons;
@@ -591,8 +683,8 @@ function createActionButtons(message) {
 function makeActionButtonContainer(eventType, message) {
 
     const eventData = {
-        up: { className: 'up-container', emoji: '⇧', count: message.ups || 0 },
-        down: { className: 'down-container', emoji: '⇩', count: message.downs || 0 },
+        // up: { className: 'up-container', emoji: '⇧', count: message.ups || 0 },
+        // down: { className: 'down-container', emoji: '⇩', count: message.downs || 0 },
         bookmark: { className: 'bookmark-container', emoji: '☆', count: message.bookmarks || 0 }
     }[eventType];
 
