@@ -13,6 +13,10 @@ header {
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
+#onlines {
+    margin-left: 2rem;
+}
+
 #docsButton {
     background-color: #f0f0f0;
     color: #263165;
@@ -27,7 +31,6 @@ body {
     width: 98vw;
     margin-top: 6rem;
     padding-bottom: 5rem;
-    /* body の下を決めるFooter height */
     background-color: (240, 240, 240);
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
@@ -39,11 +42,10 @@ body {
 
 #messageLists>div {
     display: flex;
-    /* Flexboxで子要素を並べる */
     justify-content: space-between;
-    /* 子要素の間隔を調整 */
+    margin-left: 1rem;
+    margin-bottom: 0.5rem;
     align-items: center;
-    /* 中央に揃える */
 }
 
 .buttons {
@@ -57,10 +59,10 @@ body {
     margin-left: auto;
 }
 
-.accordion {
+details.accordion {
     margin-bottom: 7px;
-    border: 2px solid #d0d0d0;
-    border-left: #EF7D3C 5px solid;
+    border: 2px solid #d0d0d052;
+    /* border-left: #EF7D3C 5px solid; */
     border-radius: 25px;
 }
 
@@ -69,7 +71,7 @@ body {
     justify-content: space-between;
     align-items: center;
     position: relative;
-    padding: 1em 2em;
+    padding: 0.5em 1em;
     color: #333333;
     font-weight: 600;
     cursor: pointer;
@@ -101,14 +103,19 @@ body {
     flex-wrap: wrap;
 }
 
+.accordion .child {
+    display: flex;
+}
+
 .accordion p {
     display: flex;
     transform: translateY(-10px);
     opacity: 0;
     margin: 0;
-    padding: .3em 2em 1.5em;
-    color: #333333;
+    /* padding: .3em 2em 1.5em; */
+    color: rgb(56, 56, 56);
     transition: transform .5s, opacity .5s;
+    font-size: 0.8rem;
 }
 
 .accordion[open] p {
@@ -118,9 +125,9 @@ body {
 
 #messageLists>.memo {
     /* メモ */
-    font-size: 1rem;
+    font-size: 0.8rem;
     /* color: gray; */
-    padding: 0.5rem 1rem;
+    padding: 0.5rem 0.5rem;
     position: relative;
     display: flex;
     align-items: center;
@@ -133,27 +140,28 @@ body {
 
 #messageLists>div .ml {
     /* チャット投稿 まとめdiv */
-    font-size: 1rem;
-    padding: 0.5rem 1rem;
+    font-size: 0.8rem;
+    padding: 0.5rem 0.5rem;
     position: relative;
     display: flex;
     align-items: center;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
 }
 
+/* 
 #messageLists>div.kasane {
-    font-size: 1rem;
+    font-size: 0.6rem;
     padding: 0.3rem 0.7rem;
 }
 
 #messageLists>div.kasane .ml {
-    font-size: 0.7rem;
+    font-size: 0.6rem;
     padding: 0.3rem 0.7rem;
     position: relative;
     display: flex;
     align-items: center;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.03);
-}
+} */
 
 #messageLists>div.userName-time-msg {
     /* ユーザ名と投稿時間 まとめdiv */
@@ -169,12 +177,15 @@ body {
 
 #messageLists>div div.userName-time-msg div.userName-time span.time {
     /* 投稿時間 */
-    font-size: small;
+    margin-left: 1rem;
+    font-size: 0.8rem;
     color: gray;
 }
 
 #messageLists>div div.message-text {
     /* 投稿のテキスト */
+    padding-top: 0.1rem;
+    margin-left: 0.8rem;
     flex: 1;
     justify-content: flex-start;
     align-items: center;
@@ -219,18 +230,19 @@ body {
 .memoSend-container {
     /* ボタンのまとめdiv */
     display: flex;
-    justify-content: flex-end
+    justify-content: flex-end;
+
+    margin-right: 10px;
 }
 
 .up-container button,
 .down-container button,
 .bookmark-container button,
 .memoSend-container button {
-    /* 各ボタン */
+    background: transparent;
+    box-shadow: none;
     border: none;
-    color: white;
-    padding: 0.25rem 0.5rem;
-    margin-right: 10px;
+    color: gray;
     border-radius: 5px;
     cursor: pointer;
     outline: none;
@@ -247,17 +259,18 @@ span.memoSend-count {
     justify-content: flex-end;
 }
 
+/* 
 .up-container button {
     background-color: #EF7D3C;
 }
 
 .down-container button {
     background-color: #60955F;
-}
-
+} */
+/* 
 .bookmark-container button {
     background-color: #2879C2;
-}
+} */
 
 .memoSend-container button {
     background-color: #263165;
@@ -267,16 +280,18 @@ span.memoSend-count {
 .down-container button.active,
 .bookmark-container button.active,
 .memoSend-container button.active {
-    border: 4px solid gray;
+    font-weight: bold;
+    color: #ffae00;
 }
 
+/* 
 span.up-count {
     color: #EF7D3C;
 }
 
 span.down-count {
     color: #60955F;
-}
+} */
 
 span.bookmark-count {
     color: #2879C2;

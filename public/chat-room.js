@@ -283,9 +283,12 @@ function appendNestedContainer_fromPastLogs(pastElement, stackLogs) {
     const accordionContainer = createElement('details', 'accordion');
     accordionContainer.appendChild(master);
 
-    // 重ね子分を配列に格納
     let kobuns = makeKobunsArray(stackLogs, pastElement);
-
+    console.log('kobunsLength: ', kobuns.length);
+    console.log('☆', kobuns.length * 3);
+    const weight = kobuns.length * 2;
+    accordionContainer.style.borderLeft = `${weight}px solid #EF7D3C`;
+    
     let children = createElement('div', 'children');
     // 重ね子分を表示
     kobuns.forEach(kobun => {
@@ -299,6 +302,7 @@ function appendNestedContainer_fromPastLogs(pastElement, stackLogs) {
     accordionContainer.appendChild(children);
     // コンテナをmessageListsに追加
     messageLists.appendChild(accordionContainer);
+
 }
 
 function makeKobunsArray(stackLogs, pastElement) {
