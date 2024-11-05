@@ -73,8 +73,9 @@ function updateStatus() {
     $('status').textContent = openCardStatus.size > 0 ? text : '';
 }
 
-function GoToTheOpenCard(){
+function GoToTheOpenCard() {
     console.log('目当ての投稿へひとっとび');
+    console.log('～秒前∧名前∧伏せカード で探せる')
 }
 
 // 過去ログ受信
@@ -143,65 +144,28 @@ socket.on('memoLogs', (memo) => {
 
 let currentColor = { r: 38, g: 49, b: 101 }; // 初期の色
 
-socket.on('memoCount', (memoCount) => {
-    console.log('memoCount: ', memoCount);
+// socket.on('memoCount', (memoCount) => {
+//     console.log('memoCount: ', memoCount);
 
-    const header = document.querySelector('header');
+//     const header = document.querySelector('header');
 
-    const endColor = { r: 184, g: 46, b: 46 }; // 最終的に目指す色
-    const maxMemoCount = 30; // memoCount がこの値に達すると完全に赤になる
-    const progress = Math.min(memoCount / maxMemoCount, 1); // 0から1までの範囲で進捗率を計算
-    console.log('progress: ', progress);
+//     const endColor = { r: 184, g: 46, b: 46 }; // 最終的に目指す色
+//     const maxMemoCount = 30; // memoCount がこの値に達すると完全に赤になる
+//     const progress = Math.min(memoCount / maxMemoCount, 1); // 0から1までの範囲で進捗率を計算
+//     console.log('progress: ', progress);
 
-    // memoCount に応じて現在の色を更新
-    const redIntensity = Math.round(currentColor.r + (endColor.r - currentColor.r) * progress);
-    const greenIntensity = Math.round(currentColor.g + (endColor.g - currentColor.g) * progress);
-    const blueIntensity = Math.round(currentColor.b + (endColor.b - currentColor.b) * progress);
+//     // memoCount に応じて現在の色を更新
+//     const redIntensity = Math.round(currentColor.r + (endColor.r - currentColor.r) * progress);
+//     const greenIntensity = Math.round(currentColor.g + (endColor.g - currentColor.g) * progress);
+//     const blueIntensity = Math.round(currentColor.b + (endColor.b - currentColor.b) * progress);
 
-    console.log(redIntensity, greenIntensity, blueIntensity);
-    header.style.backgroundColor = `rgb(${redIntensity}, ${greenIntensity}, ${blueIntensity})`;
-});
-
-
+//     console.log(redIntensity, greenIntensity, blueIntensity);
+//     header.style.backgroundColor = `rgb(${redIntensity}, ${greenIntensity}, ${blueIntensity})`;
+// });
 
 // 伏せカード登場！
 socket.on('downCard', (msg) => {
     handleDownCard(msg);
-});
-
-// 重ねてオープン
-socket.on('kasaneteOpen', (data) => {
-
-    const post = data.organizedPost;
-    const dropId = data.dropId;
-
-    console.log('post: ', post);
-    console.log('dropId: ', dropId);
-
-    const item = buildMlElement(post);
-    item.id = post._id;
-
-    // enable drag & drop
-    item.classList.add('draggable');
-    item.setAttribute('draggable', 'true');
-    addDragAndDropListeners(item);
-
-    if (post._id) {
-        item.id = post._id;
-    }
-
-    const dropElement = $(dropId);
-    console.log('dropElement: ', dropElement);
-    if (dropElement.classList.contains('kasane') || dropElement.parentNode.classList.contains('kasane')) {
-        let parentDIV = dropElement.closest('.kasane');
-        parentDIV.appendChild(draggedElement);
-    } else {
-        createKasaneDiv(draggedElement, dropElement);
-    }
-
-    dropElement.appendChild(item);
-    dropElement = null;
-    // socket.emit('drop', { draggedId: item.id, dropId: dropElement.id });
 });
 
 // < 投票を受信
@@ -262,7 +226,6 @@ function handlePastLogs(pastLogs, stackLogs) {
             const item = buildMlElement(pastElement);
             if (pastElement.isOpenCard) {
                 item.classList.add('downCard', 'visible');
-                console.log(item);
             }
             enableDragDrop_appendWithId(item, pastElement);
         }
@@ -311,16 +274,12 @@ function appendNestedContainer_fromPastLogs(pastElement, stackLogs) {
     }
 
     const master = build(pastElement);
-    console.log('master: ', master);
 
     const accordionContainer = createElement('details', 'accordion');
     accordionContainer.appendChild(master);
 
     let kobuns = makeKobunsArray(stackLogs, pastElement);
-    console.log('kobunsLength: ', kobuns.length);
-    // if (kobuns.length > 1) {
     accordionContainer.style.borderLeft = `${kobuns.length * 2}px solid #EF7D3C`;
-    // }
 
     let children = createElement('div', 'children');
     // 重ね子分を表示
@@ -357,7 +316,7 @@ function handleChatLogs(post) {
     enableDragDrop_appendWithId(item, post);
 }
 
-// handleMemoLogs(memo);
+// handleMemoLogs(memo); 自分メモ受信
 function handleMemoLogs(memo, shouldScroll = true) { // buildMlElement(message);に近い
     const item = buildMlBaseStructure(memo, '[memo]');
     item.classList.add('memo');
@@ -365,7 +324,6 @@ function handleMemoLogs(memo, shouldScroll = true) { // buildMlElement(message);
     item.appendChild(memoSendContainer);
 
     // enable drag & drop
-    item.classList.add('draggable');
     item.setAttribute('draggable', 'true');
     addDragAndDropListeners(item);
 
@@ -409,10 +367,7 @@ function handleDownCard(msg) {
 
         if (isBefore === false) {
             if (i === timeSpans.length - 1) {
-                console.log("target は 最新");
                 insertDownCard(msg, timeSpans, i, true);
-                // const item = buildMlElement(msg);
-                // enableDragDrop_appendWithId(item, msg);
                 return;
             }
             continue;
@@ -427,7 +382,6 @@ function handleDownCard(msg) {
 function insertDownCard(msg, timeSpans, index, isLatest = false) {
     const item = buildMlElement(msg);
 
-    item.classList.add('draggable');
     item.setAttribute('draggable', 'true');
     addDragAndDropListeners(item);
 
@@ -452,7 +406,6 @@ function handleUpdateVote(voteData) {
     const item = $(voteData._id);
     voteData.voteSums.forEach((voteSum, i) => {
         const surveyNum = item.querySelector(`.survey-container .survey-num-${i}`);
-        console.log('surveyNum: ', surveyNum);
         surveyNum.textContent = voteSum;
     });
 }
@@ -466,11 +419,9 @@ function handleDrop_Display(data) {
     const dropElement = $(dropId);
 
     if (dropElement.classList.contains('kasane') || dropElement.parentNode.classList.contains('kasane')) {
-        console.log('kasane no naka');
         let parentDIV = dropElement.closest('.kasane');
         parentDIV.appendChild(draggedElement);
     } else {
-        console.log('kasane wo tsukuru');
         createKasaneDiv(draggedElement, dropElement);
     }
 }
@@ -500,7 +451,6 @@ function setPastLogsDraggable() {
 let draggedElement = null;
 
 function addDragAndDropListeners(element) {
-    console.log('element: ', element);
     element.addEventListener('dragstart', handleDragStart);
     element.addEventListener('dragend', handleDragEnd);
     element.addEventListener('dragover', handleDragOver);
@@ -547,11 +497,9 @@ function handleDrop_Now(event) {
     event.stopPropagation();
 
     if (draggedElement) {
-        console.log('draggedElement: ', draggedElement);
 
         const dropElement = event.target.closest('.ml');
         if (dropElement) {
-            console.log('yes dropElement: ', dropElement);
             if (draggedElement.classList.contains('memo')) {
                 handleMemoDrop(event, dropElement);
                 return;
@@ -571,19 +519,15 @@ function handleDrop_Now(event) {
     }
 }
 
-function handleMemoDrop(event, dropElement) {
+function handleMemoDrop(event, dropElement) { // memo を重ねてオープン
     dropElement = dropElement;
-    console.log('start handleMemoDrop');
     event.preventDefault();
     event.stopPropagation();
-    console.log('yes dropElement: ', dropElement);
 
     if (dropElement.classList.contains('kasane') || dropElement.parentNode.classList.contains('kasane')) {
-        console.log('kasane no naka');
         let parentDIV = dropElement.closest('.kasane');
         parentDIV.appendChild(draggedElement);
     } else {
-        console.log('kasane wo tsukuru');
         createKasaneDiv(draggedElement, dropElement);
     }
 
@@ -612,8 +556,6 @@ function changeTagName(oldElement, newTagName) {
 }
 
 function createKasaneDiv(draggedElement, dropElement) {
-    console.log('start createKasaneDiv');
-
     const accordionContainer = createElement('details', 'accordion');
     messageLists.insertBefore(accordionContainer, dropElement);
 
@@ -628,8 +570,6 @@ function createKasaneDiv(draggedElement, dropElement) {
     accordionContainer.appendChild(children);
 
     const childCount = accordionContainer.children.length; // 要素ノードの数を取得
-    console.log('子タグ', accordionContainer.children);
-    console.log('子タグの数: ', childCount);
 
     accordionContainer.style.borderLeft = `${(childCount - 1) * 2}px solid #EF7D3C`;
 
@@ -660,7 +600,6 @@ function buildMlBaseStructure(data, nameText) {
 }
 
 function buildMlElement(message) { // chat
-    console.log('buildMLElement message: ', message);
     const item = buildMlBaseStructure(message, message.name);
 
     // (2) case survey => options and votes
@@ -748,7 +687,6 @@ function makeActionButtonContainer(eventType, message) {
 
 function enableDragDrop_appendWithId(item, message = {}, shouldScroll = true) {
     // enable drag & drop
-    item.classList.add('draggable');
     item.setAttribute('draggable', 'true');
     addDragAndDropListeners(item);
 
@@ -791,14 +729,13 @@ form.addEventListener('submit', (event) => {
     if (isChecked) {
         // 連続した2つのコロン "::" が2つ以上あるかを判別する
         if ((input.value.match(/::/g) || []).length >= 2) {
-            console.log("2つ以上の連続したコロン '::' が含まれています。");
+            console.log("'::'が含まれるアンケート");
             socket.emit('submitSurvey', input.value);
         } else {
-            console.log("連続したコロン '::' が2つ以上含まれていません。");
+            console.log("'::' が2つ以上含まれない普通のチャット");
             socket.emit('chat message', input.value);
         }
     } else {
-        console.log('メモモード');
         socket.emit('personal memo', input.value);
     }
     input.value = '';
