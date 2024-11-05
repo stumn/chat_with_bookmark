@@ -66,12 +66,10 @@ io.on('connection', async (socket) => {
         msg: m.msg,
         createdAt: organizeCreatedAt(m.createdAt)
       }
-      console.log('organizedMemo', organizedMemo);
 
       socket.emit('memoLogs', organizedMemo); // 自分だけに送信
 
       memoCount++;
-      console.log('memoCount', memoCount);
       if (memoCount >= 1) {
         io.emit('memoCount', memoCount);
       }
@@ -81,7 +79,6 @@ io.on('connection', async (socket) => {
     function decreaseMemoCount() {
       if (memoCount > 0) {
         memoCount -= 1;
-        console.log('decrease memoCount: ', memoCount);
         socket.emit('memoCount', memoCount);
       }
     }
@@ -90,15 +87,10 @@ io.on('connection', async (socket) => {
 
     // < アンケートメッセージ >
     socket.on('submitSurvey', async data => {
-      console.log('data', data); // data Q:: a:: b:: c:: d:: e
-
       // 文字列を最初に出現する "::" で分割して、質問部分と選択肢部分に分ける
       const { formattedQuestion, options } = parseQuestionOptions(data);
 
       const s = await SaveSurveyMessage(formattedQuestion, options, name);
-
-      console.log(s.voteSums);
-
       const organizedSurvey = {
         _id: s._id,
         name: s.name,
@@ -107,7 +99,6 @@ io.on('connection', async (socket) => {
         voteSums: s.voteSums,
         createdAt: organizeCreatedAt(s.createdAt)
       }
-      console.log('organizedSurvey', organizedSurvey);
       io.emit('survey_post', organizedSurvey);
     });
 
@@ -124,7 +115,6 @@ io.on('connection', async (socket) => {
 
     // 伏せカードオープン
     socket.on('open_downCard', async (msg) => {
-      console.log('open_downCard', msg);
       const p = await SaveChatMessage(name, msg.msg, true);
 
       const organizedPost = {
@@ -138,18 +128,8 @@ io.on('connection', async (socket) => {
 
       io.emit('downCard', organizedPost);
 
-      const date = new Date(msg.createdAt);
-      console.log('date: ', date);
-
-      const nowDate = new Date();
-      console.log('nowDate: ', nowDate);
-
-      const difference = date - nowDate;
-      console.log('differenece: ', difference);
-
+      const difference = new Date(msg.createdAt) - new Date();
       const data = { name, difference };
-      console.log('data: ', data);
-
       io.emit('status', data);
     });
 
@@ -177,15 +157,11 @@ io.on('connection', async (socket) => {
 
     // ドラッグstart
     socket.on('dragstart', id => {
-      console.log('dragstart');
-      console.log('id: ', id);
       socket.broadcast.emit('dragstart', id); // 操作したユーザ以外に送信
     });
 
     // ドラッグend
     socket.on('dragend', id => {
-      console.log('dragend');
-      console.log('id: ', id);
       socket.broadcast.emit('dragend', id); // 操作したユーザ以外に送信
     });
 
@@ -207,14 +183,9 @@ io.on('connection', async (socket) => {
 
 function parseQuestionOptions(data) {
   const [question, ...rest] = data.split('::');
-
   // 残りの部分をまとめて再び "::" で分割して、選択肢の配列を作成
   const options = rest.join('::').split('::').map(option => option.trim());
-
   const formattedQuestion = question.trim();
-  // 結果を確認
-  console.log("質問:", formattedQuestion);
-  console.log("選択肢:", options);
   return { formattedQuestion, options };
 }
 
@@ -243,7 +214,6 @@ async function logInFunction(rawname, socket) {
 
   try { // ユーザー情報を保存 
     await saveUser(name, socket.id, randomString);
-    console.log('ユーザー情報保存たぶん完了');
   } catch (error) {
     handleErrors(error, 'LogInFunction ユーザー情報保存中にエラーが発生しました');
   }
@@ -264,20 +234,16 @@ async function processVoteEvent(msgId, option, userSocketId, socket) {
   try {
     const surveyPost = await findPost(msgId); // ポストを特定
     const voteArrays = surveyPost.voteOptions;  // 投票配列
-    console.log('voteArrays', voteArrays);
 
     let { userHasVoted, hasVotedOption } = checkVoteStatus(userSocketId, voteArrays); // ユーザーが投票済みか否か
 
     if (userHasVoted === true) { // 投票済み（関数切り分け済み）
-      console.log('投票済み');
       await handle_Voted_User(option, hasVotedOption, socket, voteArrays, surveyPost);
     }
     else { // 未投票(処理が短いので関数に切り分けていない)
-      console.log('未投票');
       voteArrays[option].push(userSocketId);
       surveyPost.markModified('voteOptions');
       await surveyPost.save();
-      console.log(surveyPost);
     }
 
     let voteSums = calculate_VoteSum(voteArrays); // 投票合計を計算
@@ -307,10 +273,7 @@ async function handle_Voted_User(option, hasVotedOption, socket, voteArrays, sur
 
   // answer 変更希望 => 投票済みの選択肢を1減らし、新しい選択肢に1増やす
   if (answer === true) {
-    console.log('投票変更');
-    console.log('voteArrays[hasVotedOption]', voteArrays[hasVotedOption]);
     voteArrays[hasVotedOption].pull(socket.id);
-    console.log('voteArrays[option]', voteArrays[option]);
     voteArrays[option].push(socket.id);
     surveyPost.markModified('voteOptions');
     await surveyPost.save();
@@ -319,21 +282,15 @@ async function handle_Voted_User(option, hasVotedOption, socket, voteArrays, sur
 
 // イベントの受送信（up, down, bookmark）
 async function receiveSendButtonEvent(eventType, msgId, name, socket) {
-  console.log('eventType: ' + eventType + ' msgId: ' + msgId + ' name: ' + name);
-
   try {
     const post = await findPost(msgId);
-
     const events = post[eventType + 's']; // ups, downs, bookmarks (配列)
-
     const isAlert = await checkEventStatus(events, socket.id);
 
     if (isAlert) {
-      console.log('この人は既にアクションがあります');
       // socket.emit('alert', `${eventType}は一度しかできません`);
     } else {
       events.push({ userSocketId: socket.id, name: name });
-      console.log(`新たなユーザーの${eventType}を追加しました: ` + JSON.stringify(events));
       await post.save();
     }
 
