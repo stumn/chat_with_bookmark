@@ -35,15 +35,30 @@ body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
 
+#status {
+    border: none;
+    cursor: pointer;
+    padding: 0.3rem;
+    margin: 0.2rem;
+    position: fixed;
+    bottom: 4rem;
+    color: white;
+    background-color: rgba(128, 128, 128, 0.8);
+    border-radius: 0.8rem;
+    align-content: center;
+    text-align: center;
+}
+
 #messageLists {
-    margin: 0;
+    margin: 0.3rem;
     padding: 0;
 }
 
 #messageLists>div {
     display: flex;
     justify-content: space-between;
-    margin-left: 1rem;
+    /* margin-left: 1rem; */
+    padding: 1rem;
     margin-bottom: 0.5rem;
     align-items: center;
 }
@@ -57,10 +72,12 @@ body {
     display: flex;
     justify-content: flex-end;
     margin-left: auto;
+    white-space: nowrap;
 }
 
 details.accordion {
     margin-bottom: 7px;
+    margin-right: 0.6rem;
     border: 2px solid #d0d0d052;
     /* border-left: #EF7D3C 5px solid; */
     border-radius: 25px;
@@ -71,10 +88,27 @@ details.accordion {
     justify-content: space-between;
     align-items: center;
     position: relative;
-    padding: 0.5em 1em;
-    color: #333333;
     font-weight: 600;
     cursor: pointer;
+}
+
+.accordion summary>div.userName-time-msg {
+    position: relative;
+    padding: 0.5rem;
+    margin: 0.5rem;
+    /* box-shadow: 0 4px 6px rgba(0, 0, 0, 0.5); */
+}
+
+.accordion summary>div.userName-time-msg>div.userName-time>span.time {
+    margin-left: 0.8rem;
+    font-size: 0.8rem;
+    color: gray;
+    font-weight: normal;
+}
+
+.accordion summary>div.userName-time-msg>div.message-text {
+    margin-left: 0.8rem;
+    font-weight: normal;
 }
 
 .accordion summary::-webkit-details-marker {
@@ -118,6 +152,18 @@ details.accordion {
     font-size: 0.8rem;
 }
 
+.accordion p>div>div.userName-time-msg>div.userName-time>span.time {
+    margin-left: 0.5rem;
+    font-size: 0.6rem;
+    color: gray;
+    font-weight: normal;
+}
+
+.accordion p>div>div.userName-time-msg>div.message-text {
+    margin-left: 0.5rem;
+    font-size: 0.8rem;
+}
+
 .accordion[open] p {
     transform: none;
     opacity: 1;
@@ -125,9 +171,9 @@ details.accordion {
 
 #messageLists>.memo {
     /* メモ */
-    font-size: 0.8rem;
+    font-size: 1rem;
     /* color: gray; */
-    padding: 0.5rem 0.5rem;
+    /* padding: 0.5rem 0.5rem; */
     position: relative;
     display: flex;
     align-items: center;
@@ -141,7 +187,7 @@ details.accordion {
 #messageLists>div .ml {
     /* チャット投稿 まとめdiv */
     font-size: 0.8rem;
-    padding: 0.5rem 0.5rem;
+    padding: 0.5rem;
     position: relative;
     display: flex;
     align-items: center;
@@ -177,7 +223,7 @@ details.accordion {
 
 #messageLists>div div.userName-time-msg div.userName-time span.time {
     /* 投稿時間 */
-    margin-left: 1rem;
+    margin-left: 0.8rem;
     font-size: 0.8rem;
     color: gray;
 }
@@ -341,8 +387,8 @@ span.bookmark-count {
     top: 50%;
     transform: translateY(-50%);
     background-color: #f0f0f0;
-    padding: 10px;
-    margin: 0.5rem;
+    padding: 0.1rem;
+    margin: 0.2rem;
     border-radius: 8px;
     opacity: 0;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);

@@ -137,19 +137,26 @@ io.on('connection', async (socket) => {
       }
 
       io.emit('downCard', organizedPost);
+
+      const date = new Date(msg.createdAt);
+      console.log('date: ', date);
+
+      const nowDate = new Date();
+      console.log('nowDate: ', nowDate);
+
+      const difference = date - nowDate;
+      console.log('differenece: ', difference);
+
+      const data = { name, difference };
+      console.log('data: ', data);
+
+      io.emit('status', data);
     });
 
     socket.on('kasaneteOpen', async (memoId, dropId) => {
-      console.log('kasaneteOpen');
-      console.log('memoId: ', memoId);
-
       const memo = await findMemo(memoId);
-      console.log('memo: ', memo);
-
       const target = await findPost(dropId);
-      console.log('target: ', target);
-
-      const p = await SaveChatMessage(memo.name, memo.msg, true);
+      const p = await SaveChatMessage(name, memo.msg, true);
 
       const organizedPost = {
         _id: p._id,
@@ -160,9 +167,9 @@ io.on('connection', async (socket) => {
         createdAt: memo.createdAt
       }
 
-      const data = { organizedPost, dropId };
+      const kasaneData = { draggedId: organizedPost._id, dropId: dropId };
+      socket.broadcast.emit('drop', kasaneData); // 操作したユーザ以外に送信
 
-      io.emit('kasaneteOpen', data);
 
       // 重ね関係保存
       kasaneteOpen_saveStackRelation(p, target);
@@ -187,14 +194,8 @@ io.on('connection', async (socket) => {
 
     // ドラッグドロップ
     socket.on('drop', async (kasaneData) => {
-      console.log('drop');
-      console.log('draggedId: ', kasaneData.draggedId);
-      console.log('dropId: ', kasaneData.dropId);
       socket.broadcast.emit('drop', kasaneData); // 操作したユーザ以外に送信
-
-      const { draggedPost, dropPost } = await saveStackRelation(kasaneData.draggedId, kasaneData.dropId);
-      console.log('index draggedPost: ', draggedPost);
-      console.log('index dropPost: ', dropPost);
+      await saveStackRelation(kasaneData.draggedId, kasaneData.dropId);
     });
   });
 

@@ -10,6 +10,7 @@ function $(id) {
 }
 
 const messageLists = $('messageLists');
+const status = $('status');
 const form = $('form');
 const input = $('input');
 const formButton = $('formButton');
@@ -43,6 +44,38 @@ function OpenDocumentWindow() {
 socket.on('onlineUsers', (onlines) => {
     $('onlines').textContent = '接続中: ' + onlines.length + '人';
 });
+
+// status
+const openCardStatus = new Map();
+setInterval(updateStatus, 1000); // update
+
+socket.on('status', (data) => {
+    openCardStatus.set(data, new Date());
+});
+
+function updateStatus() {
+    let name, difference, text;
+
+    for (let [data, date] of openCardStatus) {
+        if (Date.now() - date > 1000 * 60) {
+            openCardStatus.delete(data);
+        }
+        name = data.name;
+        difference = Math.abs(data.difference);
+        const second = Math.round(difference / 1000);
+        text = `${name}さんが${second}秒前のメモを公開しました`;
+
+        if (difference > 60 * 1000) {
+            const minute = Math.round(difference / 60000);
+            text = `${name}さんが${minute}分前のメモを公開しました`;
+        }
+    }
+    $('status').textContent = openCardStatus.size > 0 ? text : '';
+}
+
+function GoToTheOpenCard(){
+    console.log('目当ての投稿へひとっとび');
+}
 
 // 過去ログ受信
 socket.on('pastLogs', ({ pastLogs, stackLogs }) => {
@@ -285,7 +318,9 @@ function appendNestedContainer_fromPastLogs(pastElement, stackLogs) {
 
     let kobuns = makeKobunsArray(stackLogs, pastElement);
     console.log('kobunsLength: ', kobuns.length);
+    // if (kobuns.length > 1) {
     accordionContainer.style.borderLeft = `${kobuns.length * 2}px solid #EF7D3C`;
+    // }
 
     let children = createElement('div', 'children');
     // 重ね子分を表示
@@ -423,21 +458,21 @@ function handleUpdateVote(voteData) {
 }
 
 // handleDrop_Display(stackedData);
-function handleDrop_Display(stackedData) {
-    console.log('draggedId: ', stackedData.draggedId);
-    console.log('dropId: ', stackedData.dropId);
+function handleDrop_Display(data) {
+    const draggedId = data.draggedId;
+    const dropId = data.dropId;
 
-    const draggedElement = $(stackedData.draggedId);
-    const stackedMl = $(stackedData.dropId);
+    const draggedElement = $(draggedId);
+    const dropElement = $(dropId);
 
-    // Create a new div with the class 'kasane'
-    const nestedMessageContainer = createElement('div', 'kasane', '▼');
-
-    messageLists.insertBefore(nestedMessageContainer, stackedMl); // Insert the kasane div before the dropElement
-    nestedMessageContainer.appendChild(stackedMl); // Append the dropElement
-    nestedMessageContainer.appendChild(draggedElement); // Append the dragged element
-    stackedMl.style.border = '3px solid';
-    stackedMl.style.color = '#227B94';
+    if (dropElement.classList.contains('kasane') || dropElement.parentNode.classList.contains('kasane')) {
+        console.log('kasane no naka');
+        let parentDIV = dropElement.closest('.kasane');
+        parentDIV.appendChild(draggedElement);
+    } else {
+        console.log('kasane wo tsukuru');
+        createKasaneDiv(draggedElement, dropElement);
+    }
 }
 
 // ↓↓↓ sub function ↓↓↓
@@ -596,7 +631,7 @@ function createKasaneDiv(draggedElement, dropElement) {
     console.log('子タグ', accordionContainer.children);
     console.log('子タグの数: ', childCount);
 
-    accordionContainer.style.borderLeft = `${(childCount-1) * 2}px solid #EF7D3C`;
+    accordionContainer.style.borderLeft = `${(childCount - 1) * 2}px solid #EF7D3C`;
 
     draggedElement.style.visibility = '';
     master.style.border = "";
