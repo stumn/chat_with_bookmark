@@ -22,6 +22,7 @@ let dropElement;
 const myName = prompt("名前を入力してください", "");
 if (!myName) {
     alert('名前が入力されていません。再読み込みしてください。');
+    // 記号を含む場合は、変更してもらう（記号を含まないように指示しておく）
     location.reload();
 }
 socket.emit('sign-up', myName);
@@ -63,7 +64,8 @@ function updateStatus() {
         name = data.name;
         difference = Math.abs(data.difference);
         const second = Math.round(difference / 1000);
-        text = `${name}さんが${second}秒前のメモを公開しました`;
+        text = second < 20 ? '' : `${name}さんが${second}秒前のメモを公開しました`;
+        // text = `${name}さんが${second}秒前のメモを公開しました`;
 
         if (difference > 60 * 1000) {
             const minute = Math.round(difference / 60000);
@@ -74,8 +76,8 @@ function updateStatus() {
 }
 
 function GoToTheOpenCard() {
-    console.log('目当ての投稿へひとっとび');
-    console.log('～秒前∧名前∧伏せカード で探せる')
+    // 目当ての投稿へひとっとび
+    // ～秒前∧名前∧伏せカード で探せる
 }
 
 // 過去ログ受信
@@ -84,66 +86,25 @@ socket.on('pastLogs', ({ pastLogs, stackLogs }) => {
 });
 
 // < チャット受信
-socket.on('chatLogs', (post) => {
+socket.on('myChat', (post) => {
+    handleMyChat(post);
+});
+
+socket.on('chatLogs', (post) => { // other people
     handleChatLogs(post);
 });
 
 // < アンケート投稿をサーバーから受信
-socket.on('survey_post', (post) => {
-    handleChatLogs(post);
+socket.on('mySurvey', (post) => {
+    handleMySurvey(post);
 });
 
 // < 自分メモ受信
 socket.on('memoLogs', (memo) => {
-    handleMemoLogs(memo);
+    handleMemoLogs(memo); //draggable
 });
 
-// socket.on('memoCount', (memoCount) => {
-//     console.log('memoCount: ', memoCount);
-
-//     const header = document.querySelector('header');
-//     const redIntensity = Math.min(240 + memoCount * 1, 255);
-//     const greenIntensity = Math.max(240 - memoCount * 10, 0);
-//     const blueIntensity = Math.max(240 - memoCount * 10, 0);
-
-//     console.log(redIntensity, greenIntensity, blueIntensity);
-//     header.style.backgroundColor = `rgb(${redIntensity}, ${greenIntensity}, ${blueIntensity})`;
-//     return memoCount;
-// });
-
-// // anime
-// socket.on('memoCount', (memoCount) => {
-//     console.log('memoCount: ', memoCount);
-
-//     const header = document.querySelector('header');
-
-//     const startColor = { r: 38, g: 49, b: 101 };
-//     const endColor = { r: 184, g: 46, b: 46 };
-
-//     const steps = 100; // 色が変わるステップ数
-//     let step = 0;
-
-//     function animateColorChange() {
-//         const progress = step / steps;
-
-//         const redIntensity = Math.round(startColor.r + (endColor.r - startColor.r) * progress);
-//         const greenIntensity = Math.round(startColor.g + (endColor.g - startColor.g) * progress);
-//         const blueIntensity = Math.round(startColor.b + (endColor.b - startColor.b) * progress);
-
-//         console.log(redIntensity, greenIntensity, blueIntensity);
-//         header.style.backgroundColor = `rgb(${redIntensity}, ${greenIntensity}, ${blueIntensity})`;
-
-//         if (step < steps) {
-//             step++;
-//             requestAnimationFrame(animateColorChange); // 次のフレームで色を更新
-//         }
-//     }
-
-//     animateColorChange();
-// });
-
-let currentColor = { r: 38, g: 49, b: 101 }; // 初期の色
-
+// let currentColor = { r: 38, g: 49, b: 101 }; // 初期の色
 // socket.on('memoCount', (memoCount) => {
 //     console.log('memoCount: ', memoCount);
 
@@ -164,8 +125,12 @@ let currentColor = { r: 38, g: 49, b: 101 }; // 初期の色
 // });
 
 // 伏せカード登場！
+socket.on('myOpenCard', (msg) => {
+    handleMyOpenCard(msg); // draggable
+})
+
 socket.on('downCard', (msg) => {
-    handleDownCard(msg);
+    handleDownCard(msg); // not draggable
 });
 
 // < 投票を受信
@@ -193,9 +158,6 @@ socket.on('dragend', (draggedId) => {// < ドラッグ終了 >
     $(draggedId).style.border = '';
 });
 
-// < ドラッグオーバー >
-// < ドラッグリーブ >
-
 socket.on('drop', (stackedData) => {// < ドロップ >
     handleDrop_Display(stackedData);
 });
@@ -209,7 +171,6 @@ socket.on('alert', (alertMsg) => {
 socket.on('dialog_to_html', (dialogMsg) => {
     socket.emit('dialog_to_js', confirm(dialogMsg) ? true : false);
 });
-
 
 // ↓↓↓ handle function ↓↓↓
 
@@ -227,53 +188,31 @@ function handlePastLogs(pastLogs, stackLogs) {
             if (pastElement.isOpenCard) {
                 item.classList.add('downCard', 'visible');
             }
-            enableDragDrop_appendWithId(item, pastElement);
+            addBeingDraggedListeners(item);
+            appendChild_IdScroll(item, pastElement, false);
         }
     });
 
-    // ここから参加
-    const item = createElement('div', 'ml', '-----⇊ ここから参加 ⇊-----');
-    enableDragDrop_appendWithId(item);
+    markTheBeginingOfParticipate(); // ここから参加
+}
 
-    // 過去ログ全てをドラッグ可能にする
-    setPastLogsDraggable();
+function markTheBeginingOfParticipate() {
+    const item = createElement('div', 'ml', '-----⇊ ここから参加 ⇊-----');
+    appendChild_IdScroll(item, {}, false);
 }
 
 function appendNestedContainer_fromPastLogs(pastElement, stackLogs) {
 
-    function build(message) {
-        const master = createElement('summary', 'ml');
+    const master = createElement('summary', 'ml');
+    master.appendChild(createNameTimeMsg(pastElement));
+    createSurveyContainer(pastElement, master);
+    master.appendChild(createActionButtons(pastElement));
 
-        const userNameTimeMsg = createElement('div', 'userName-time-msg');
-        const userName_time = createElement('div', 'userName-time');
-        const userName = createElement('span', 'userName', message.name);
-        const time = createElement('span', 'time', message.createdAt);
-
-        userName_time.append(userName, time);
-        userNameTimeMsg.appendChild(userName_time);
-
-        const message_div = createElement('div', 'message-text', message.question || message.msg);
-        userNameTimeMsg.appendChild(message_div);
-        master.appendChild(userNameTimeMsg);
-
-        // (2) case survey => options and votes
-        if (message.question) {
-            const surveyContainer = makeSurveyContainerElement(message);
-            master.appendChild(surveyContainer);
-        }
-
-        // 3 buttons
-        const buttons = createActionButtons(message);
-        master.appendChild(buttons);
-
-        if (pastElement.isOpenCard) {
-            master.classList.add('downCard', 'visible');
-        }
-        enableDragDrop_appendWithId(master, pastElement);
-        return master;
+    if (pastElement.isOpenCard) {
+        master.classList.add('downCard', 'visible');
     }
-
-    const master = build(pastElement);
+    // enableDragDrop(master);
+    appendChild_IdScroll(master, pastElement, false);
 
     const accordionContainer = createElement('details', 'accordion');
     accordionContainer.appendChild(master);
@@ -284,17 +223,17 @@ function appendNestedContainer_fromPastLogs(pastElement, stackLogs) {
     let children = createElement('div', 'children');
     // 重ね子分を表示
     kobuns.forEach(kobun => {
-        const item = buildMlElement(kobun);
-        enableDragDrop_appendWithId(item, kobun);
         const child = createElement('p', 'child');
-        child.appendChild(item);
+        child.appendChild(createNameTimeMsg(kobun));
+        createSurveyContainer(kobun, child);
+        child.appendChild(createActionButtons(kobun));
+        child.id = kobun._id;
         children.appendChild(child);
     });
 
-    accordionContainer.appendChild(children);
-    // コンテナをmessageListsに追加
+    accordionContainer.appendChild(children);    
+    addBeingDraggedListeners(accordionContainer);
     messageLists.appendChild(accordionContainer);
-
 }
 
 function makeKobunsArray(stackLogs, pastElement) {
@@ -309,11 +248,23 @@ function makeKobunsArray(stackLogs, pastElement) {
     return kobuns;
 }
 
-// handleChatLogs(post);
-function handleChatLogs(post) {
+function handleMyChat(post) { // MyChat
     const item = buildMlElement(post);
-    item.id = post._id;
-    enableDragDrop_appendWithId(item, post);
+    enableDragDrop(item);
+    appendChild_IdScroll(item, post, true);
+}
+
+function handleChatLogs(post) { // ChatLogs
+    const item = buildMlElement(post);
+    // item.classList.add('UNdraggable');
+    addBeingDraggedListeners(item);
+    appendChild_IdScroll(item, post, true);
+}
+
+function handleMySurvey(post) { // MySurvey
+    const item = buildMlElement(post);
+    enableDragDrop(item);
+    appendChild_IdScroll(item, post, true);
 }
 
 // handleMemoLogs(memo); 自分メモ受信
@@ -323,20 +274,8 @@ function handleMemoLogs(memo, shouldScroll = true) { // buildMlElement(message);
     const memoSendContainer = buildMemoSendContainer(memo);
     item.appendChild(memoSendContainer);
 
-    // enable drag & drop
-    item.setAttribute('draggable', 'true');
-    addDragAndDropListeners(item);
-
-    // messageLists に追加
-    messageLists.appendChild(item);
-
-    if (memo._id) {
-        item.id = memo._id;
-    }
-
-    if (shouldScroll) {
-        window.scrollTo(0, document.body.scrollHeight);
-    }
+    enableDragDrop(item);
+    appendChild_IdScroll(item, memo, shouldScroll);
 }
 
 function buildMemoSendContainer(memo) {
@@ -355,39 +294,47 @@ function buildMemoSendContainer(memo) {
     return memoSendContainer;
 }
 
+// handleMyOpenCard(msg);
+function handleMyOpenCard(msg) {
+    handleDownCard(msg, true);
+}
+
 // handleDownCard(msg);
-function handleDownCard(msg) {
+function handleDownCard(msg, isMine = false) {
     const targetCreatedAt = msg.createdAt;
     const timeSpans = document.querySelectorAll("#messageLists div span.time");
 
     for (let i = 0; i < timeSpans.length; i++) {
         const compare = timeSpans[i].textContent;
-
         const isBefore = checkIsBefore(targetCreatedAt, compare);
 
         if (isBefore === false) {
-            if (i === timeSpans.length - 1) {
-                insertDownCard(msg, timeSpans, i, true);
+            if (i === timeSpans.length - 1) { // 最新
+                insertDownCard(msg, timeSpans, i, true, isMine);
                 return;
             }
             continue;
         }
-        else { // ここで、messageLists に挿入
-            insertDownCard(msg, timeSpans, i);
+        else { // ここで messageLists に挿入
+            insertDownCard(msg, timeSpans, i, false, isMine);
             return;
         }
     }
 }
 
-function insertDownCard(msg, timeSpans, index, isLatest = false) {
+function insertDownCard(msg, timeSpans, index, isLatest = false, isMine) {
     const item = buildMlElement(msg);
 
-    item.setAttribute('draggable', 'true');
-    addDragAndDropListeners(item);
+    if (isMine) { // 自分の投稿⇒D&D可能
+        enableDragDrop(item);
+    } else {
+        item.classList.add('UNdraggable');
+        addBeingDraggedListeners(item);
+    }
 
     if (isLatest) {
-        messageLists.appendChild(item);
-        window.scrollTo(0, document.body.scrollHeight);
+        appendChild_IdScroll(item, msg, true);
+
     } else {
         let parentDIV = timeSpans[index].closest('.ml');
 
@@ -412,11 +359,8 @@ function handleUpdateVote(voteData) {
 
 // handleDrop_Display(stackedData);
 function handleDrop_Display(data) {
-    const draggedId = data.draggedId;
-    const dropId = data.dropId;
-
-    const draggedElement = $(draggedId);
-    const dropElement = $(dropId);
+    const draggedElement = $(data.draggedId);
+    const dropElement = $(data.dropId);
 
     if (dropElement.classList.contains('kasane') || dropElement.parentNode.classList.contains('kasane')) {
         let parentDIV = dropElement.closest('.kasane');
@@ -426,33 +370,15 @@ function handleDrop_Display(data) {
     }
 }
 
-// ↓↓↓ sub function ↓↓↓
-
-function setPastLogsDraggable() {
-    // Get all .ml elements
-    const mlArray = messageLists.getElementsByClassName("ml");
-
-    // Make each .ml element draggable
-    for (let element of mlArray) {
-        element.classList.add('draggable');
-    }
-
-    // Get all .draggable elements
-    const elements = document.querySelectorAll(".draggable");
-
-    // Add event listeners to each .draggable element
-    elements.forEach(element => {
-        element.setAttribute('draggable', 'true');
-        addDragAndDropListeners(element);
-    });
-}
-
 // Initialize the dragged element
 let draggedElement = null;
 
-function addDragAndDropListeners(element) {
+function addDragListeners(element) {
     element.addEventListener('dragstart', handleDragStart);
     element.addEventListener('dragend', handleDragEnd);
+}
+
+function addBeingDraggedListeners(element) {
     element.addEventListener('dragover', handleDragOver);
     element.addEventListener('dragleave', handleDragLeave);
     element.addEventListener('drop', handleDrop_Now);
@@ -497,7 +423,6 @@ function handleDrop_Now(event) {
     event.stopPropagation();
 
     if (draggedElement) {
-
         const dropElement = event.target.closest('.ml');
         if (dropElement) {
             if (draggedElement.classList.contains('memo')) {
@@ -560,13 +485,15 @@ function createKasaneDiv(draggedElement, dropElement) {
     messageLists.insertBefore(accordionContainer, dropElement);
 
     const master = changeTagName(dropElement, 'summary');
-
     accordionContainer.appendChild(master);
 
     let children = createElement('div', 'children');
-    const child = createElement('p', 'child');
-    child.appendChild(draggedElement);
+    const child = changeTagName(draggedElement, 'p');
+    child.classList.add('child');
+    console.log('child: ', child);
+
     children.appendChild(child);
+    console.log('children: ', children);
     accordionContainer.appendChild(children);
 
     const childCount = accordionContainer.children.length; // 要素ノードの数を取得
@@ -590,6 +517,26 @@ function createElement(tag, className = '', text = '') {
     }
 }
 
+function buildMlElement(message) { // chat
+    const item = buildMlBaseStructure(message, message.name);
+
+    // (2) case survey => options and votes
+    createSurveyContainer(message, item);
+
+    // 3 buttons
+    const buttons = createActionButtons(message);
+    item.appendChild(buttons);
+
+    return item;
+}
+
+function createSurveyContainer(message, item) {
+    if (message.question) {
+        const surveyContainer = makeSurveyContainerElement(message);
+        item.appendChild(surveyContainer);
+    }
+}
+
 function buildMlBaseStructure(data, nameText) {
     const item = createElement('div', 'ml');
 
@@ -599,23 +546,6 @@ function buildMlBaseStructure(data, nameText) {
     return item;
 }
 
-function buildMlElement(message) { // chat
-    const item = buildMlBaseStructure(message, message.name);
-
-    // (2) case survey => options and votes
-    if (message.question) {
-        const surveyContainer = makeSurveyContainerElement(message);
-        item.appendChild(surveyContainer);
-    }
-
-    // 3 buttons
-    const buttons = createActionButtons(message);
-    item.appendChild(buttons);
-
-    return item;
-}
-
-// 1 userName + time + message
 function createNameTimeMsg(message, nameText = message.name) {
     const userNameTimeMsg = createElement('div', 'userName-time-msg');
     const userName_time = createElement('div', 'userName-time');
@@ -677,6 +607,7 @@ function makeActionButtonContainer(eventType, message) {
 
     button.addEventListener('click', e => {
         button.classList.toggle("active");
+        console.log('button.classList: ', button.classList);
         socket.emit('event', eventType, message._id);
     });
 
@@ -685,21 +616,17 @@ function makeActionButtonContainer(eventType, message) {
     return container;
 }
 
-function enableDragDrop_appendWithId(item, message = {}, shouldScroll = true) {
-    // enable drag & drop
+function enableDragDrop(item) {
     item.setAttribute('draggable', 'true');
-    addDragAndDropListeners(item);
+    item.classList.add('draggable');
+    addDragListeners(item);
+    addBeingDraggedListeners(item);
+}
 
-    // messageLists に追加
+function appendChild_IdScroll(item, message = {}, shouldScroll = true) {
     messageLists.appendChild(item);
-
-    if (message._id) {
-        item.id = message._id;
-    }
-
-    if (shouldScroll) {
-        window.scrollTo(0, document.body.scrollHeight);
-    }
+    if (message._id) { item.id = message._id; }
+    if (shouldScroll) { window.scrollTo(0, document.body.scrollHeight); }
 }
 
 input.addEventListener('focus', () => {

@@ -353,6 +353,11 @@ span.bookmark-count {
     color: #2879C2;
 }
 
+.UNdraggable {
+    /* ドラッグ不可 */
+    pointer-events: none;
+}
+
 /* ドラッグ */
 .draggable {
     cursor: grab;
@@ -382,7 +387,7 @@ span.bookmark-count {
 }
 
 .downCard {
-    position: relative;
+    /* position: relative; */
     right: 0;
     top: 50%;
     transform: translateY(-50%);

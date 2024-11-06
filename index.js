@@ -53,7 +53,8 @@ io.on('connection', async (socket) => {
         createdAt: organizeCreatedAt(p.createdAt)
       }
 
-      io.emit('chatLogs', organizedPost);
+      socket.emit('myChat', organizedPost);
+      socket.broadcast.emit('chatLogs', organizedPost);
     });
 
     // < 自分メモ >
@@ -99,7 +100,9 @@ io.on('connection', async (socket) => {
         voteSums: s.voteSums,
         createdAt: organizeCreatedAt(s.createdAt)
       }
-      io.emit('survey_post', organizedSurvey);
+
+      socket.emit('mySurvey', organizedSurvey);
+      socket.broadcast.emit('chatLogs', organizedSurvey);
     });
 
     // < アンケート投票 >
@@ -126,7 +129,8 @@ io.on('connection', async (socket) => {
         createdAt: msg.createdAt
       }
 
-      io.emit('downCard', organizedPost);
+      socket.emit('myOpenCard', organizedPost);
+      socket.broadcast.emit('downCard', organizedPost);
 
       const difference = new Date(msg.createdAt) - new Date();
       const data = { name, difference };
@@ -283,6 +287,9 @@ async function handle_Voted_User(option, hasVotedOption, socket, voteArrays, sur
 // イベントの受送信（up, down, bookmark）
 async function receiveSendButtonEvent(eventType, msgId, name, socket) {
   try {
+
+    console.log('receiveSendButtonEvent', eventType, msgId, name);
+
     const post = await findPost(msgId);
     const events = post[eventType + 's']; // ups, downs, bookmarks (配列)
     const isAlert = await checkEventStatus(events, socket.id);
