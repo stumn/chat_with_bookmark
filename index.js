@@ -71,9 +71,7 @@ io.on('connection', async (socket) => {
       socket.emit('memoLogs', organizedMemo); // 自分だけに送信
 
       memoCount++;
-      if (memoCount >= 1) {
-        io.emit('memoCount', memoCount);
-      }
+      if (memoCount >= 1) { io.emit('memoCount', memoCount); }
 
     });
 
@@ -151,14 +149,14 @@ io.on('connection', async (socket) => {
         createdAt: memo.createdAt,
         memoId: memoId
       }
-      
+
       // const kasaneData = { draggedId: organizedPost._id, dropId: dropId };
       // socket.broadcast.emit('drop', kasaneData); // 操作したユーザ以外に送信
 
       // 重ね関係保存
       kasaneteOpen_saveStackRelation(p, target);
 
-      const data = {organizedPost, dropId};
+      const data = { organizedPost, dropId };
       console.log('data: ', data);
 
       socket.emit('myKasaneOpen', data);

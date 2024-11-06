@@ -517,10 +517,10 @@ function buildMlElement(message) { // chat
 }
 
 function createSurveyContainer(message, item) {
-    if (!message.question) { console.log('no question'); return; }
-
-    const surveyContainer = makeSurveyContainerElement(message);
-    item.appendChild(surveyContainer);
+    if (message.question) {
+        const surveyContainer = makeSurveyContainerElement(message);
+        item.appendChild(surveyContainer);
+    }
 }
 
 function buildMlBaseStructure(data, nameText) {
