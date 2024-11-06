@@ -1,4 +1,4 @@
-// dbOperations.js 
+// dbOperations.js
 const { mongoose, User, Post, Memo } = require('./db');
 const { handleErrors, organizeLogs } = require('./utils');
 
@@ -45,7 +45,7 @@ async function getPastLogs() {
         stackLogs.forEach(e => {
             e.createdAt = organizeCreatedAt(e.createdAt);
         });
-        console.log('過去ログ整理完了', pastLogs[pastLogs.length - 1]);
+        console.log('過去ログ整理完了');
         return { pastLogs, stackLogs };
     } catch (error) {
         handleErrors(error, 'getPastLogs 過去ログ取得中にエラーが発生しました');
@@ -59,10 +59,9 @@ function organizeCreatedAt(createdAt) {
 }
 
 // データベースにレコードを保存
-async function saveRecord(name, msg, question = '', options = [], voteOptions = [], ups = [], downs = [], bookmarks = [], isOpenCard = false, isStackingOn = false, stackedPostIds = []) {
+async function saveRecord(name, msg, question = '', options = [], voteOptions = [], ups = [], downs = [], bookmarks = [], isOpenCard = false, isStackingOn = false, stackedPostIds = [], memoId = '') {
     try {
-        const npData = { name, msg, question, options, voteOptions, ups, downs, bookmarks, isOpenCard, isStackingOn, stackedPostIds };
-        console.log('npData: ', npData);
+        const npData = { name, msg, question, options, voteOptions, ups, downs, bookmarks, isOpenCard, isStackingOn, stackedPostIds, memoId };
         const newPost = await Post.create(npData);
         return newPost;
     } catch (error) {
@@ -73,8 +72,6 @@ async function saveRecord(name, msg, question = '', options = [], voteOptions = 
 // チャットメッセージ受送信
 async function SaveChatMessage(name, msg, isOpenCard) {
     try {
-        console.log('SCM msg: ', msg);
-        console.log('SCM isOpenCard: ', isOpenCard);
         const p = await saveRecord(name, msg, '', [], [], [], [], [], isOpenCard);
         console.log('チャット保存しました💬:' + p.msg + p.isOpenCard);
         return p;
@@ -84,25 +81,12 @@ async function SaveChatMessage(name, msg, isOpenCard) {
     }
 }
 
-// 自分メモ受送信
-async function SavePersonalMemo(name, msg, socket) {
-    try {
-        const m = await saveMemo(name, msg);
-        console.log('自分メモ保存完了', m.name, m.msg, m.createdAt);
-        return m;
-    }
-    catch (error) {
-        handleErrors(error, '自分メモ受送信中にエラーが発生しました');
-    }
-}
-
 // 自分メモ保存
-async function saveMemo(name, msg) {
+async function SavePersonalMemo(name, msg) {
     try {
-        console.log(msg);
         const memoData = { name, msg };
         const newMemo = await Memo.create(memoData);
-        console.log(newMemo);
+        console.log('自分メモ保存完了', newMemo.name, newMemo.msg, newMemo.createdAt);
         return newMemo;
     } catch (error) {
         handleErrors(error, '自分メモ保存時にエラーが発生しました');
@@ -112,10 +96,8 @@ async function saveMemo(name, msg) {
 // アンケートメッセージ受送信
 async function SaveSurveyMessage(formattedQuestion, options, name) {
     const voteOptions = options.map(() => []); // 選択肢数分の空配列を作成
-    console.log('voteOptions: ', voteOptions);
     try {
         const surveyPost = await saveRecord(name, '', formattedQuestion, options, voteOptions);
-        console.log('surveyPost: ', surveyPost);
         return organizeLogs(surveyPost);
     } catch (error) {
         handleErrors(error, 'アンケート受送信中にエラーが発生しました');
@@ -150,7 +132,6 @@ async function findMemo(msgId) {
 async function getUserInfo_rsnm(randomString) {
     try {
         const userInfo = await User.findOne().where('randomString').equals(randomString);
-        console.log('userInfo.name: ', userInfo.name);
         return userInfo.name;
     } catch {
         handleErrors(error, ' rs=>name ユーザー情報取得時にエラーが発生しました');
@@ -225,7 +206,7 @@ async function saveStackRelation(dragedId, dropId) {
         return { draggedPost, dropPost };
 
     } catch (error) {
-        console.error('Error saving stack relation:', error);
+        handleErrors(error, 'Error saving stack relation');
         throw error;  // Re-throw the error to be handled by the caller
     }
 }

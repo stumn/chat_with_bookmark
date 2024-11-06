@@ -3,14 +3,12 @@ const socket = io();
 // html要素の取得 ($は短縮形の関数名 = DOM要素の操作で使うと便利) 
 function $(id) {
     const element = document.getElementById(id);
-    if (!element) {
-        console.error(`Element with id "${id}" not found`);
-    }
+    if (!element) { console.error(`Element with id "${id}" not found`); }
     return element;
 }
 
 const messageLists = $('messageLists');
-const status = $('status');
+const notification = $('notification');
 const form = $('form');
 const input = $('input');
 const formButton = $('formButton');
@@ -22,9 +20,10 @@ let dropElement;
 const myName = prompt("名前を入力してください", "");
 if (!myName) {
     alert('名前が入力されていません。再読み込みしてください。');
-    // 記号を含む場合は、変更してもらう（記号を含まないように指示しておく）
     location.reload();
 }
+// 記号を含む場合は、変更してもらう（記号を含まないように指示しておく）
+
 socket.emit('sign-up', myName);
 $('sign-up-name').textContent = 'あなた： ' + myName;
 
@@ -34,11 +33,9 @@ socket.on('randomString', (receivedString) => {
 });
 
 function OpenDocumentWindow() {
-    if (docURL) {
-        window.open(docURL, '_blank');
-    } else {
-        alert('ドキュメントURLが設定されていません。しばらくしてからもう一度お試しください。');
-    }
+    docURL
+        ? window.open(docURL, '_blank')
+        : alert('ドキュメントURLが設定されていません。しばらくしてからもう一度お試しください。');
 }
 
 // オンラインメンバー
@@ -46,11 +43,11 @@ socket.on('onlineUsers', (onlines) => {
     $('onlines').textContent = '接続中: ' + onlines.length + '人';
 });
 
-// status
+// notification
 const openCardStatus = new Map();
 setInterval(updateStatus, 1000); // update
 
-socket.on('status', (data) => {
+socket.on('notification', (data) => {
     openCardStatus.set(data, new Date());
 });
 
@@ -58,21 +55,19 @@ function updateStatus() {
     let name, difference, text;
 
     for (let [data, date] of openCardStatus) {
-        if (Date.now() - date > 1000 * 60) {
-            openCardStatus.delete(data);
-        }
+        if (Date.now() - date > 60000) { openCardStatus.delete(data); } // 60sec passed => delete notification
+
         name = data.name;
         difference = Math.abs(data.difference);
         const second = Math.round(difference / 1000);
         text = second < 20 ? '' : `${name}さんが${second}秒前のメモを公開しました`;
-        // text = `${name}さんが${second}秒前のメモを公開しました`;
 
-        if (difference > 60 * 1000) {
+        if (difference > 60000) { // case: released memo was saved more than 60sec ago.
             const minute = Math.round(difference / 60000);
             text = `${name}さんが${minute}分前のメモを公開しました`;
         }
     }
-    $('status').textContent = openCardStatus.size > 0 ? text : '';
+    notification.textContent = openCardStatus.size > 0 ? text : '';
 }
 
 function GoToTheOpenCard() {
@@ -104,24 +99,9 @@ socket.on('memoLogs', (memo) => {
     handleMemoLogs(memo); //draggable
 });
 
-// let currentColor = { r: 38, g: 49, b: 101 }; // 初期の色
+// エキサイト機能
 // socket.on('memoCount', (memoCount) => {
-//     console.log('memoCount: ', memoCount);
-
-//     const header = document.querySelector('header');
-
-//     const endColor = { r: 184, g: 46, b: 46 }; // 最終的に目指す色
-//     const maxMemoCount = 30; // memoCount がこの値に達すると完全に赤になる
-//     const progress = Math.min(memoCount / maxMemoCount, 1); // 0から1までの範囲で進捗率を計算
-//     console.log('progress: ', progress);
-
-//     // memoCount に応じて現在の色を更新
-//     const redIntensity = Math.round(currentColor.r + (endColor.r - currentColor.r) * progress);
-//     const greenIntensity = Math.round(currentColor.g + (endColor.g - currentColor.g) * progress);
-//     const blueIntensity = Math.round(currentColor.b + (endColor.b - currentColor.b) * progress);
-
-//     console.log(redIntensity, greenIntensity, blueIntensity);
-//     header.style.backgroundColor = `rgb(${redIntensity}, ${greenIntensity}, ${blueIntensity})`;
+//     updateHeaderColorBasedOnMemoCount(memoCount);
 // });
 
 // 伏せカード登場！
@@ -133,33 +113,34 @@ socket.on('downCard', (msg) => {
     handleDownCard(msg); // not draggable
 });
 
+// 重ねてオープン
+socket.on('myKasaneOpen', data => { // 私の重ねてオープンを投稿化済み
+    handleMyKasaneOpen(data);
+});
+
+socket.on('kasaneOpen', (post, dropId) => { // 重ねてオープン 投稿を得た
+
+});
+
 // < 投票を受信
 socket.on('updateVote', (voteData) => {
     handleUpdateVote(voteData);
 });
 
-// < インタラクティブイベントを受信
-function setUpInteractiveEventHandler(eventType) {
-    socket.on(eventType, (data) => {
-        const item = $(data._id);
-        const countElement = item.querySelector(`.${eventType}-container span`);
-        countElement.textContent = data.count;
-    });
-}
+// < bookmark を受信
+socket.on('bookmark', (data) => {
+    const item = $(data._id);
+    const countElement = item.querySelector(`.bookmark-container span`);
+    countElement.textContent = data.count;
+});
 
-['up', 'down', 'bookmark'].forEach(setUpInteractiveEventHandler);
-
-// 重ねる
+// 他の人が D & D をしている
 socket.on('dragstart', (draggedId) => {// < ドラッグ開始 >
     $(draggedId).style.border = '3px dotted';
 });
 
 socket.on('dragend', (draggedId) => {// < ドラッグ終了 >
     $(draggedId).style.border = '';
-});
-
-socket.on('drop', (stackedData) => {// < ドロップ >
-    handleDrop_Display(stackedData);
 });
 
 // < アラート
@@ -173,6 +154,50 @@ socket.on('dialog_to_html', (dialogMsg) => {
 });
 
 // ↓↓↓ handle function ↓↓↓
+
+function handleMyKasaneOpen(data) {
+    const post = data.organizedPost;
+    const memoId = post.memoId;
+    const dropId = data.dropId;
+
+    const dropElement = $(dropId);
+    // console.log('dropElement: ', dropElement);
+    // if (dropElement.classList.contains('kasane') || dropElement.parentNode.classList.contains('kasane')) {
+    //     let parentDIV = dropElement.closest('.kasane');
+    //     parentDIV.appendChild(draggedElement);
+    // } 
+    const accordionContainer = createElement('details', 'accordion');
+    messageLists.insertBefore(accordionContainer, dropElement);
+
+    const master = changeTagName(dropElement, 'summary');
+    accordionContainer.appendChild(master);
+
+    let children = createElement('div', 'children');
+    const draggedElement = buildMlElement(post);
+    draggedElement.id = post._id;
+    console.log('draggedElement: ', draggedElement);
+
+    const child = changeTagName(draggedElement, 'p');
+    console.log('child', child);
+    const memo = $(memoId);
+    memo.remove();
+
+    child.classList.add('child');
+    child.style.visibility = '';
+    console.log('child: ', child);
+
+    children.appendChild(child);
+    console.log('children: ', children);
+    accordionContainer.appendChild(children);
+
+    const childCount = accordionContainer.children.length; // 要素ノードの数を取得
+
+    accordionContainer.style.borderLeft = `${(childCount - 1) * 2}px solid #EF7D3C`;
+
+    draggedElement.style.visibility = '';
+    master.style.border = "";
+    master.style.color = '';
+}
 
 // handlePastLogs(pastLogs, stackLogs);
 function handlePastLogs(pastLogs, stackLogs) {
@@ -231,7 +256,7 @@ function appendNestedContainer_fromPastLogs(pastElement, stackLogs) {
         children.appendChild(child);
     });
 
-    accordionContainer.appendChild(children);    
+    accordionContainer.appendChild(children);
     addBeingDraggedListeners(accordionContainer);
     messageLists.appendChild(accordionContainer);
 }
@@ -325,12 +350,8 @@ function handleDownCard(msg, isMine = false) {
 function insertDownCard(msg, timeSpans, index, isLatest = false, isMine) {
     const item = buildMlElement(msg);
 
-    if (isMine) { // 自分の投稿⇒D&D可能
-        enableDragDrop(item);
-    } else {
-        item.classList.add('UNdraggable');
-        addBeingDraggedListeners(item);
-    }
+    isMine ? enableDragDrop(item) : addBeingDraggedListeners(item);
+
 
     if (isLatest) {
         appendChild_IdScroll(item, msg, true);
@@ -357,19 +378,6 @@ function handleUpdateVote(voteData) {
     });
 }
 
-// handleDrop_Display(stackedData);
-function handleDrop_Display(data) {
-    const draggedElement = $(data.draggedId);
-    const dropElement = $(data.dropId);
-
-    if (dropElement.classList.contains('kasane') || dropElement.parentNode.classList.contains('kasane')) {
-        let parentDIV = dropElement.closest('.kasane');
-        parentDIV.appendChild(draggedElement);
-    } else {
-        createKasaneDiv(draggedElement, dropElement);
-    }
-}
-
 // Initialize the dragged element
 let draggedElement = null;
 
@@ -381,7 +389,7 @@ function addDragListeners(element) {
 function addBeingDraggedListeners(element) {
     element.addEventListener('dragover', handleDragOver);
     element.addEventListener('dragleave', handleDragLeave);
-    element.addEventListener('drop', handleDrop_Now);
+    element.addEventListener('drop', handleDrop);
 }
 
 function handleDragStart(event) {
@@ -418,65 +426,48 @@ function handleDragLeave(event) {
     this.style.color = '';
 }
 
-function handleDrop_Now(event) {
+function handleDrop(event) {
     event.preventDefault();
     event.stopPropagation();
+    const dropElement = event.target.closest('.ml');
 
-    if (draggedElement) {
-        const dropElement = event.target.closest('.ml');
-        if (dropElement) {
-            if (draggedElement.classList.contains('memo')) {
-                handleMemoDrop(event, dropElement);
-                return;
-            } else {
+    if (!draggedElement) { console.log('no draggedElement'); return; }
+    if (!dropElement) { console.log('no dropElement'); return; }
 
-                if (dropElement.classList.contains('kasane') || dropElement.parentNode.classList.contains('kasane')) {
-                    let parentDIV = dropElement.closest('.kasane');
-                    parentDIV.appendChild(draggedElement);
-                } else {
-                    createKasaneDiv(draggedElement, dropElement);
-                }
-                socket.emit('drop', { draggedId: draggedElement.id, dropId: dropElement.id });
-            }
-        } else {
-            console.log('no dropElement: ', dropElement);
-        }
-    }
+    draggedElement.classList.contains('memo')
+        ? undercoverDrop(event, dropElement)
+        : overtDrop(dropElement);
+
 }
 
-function handleMemoDrop(event, dropElement) { // memo を重ねてオープン
-    dropElement = dropElement;
-    event.preventDefault();
-    event.stopPropagation();
+// chat / opencard を重ねる
+function overtDrop(dropElement) {
+    const parentDIV = dropElement.closest('.kasane');
 
-    if (dropElement.classList.contains('kasane') || dropElement.parentNode.classList.contains('kasane')) {
-        let parentDIV = dropElement.closest('.kasane');
-        parentDIV.appendChild(draggedElement);
-    } else {
-        createKasaneDiv(draggedElement, dropElement);
-    }
+    dropElement.classList.contains('kasane') || parentDIV
+        ? parentDIV.appendChild(draggedElement)
+        : createKasaneDiv(draggedElement, dropElement);
 
-    // メモをポストにする
-    socket.emit('kasaneteOpen', draggedElement.id, dropElement.id);
+    const twoID = { draggedId: draggedElement.id, dropId: dropElement.id };
+    socket.emit('drop', twoID);
+}
 
-    draggedElement.classList.remove('memo');
-
-    const memoSendContainer = draggedElement.querySelector('.memoSend-container');
-    // 要素が存在すれば削除
-    if (memoSendContainer) { memoSendContainer.remove(); }
-
-    draggedElement.appendChild(createActionButtons(draggedElement));
+// memo を重ねてオープン
+function undercoverDrop(event, dropElement) {
+    socket.emit('kasaneteOpen', draggedElement.id, dropElement.id); // サーバでメモをポストにする
 };
 
 function changeTagName(oldElement, newTagName) {
+    console.log('oldElement', oldElement);
     // 新しいタグを作成して、元の要素の属性と内容をコピー
     const newElement = document.createElement(newTagName);
     [...oldElement.attributes].forEach(attr => newElement.setAttribute(attr.name, attr.value));
     newElement.innerHTML = oldElement.innerHTML;
 
     // 元の要素を新しい要素で置き換える
-    oldElement.parentNode.replaceChild(newElement, oldElement);
-
+    oldElement.parentNode
+        ? oldElement.parentNode.replaceChild(newElement, oldElement)
+        : console.log('newElement: ', newElement);
     return newElement;
 }
 
@@ -490,6 +481,7 @@ function createKasaneDiv(draggedElement, dropElement) {
     let children = createElement('div', 'children');
     const child = changeTagName(draggedElement, 'p');
     child.classList.add('child');
+    child.style.visibility = '';
     console.log('child: ', child);
 
     children.appendChild(child);
@@ -519,30 +511,22 @@ function createElement(tag, className = '', text = '') {
 
 function buildMlElement(message) { // chat
     const item = buildMlBaseStructure(message, message.name);
-
-    // (2) case survey => options and votes
     createSurveyContainer(message, item);
-
-    // 3 buttons
-    const buttons = createActionButtons(message);
-    item.appendChild(buttons);
-
+    item.appendChild(createActionButtons(message));
     return item;
 }
 
 function createSurveyContainer(message, item) {
-    if (message.question) {
-        const surveyContainer = makeSurveyContainerElement(message);
-        item.appendChild(surveyContainer);
-    }
+    if (!message.question) { console.log('no question'); return; }
+
+    const surveyContainer = makeSurveyContainerElement(message);
+    item.appendChild(surveyContainer);
 }
 
 function buildMlBaseStructure(data, nameText) {
     const item = createElement('div', 'ml');
-
     const userNameTimeMsg = createNameTimeMsg(data, nameText);
     item.appendChild(userNameTimeMsg);
-
     return item;
 }
 
@@ -561,58 +545,34 @@ function createNameTimeMsg(message, nameText = message.name) {
     return userNameTimeMsg;
 }
 
-// (2)
 function makeSurveyContainerElement(message) {
     const surveyContainer = createElement('div', 'survey-container');
-
     for (let i = 0; i < message.options.length; i++) {
         const surveyOption = createElement('button', 'survey-option', message.options[i] || '');
-
-        surveyOption.addEventListener('click', () => {
-            // console.log(i);
-            socket.emit('survey', message._id, i);
-        });
-
+        surveyOption.addEventListener('click', () => { socket.emit('survey', message._id, i); });
         console.log('message.voteSums: ', message.voteSums);
-
         const surveyNum = createElement('span', 'survey-num-' + (i), `${message.voteSums[i]}`);
-
-        surveyContainer.appendChild(surveyOption);
-        surveyContainer.appendChild(surveyNum);
+        surveyContainer.append(surveyOption, surveyNum);
     }
     return surveyContainer;
 }
-
-// 3 buttons
 function createActionButtons(message) {
     const buttons = createElement('div', 'buttons');
-    // ['up', 'down', 'bookmark'].forEach(eventType => {
-    ['bookmark'].forEach(eventType => {
-        buttons.appendChild(makeActionButtonContainer(eventType, message));
-    });
+    buttons.appendChild(makeBookmarkButton(message));
     return buttons;
 }
 
-function makeActionButtonContainer(eventType, message) {
+function makeBookmarkButton(message) {
+    const container = createElement('div', 'bookmark-container');
+    const button = createElement('button', 'actionButton', '☆');
+    const count = createElement('span', 'bookmark-count', message.bookmarks || 0);
 
-    const eventData = {
-        // up: { className: 'up-container', emoji: '⇧', count: message.ups || 0 },
-        // down: { className: 'down-container', emoji: '⇩', count: message.downs || 0 },
-        bookmark: { className: 'bookmark-container', emoji: '☆', count: message.bookmarks || 0 }
-    }[eventType];
-
-    const container = createElement('div', eventData.className);
-    const button = createElement('button', 'actionButton', eventData.emoji);
-    const count = createElement('span', `${eventType}-count`, eventData.count);
-
-    button.addEventListener('click', e => {
+    button.addEventListener('click', () => {
         button.classList.toggle("active");
-        console.log('button.classList: ', button.classList);
-        socket.emit('event', eventType, message._id);
+        socket.emit('event', 'bookmark', message._id);
     });
 
-    container.appendChild(button);
-    container.appendChild(count);
+    container.append(button, count);
     return container;
 }
 
@@ -651,25 +611,35 @@ function toggleMemoMode() {
 
 form.addEventListener('submit', (event) => {
     event.preventDefault();
-
-    const isChecked = checkBox.checked;
-    if (isChecked) {
-        // 連続した2つのコロン "::" が2つ以上あるかを判別する
-        if ((input.value.match(/::/g) || []).length >= 2) {
-            console.log("'::'が含まれるアンケート");
-            socket.emit('submitSurvey', input.value);
-        } else {
-            console.log("'::' が2つ以上含まれない普通のチャット");
-            socket.emit('chat message', input.value);
-        }
-    } else {
-        socket.emit('personal memo', input.value);
-    }
+    checkBox.checked ? handleChatOrSurvey() : socket.emit('personal memo', input.value);
     input.value = '';
 });
+
+function handleChatOrSurvey() {
+    (input.value.match(/::/g) || []).length >= 2
+        ? socket.emit('submitSurvey', input.value)
+        : socket.emit('chat message', input.value);
+}
 
 function checkIsBefore(target, compare) {
     const targetDate = new Date(target);
     const compareDate = new Date(compare);
     return targetDate < compareDate;
 }
+
+// エキサイト機能
+// let currentColor = { r: 38, g: 49, b: 101 }; // 初期の色
+// function updateHeaderColorBasedOnMemoCount(memoCount) {
+//     const header = document.querySelector('header');
+//     const endColor = { r: 184, g: 46, b: 46 }; // 最終的に目指す色
+//     const maxMemoCount = 30; // memoCount がこの値に達すると完全に赤になる
+//     const progress = Math.min(memoCount / maxMemoCount, 1); // 0から1までの範囲で進捗率を計算
+
+
+//     // memoCount に応じて現在の色を更新
+//     const redIntensity = Math.round(currentColor.r + (endColor.r - currentColor.r) * progress);
+//     const greenIntensity = Math.round(currentColor.g + (endColor.g - currentColor.g) * progress);
+//     const blueIntensity = Math.round(currentColor.b + (endColor.b - currentColor.b) * progress);
+
+//     header.style.backgroundColor = `rgb(${redIntensity}, ${greenIntensity}, ${blueIntensity})`;
+// }

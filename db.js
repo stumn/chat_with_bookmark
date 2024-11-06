@@ -48,7 +48,8 @@ const postSchema = new mongoose.Schema({
     voteOptions: [[String]],
     isOpenCard: { type: Boolean, default: false }, //
     isStackingOn: { type: Boolean, default: false }, // スタックしているか（このポストは子分）
-    stackedPostIds: [String] // スタックされているポストのID（このポストが親分、id は子分たち）
+    stackedPostIds: [String], // スタックされているポストのID（このポストが親分、id は子分たち）
+    memoId: String
 }, options);
 
 const Post = mongoose.model("Post", postSchema);

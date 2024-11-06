@@ -59,7 +59,7 @@ io.on('connection', async (socket) => {
 
     // < 自分メモ >
     socket.on('personal memo', async (memo) => {
-      const m = await SavePersonalMemo(name, memo, socket);
+      const m = await SavePersonalMemo(name, memo);
 
       const organizedMemo = {
         _id: m._id,
@@ -134,7 +134,7 @@ io.on('connection', async (socket) => {
 
       const difference = new Date(msg.createdAt) - new Date();
       const data = { name, difference };
-      io.emit('status', data);
+      io.emit('notification', data);
     });
 
     socket.on('kasaneteOpen', async (memoId, dropId) => {
@@ -148,15 +148,21 @@ io.on('connection', async (socket) => {
         msg: p.msg,
         question: p.question,
         options: p.options,
-        createdAt: memo.createdAt
+        createdAt: memo.createdAt,
+        memoId: memoId
       }
-
-      const kasaneData = { draggedId: organizedPost._id, dropId: dropId };
-      socket.broadcast.emit('drop', kasaneData); // 操作したユーザ以外に送信
-
+      
+      // const kasaneData = { draggedId: organizedPost._id, dropId: dropId };
+      // socket.broadcast.emit('drop', kasaneData); // 操作したユーザ以外に送信
 
       // 重ね関係保存
       kasaneteOpen_saveStackRelation(p, target);
+
+      const data = {organizedPost, dropId};
+      console.log('data: ', data);
+
+      socket.emit('myKasaneOpen', data);
+      socket.broadcast.emit('kasaneOpen', data);
     });
 
     // ドラッグstart
