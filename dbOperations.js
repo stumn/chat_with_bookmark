@@ -150,6 +150,8 @@ async function SaveParentPost(child, parent) {
 // 投稿を見つける関数
 async function findPost(msgId) {
     try {
+        console.log('findPost: ', msgId);
+        if (!msgId) { throw new Error('msgId がありません'); }
         const post = await Post.findById(msgId);
         if (!post) { throw new Error(`投稿が見つかりません: ${msgId}`); }
         return post;
@@ -160,8 +162,10 @@ async function findPost(msgId) {
 
 async function findMemo(msgId) {
     try {
+        console.log('findMemo: ', msgId);
         const memo = await Memo.findById(msgId);
         if (!memo) { throw new Error(`メモが見つかりません: ${msgId}`); }
+        console.log('findMemo: ', memo);
         return memo;
     } catch (error) {
         handleErrors(error, `メモ見つからない${msgId}`);

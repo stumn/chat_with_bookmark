@@ -86,7 +86,7 @@ socket.on('pastLogs', ({ pastLogs, stackLogs }) => {
 // });
 
 // 自分のチャット・アンケート（ドラッグ可能）
-socket.on('myChat', (post) => { 
+socket.on('myChat', (post) => {
     handleMyChat(post);
 });
 
@@ -100,22 +100,22 @@ socket.on('memoLogs', (memo) => {
     handleMemoLogs(memo);
 });
 
-// 自分のメモ公開（ドラッグ可能）
+// 自分のメモボタン公開（ドラッグ可能）
 socket.on('myOpenCard', (msg) => {
     handleMyOpenCard(msg);
 })
 
-// 他の人のメモ公開（ドラッグ不可）
+// 他の人のメモボタン公開（ドラッグ不可）
 socket.on('downCard', (msg) => {
     handleDownCard(msg);
 });
 
-// 自分の重ねてオープン
+// ドロップ自分の重ねてオープン
 socket.on('myKasaneOpen', data => {
     handleMyKasaneOpen(data);
 });
 
-// 他の人の重ねてオープン
+// ドロップ他の人の重ねてオープン
 socket.on('kasaneOpen', (post, dropId) => {
 
 });
@@ -127,7 +127,7 @@ socket.on('updateVote', (voteData) => {
 
 // < bookmark を受信
 socket.on('bookmark', (data) => {
-    const item = $(data._id);
+    const item = $(data.id);
     const countElement = item.querySelector(`.bookmark-container span`);
     countElement.textContent = data.count;
 });
@@ -154,7 +154,7 @@ socket.on('dialog_to_html', (dialogMsg) => {
 // ↓↓↓ handle function ↓↓↓
 
 function handleMyKasaneOpen(data) {
-    const post = data.organizedPost;
+    const post = data.postSet;
     const memoId = post.memoId;
     const dropId = data.dropId;
 
@@ -172,7 +172,7 @@ function handleMyKasaneOpen(data) {
 
     let children = createElement('div', 'children');
     const draggedElement = buildMlElement(post);
-    draggedElement.id = post._id;
+    draggedElement.id = post.id;
     console.log('draggedElement: ', draggedElement);
 
     const child = changeTagName(draggedElement, 'p');
@@ -250,7 +250,7 @@ function appendNestedContainer_fromPastLogs(pastElement, stackLogs) {
         child.appendChild(createNameTimeMsg(kobun));
         createSurveyContainer(kobun, child);
         child.appendChild(createActionButtons(kobun));
-        child.id = kobun._id;
+        child.id = kobun.id;
         children.appendChild(child);
     });
 
@@ -263,7 +263,7 @@ function makeKobunsArray(stackLogs, pastElement) {
     let kobuns = [];
     stackLogs.forEach(stackElement => {
         for (let i = 0; i < pastElement.stackedPostIds.length; i++) {
-            if (stackElement._id == pastElement.stackedPostIds[i]) {
+            if (stackElement.id == pastElement.stackedPostIds[i]) {
                 kobuns.push(stackElement);
             }
         }
@@ -288,6 +288,7 @@ function handleMemoLogs(memo, shouldScroll = true) {
     item.classList.add('memo');
     const memoSendContainer = buildMemoSendContainer(memo);
     item.appendChild(memoSendContainer);
+    console.log('memo: ', memo);
 
     enableDragDrop(item);
     appendChild_IdScroll(item, memo, shouldScroll);
@@ -342,7 +343,6 @@ function insertDownCard(msg, timeSpans, index, isLatest = false, isMine) {
 
     isMine ? enableDragDrop(item) : addBeingDraggedListeners(item);
 
-
     if (isLatest) {
         appendChild_IdScroll(item, msg, true);
 
@@ -355,13 +355,13 @@ function insertDownCard(msg, timeSpans, index, isLatest = false, isMine) {
         messageLists.insertBefore(item, parentDIV);
     }
 
-    item.id = msg._id;
+    item.id = msg.id;
     item.classList.add('ml', 'downCard', 'visible');
 }
 
 // handleUpdateVote(voteData);
 function handleUpdateVote(voteData) {
-    const item = $(voteData._id);
+    const item = $(voteData.id);
     voteData.voteSums.forEach((voteSum, i) => {
         const surveyNum = item.querySelector(`.survey-container .survey-num-${i}`);
         surveyNum.textContent = voteSum;
@@ -444,7 +444,10 @@ function overtDrop(dropElement) {
 
 // memo を重ねてオープン
 function undercoverDrop(event, dropElement) {
-    socket.emit('kasaneteOpen', draggedElement.id, dropElement.id); // サーバでメモをポストにする
+    console.log('draggedElement: ', draggedElement.id);
+    console.log('dropElement: ', dropElement.id);
+
+    socket.emit('undercoverDrop', draggedElement.id, dropElement.id); // サーバでメモをポストにする
 };
 
 function changeTagName(oldElement, newTagName) {
@@ -559,7 +562,7 @@ function makeBookmarkButton(message) {
 
     button.addEventListener('click', () => {
         button.classList.toggle("active");
-        socket.emit('event', 'bookmark', message._id);
+        socket.emit('event', 'bookmark', message.id);
     });
 
     container.append(button, count);
@@ -574,8 +577,10 @@ function enableDragDrop(item) {
 }
 
 function appendChild_IdScroll(item, message = {}, shouldScroll = true) {
+    console.log('message: ', message);
+    console.log('message.id: ', message.id);
     messageLists.appendChild(item);
-    if (message._id) { item.id = message._id; }
+    if (message.id) { item.id = message.id; } else { console.log('message.id is not found', message.msg); }
     if (shouldScroll) { window.scrollTo(0, document.body.scrollHeight); }
 }
 

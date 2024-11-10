@@ -40,7 +40,7 @@ io.on('connection', async (socket) => {
     const { name, randomString } = await logInFunction(rawname, socket);
     socket.emit('randomString', randomString);
 
-    // < 自分メモ >
+    // 自分メモが記録された場合、自分だけに送信
     socket.on('personal memo', async (memo) => {
       const m = await SavePersonalMemo(name, memo);
 
@@ -51,6 +51,7 @@ io.on('connection', async (socket) => {
         createdAt: organizeCreatedAt(m.createdAt)
       }
 
+      console.log('自分メモ', organizedMemo);
       socket.emit('memoLogs', organizedMemo); // 自分だけに送信
 
       memoCount++;
@@ -67,30 +68,24 @@ io.on('connection', async (socket) => {
 
     setInterval(decreaseMemoCount, 1000 * 5);
 
-    // < チャット（選択肢付き）メッセージ >
+    // チャット（選択肢付き）メッセージが送信されたとき
     socket.on('chat message', async (msg) => {
       let postSet;
-      if ((msg.match(/::/g) || []).length >= 2) {
-
-        // 文字列を最初に出現する "::" で分割して、質問部分と選択肢部分に分ける
+      if ((msg.match(/::/g) || []).length >= 2) { // 最初に出現する "::" で分割. 質問と選択肢に分ける
         const { formattedQuestion, options } = parseQuestionOptions(msg);
-
         const record = await SaveSurveyMessage(name, formattedQuestion, options);
         postSet = {
-          _id: record._id,
+          id: record._id,
           name: record.name,
           msg: record.msg,
           options: record.options,
           voteSums: record.voteSums,
           createdAt: organizeCreatedAt(record.createdAt)
         }
-      }
-      else {
-
+      } else {
         const p = await SaveChatMessage(name, msg);
-
         postSet = {
-          _id: p._id,
+          id: p._id,
           name: p.name,
           msg: p.msg,
           createdAt: organizeCreatedAt(p.createdAt)
@@ -100,24 +95,24 @@ io.on('connection', async (socket) => {
       socket.broadcast.emit('chatLogs', postSet);
     });
 
-    // < アンケート投票 >
+    // 投票があったとき
     socket.on('survey', async (msgId, option) => {
       const voteData = await processVoteEvent(msgId, option, socket.id, socket);
       io.emit('updateVote', voteData); // id とcount を送信
     });
 
-    // < ボタンイベント (bookmark) >
+    // ブックマークされたとき
     socket.on('event', async (eventType, msgId) => {
       await receiveSendButtonEvent(eventType, msgId, name, socket);
     });
 
-    // 伏せカードオープン
+    // メモ送信ボタンが押されたとき
     socket.on('revealMemo', async (memo) => {
       const record = await SaveRevealMemo(memo.name, memo.msg, memo._id, memo.createdAt);
       notifyRevealMemo(record, name);
 
       const postSet = {
-        _id: record._id,
+        id: record._id,
         name: record.name,
         msg: record.msg,
         memoCreatedAt: organizeCreatedAt(record.memoCreatedAt),
@@ -126,11 +121,10 @@ io.on('connection', async (socket) => {
 
       socket.emit('myOpenCard', postSet);
       socket.broadcast.emit('downCard', postSet);
-
-
     });
 
-    socket.on('kasaneteOpen', async (memoId, dropId) => {
+    socket.on('undercoverDrop', async (memoId, dropId) => {
+      console.log('undercoverDrop memoID: ', memoId, 'dropId: ', dropId);
       const memo = await findMemo(memoId);
       const target = await findPost(dropId);
 
@@ -145,10 +139,11 @@ io.on('connection', async (socket) => {
       SaveParentPost(record, target);
 
       const postSet = {
-        _id: record._id,
+        id: record._id,
         name: record.name,
         msg: record.msg,
-        memoCreatedAt: organizeCreatedAt(record.memoCreatedAt)
+        memoCreatedAt: organizeCreatedAt(record.memoCreatedAt),
+        memoId: record.memoId,
       }
 
       const data = { postSet, dropId };
