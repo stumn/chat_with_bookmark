@@ -38,18 +38,23 @@ const bookmarkSchema = new mongoose.Schema({
 
 // Post スキーマ / モデル
 const postSchema = new mongoose.Schema({
+    // 基本情報
     name: String,
     msg: String,
-    question: String,
     options: [String],
-    ups: [{ type: bookmarkSchema, default: () => ({}) }],
-    downs: [{ type: bookmarkSchema, default: () => ({}) }],
+    voters: [[String]],
     bookmarks: [{ type: bookmarkSchema, default: () => ({}) }],
-    voteOptions: [[String]],
-    isOpenCard: { type: Boolean, default: false }, //
-    isStackingOn: { type: Boolean, default: false }, // スタックしているか（このポストは子分）
-    stackedPostIds: [String], // スタックされているポストのID（このポストが親分、id は子分たち）
-    memoId: String
+
+    // 重ねる機能
+    // isStackingOn: { type: Boolean, default: false }, // スタックしているか（このポストは子分）
+    // stackedPostIds: [String], // スタックされているポストのID（このポストが親分、id は子分たち）
+    parentPostId: { type: String, default: null },  // 親ポストのID
+    childPostIds: [String],  // 子ポストのIDリスト
+
+    // メモ機能（公開メモかどうか）
+    // isOpenCard: { type: Boolean, default: false },
+    memoId: String,
+    memoCreatedAt: Date
 }, options);
 
 const Post = mongoose.model("Post", postSchema);
