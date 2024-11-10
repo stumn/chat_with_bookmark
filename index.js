@@ -18,14 +18,14 @@ const { Server } = require("socket.io");
 const io = new Server(server);
 
 // const { mongoose, Post, Memo } = require('./db');
-const { saveUser, getUserInfo, getPastLogs, organizeCreatedAt, SaveChatMessage, SavePersonalMemo, SaveSurveyMessage, findPost, findMemo, fetchPosts, saveStackRelation, kasaneteOpen_saveStackRelation } = require('./dbOperations');
+const { saveUser, getUserInfo, getPastLogs, organizeCreatedAt, SaveChatMessage, SavePersonalMemo, SaveSurveyMessage, SaveRevealMemo, SaveKasaneteMemo, findPost, findMemo, fetchPosts, saveStackRelation, SaveParentPost } = require('./dbOperations');
 const { handleErrors, checkVoteStatus, calculate_VoteSum, checkEventStatus } = require('./utils');
 
 const { error } = require('console');
 
 // 定数の設定
 const PORT = process.env.PORT || 3000;
-const ANONYMOUS_NAME = '匿名';
+// const ANONYMOUS_NAME = '匿名';
 
 // オンラインユーザーのリスト
 let onlineUsers = [];
@@ -40,29 +40,12 @@ io.on('connection', async (socket) => {
     const { name, randomString } = await logInFunction(rawname, socket);
     socket.emit('randomString', randomString);
 
-    // < チャットメッセージ >
-    socket.on('chat message', async (msg) => {
-      const p = await SaveChatMessage(name, msg, false);
-
-      const organizedPost = {
-        _id: p._id,
-        name: p.name,
-        msg: p.msg,
-        question: p.question,
-        options: p.options,
-        createdAt: organizeCreatedAt(p.createdAt)
-      }
-
-      socket.emit('myChat', organizedPost);
-      socket.broadcast.emit('chatLogs', organizedPost);
-    });
-
     // < 自分メモ >
     socket.on('personal memo', async (memo) => {
       const m = await SavePersonalMemo(name, memo);
 
       const organizedMemo = {
-        _id: m._id,
+        id: m._id,
         name: m.name,
         msg: m.msg,
         createdAt: organizeCreatedAt(m.createdAt)
@@ -84,23 +67,37 @@ io.on('connection', async (socket) => {
 
     setInterval(decreaseMemoCount, 1000 * 5);
 
-    // < アンケートメッセージ >
-    socket.on('submitSurvey', async data => {
-      // 文字列を最初に出現する "::" で分割して、質問部分と選択肢部分に分ける
-      const { formattedQuestion, options } = parseQuestionOptions(data);
+    // < チャット（選択肢付き）メッセージ >
+    socket.on('chat message', async (msg) => {
+      let postSet;
+      if ((msg.match(/::/g) || []).length >= 2) {
 
-      const s = await SaveSurveyMessage(formattedQuestion, options, name);
-      const organizedSurvey = {
-        _id: s._id,
-        name: s.name,
-        question: s.question,
-        options: s.options,
-        voteSums: s.voteSums,
-        createdAt: organizeCreatedAt(s.createdAt)
+        // 文字列を最初に出現する "::" で分割して、質問部分と選択肢部分に分ける
+        const { formattedQuestion, options } = parseQuestionOptions(msg);
+
+        const record = await SaveSurveyMessage(name, formattedQuestion, options);
+        postSet = {
+          _id: record._id,
+          name: record.name,
+          msg: record.msg,
+          options: record.options,
+          voteSums: record.voteSums,
+          createdAt: organizeCreatedAt(record.createdAt)
+        }
       }
+      else {
 
-      socket.emit('mySurvey', organizedSurvey);
-      socket.broadcast.emit('chatLogs', organizedSurvey);
+        const p = await SaveChatMessage(name, msg);
+
+        postSet = {
+          _id: p._id,
+          name: p.name,
+          msg: p.msg,
+          createdAt: organizeCreatedAt(p.createdAt)
+        }
+      }
+      socket.emit('myChat', postSet);
+      socket.broadcast.emit('chatLogs', postSet);
     });
 
     // < アンケート投票 >
@@ -109,55 +106,52 @@ io.on('connection', async (socket) => {
       io.emit('updateVote', voteData); // id とcount を送信
     });
 
-    // < ボタンイベント (up, down, bookmark) >
+    // < ボタンイベント (bookmark) >
     socket.on('event', async (eventType, msgId) => {
       await receiveSendButtonEvent(eventType, msgId, name, socket);
     });
 
     // 伏せカードオープン
-    socket.on('open_downCard', async (msg) => {
-      const p = await SaveChatMessage(name, msg.msg, true);
+    socket.on('revealMemo', async (memo) => {
+      const record = await SaveRevealMemo(memo.name, memo.msg, memo._id, memo.createdAt);
+      notifyRevealMemo(record, name);
 
-      const organizedPost = {
-        _id: p._id,
-        name: p.name,
-        msg: p.msg,
-        question: p.question,
-        options: p.options,
-        createdAt: msg.createdAt
+      const postSet = {
+        _id: record._id,
+        name: record.name,
+        msg: record.msg,
+        memoCreatedAt: organizeCreatedAt(record.memoCreatedAt),
+        createdAt: organizeCreatedAt(record.createdAt)
       }
 
-      socket.emit('myOpenCard', organizedPost);
-      socket.broadcast.emit('downCard', organizedPost);
+      socket.emit('myOpenCard', postSet);
+      socket.broadcast.emit('downCard', postSet);
 
-      const difference = new Date(msg.createdAt) - new Date();
-      const data = { name, difference };
-      io.emit('notification', data);
+
     });
 
     socket.on('kasaneteOpen', async (memoId, dropId) => {
       const memo = await findMemo(memoId);
       const target = await findPost(dropId);
-      const p = await SaveChatMessage(name, memo.msg, true);
 
-      const organizedPost = {
-        _id: p._id,
-        name: p.name,
-        msg: p.msg,
-        question: p.question,
-        options: p.options,
-        createdAt: memo.createdAt,
-        memoId: memoId
+      // const inquryData = { options, voters };
+      const stackData = { parentPostId: target._id, childPostIds: [] };
+      const memoData = { memoId: memo._id, memoCreatedAt: memo.createdAt };
+
+      const record = await SaveKasaneteMemo(memo.name, memo.msg, stackData, memoData);
+      notifyRevealMemo(record, name);
+
+      // 重ねられた投稿に、stack 情報を追加
+      SaveParentPost(record, target);
+
+      const postSet = {
+        _id: record._id,
+        name: record.name,
+        msg: record.msg,
+        memoCreatedAt: organizeCreatedAt(record.memoCreatedAt)
       }
 
-      // const kasaneData = { draggedId: organizedPost._id, dropId: dropId };
-      // socket.broadcast.emit('drop', kasaneData); // 操作したユーザ以外に送信
-
-      // 重ね関係保存
-      kasaneteOpen_saveStackRelation(p, target);
-
-      const data = { organizedPost, dropId };
-      console.log('data: ', data);
+      const data = { postSet, dropId };
 
       socket.emit('myKasaneOpen', data);
       socket.broadcast.emit('kasaneOpen', data);
@@ -188,6 +182,12 @@ io.on('connection', async (socket) => {
     disconnectFunction(socket);
   });
 });
+
+function notifyRevealMemo(record, name) {
+  const difference = new Date(record.createdAt) - new Date(record.memoCreatedAt);
+  const data = { name, difference };
+  io.emit('notification', data);
+}
 
 function parseQuestionOptions(data) {
   const [question, ...rest] = data.split('::');
@@ -241,7 +241,7 @@ async function logInFunction(rawname, socket) {
 async function processVoteEvent(msgId, option, userSocketId, socket) {
   try {
     const surveyPost = await findPost(msgId); // ポストを特定
-    const voteArrays = surveyPost.voteOptions;  // 投票配列
+    const voteArrays = surveyPost.voters;  // 投票配列
 
     let { userHasVoted, hasVotedOption } = checkVoteStatus(userSocketId, voteArrays); // ユーザーが投票済みか否か
 
@@ -250,7 +250,7 @@ async function processVoteEvent(msgId, option, userSocketId, socket) {
     }
     else { // 未投票(処理が短いので関数に切り分けていない)
       voteArrays[option].push(userSocketId);
-      surveyPost.markModified('voteOptions');
+      surveyPost.markModified('voters');
       await surveyPost.save();
     }
 
@@ -283,7 +283,7 @@ async function handle_Voted_User(option, hasVotedOption, socket, voteArrays, sur
   if (answer === true) {
     voteArrays[hasVotedOption].pull(socket.id);
     voteArrays[option].push(socket.id);
-    surveyPost.markModified('voteOptions');
+    surveyPost.markModified('voters');
     await surveyPost.save();
   }
 }

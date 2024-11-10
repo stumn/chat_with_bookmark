@@ -80,45 +80,43 @@ socket.on('pastLogs', ({ pastLogs, stackLogs }) => {
     handlePastLogs(pastLogs, stackLogs);
 });
 
-// < チャット受信
-socket.on('myChat', (post) => {
-    handleMyChat(post);
-});
-
-socket.on('chatLogs', (post) => { // other people
-    handleChatLogs(post);
-});
-
-// < アンケート投稿をサーバーから受信
-socket.on('mySurvey', (post) => {
-    handleMySurvey(post);
-});
-
-// < 自分メモ受信
-socket.on('memoLogs', (memo) => {
-    handleMemoLogs(memo); //draggable
-});
-
 // エキサイト機能
 // socket.on('memoCount', (memoCount) => {
 //     updateHeaderColorBasedOnMemoCount(memoCount);
 // });
 
-// 伏せカード登場！
-socket.on('myOpenCard', (msg) => {
-    handleMyOpenCard(msg); // draggable
-})
-
-socket.on('downCard', (msg) => {
-    handleDownCard(msg); // not draggable
+// 自分のチャット・アンケート（ドラッグ可能）
+socket.on('myChat', (post) => { 
+    handleMyChat(post);
 });
 
-// 重ねてオープン
-socket.on('myKasaneOpen', data => { // 私の重ねてオープンを投稿化済み
+// 他の人のチャット・アンケート（ドラッグ不可）
+socket.on('chatLogs', (post) => {
+    handleChatLogs(post);
+});
+
+// 自分メモ（ドラッグ可能）
+socket.on('memoLogs', (memo) => {
+    handleMemoLogs(memo);
+});
+
+// 自分のメモ公開（ドラッグ可能）
+socket.on('myOpenCard', (msg) => {
+    handleMyOpenCard(msg);
+})
+
+// 他の人のメモ公開（ドラッグ不可）
+socket.on('downCard', (msg) => {
+    handleDownCard(msg);
+});
+
+// 自分の重ねてオープン
+socket.on('myKasaneOpen', data => {
     handleMyKasaneOpen(data);
 });
 
-socket.on('kasaneOpen', (post, dropId) => { // 重ねてオープン 投稿を得た
+// 他の人の重ねてオープン
+socket.on('kasaneOpen', (post, dropId) => {
 
 });
 
@@ -281,19 +279,11 @@ function handleMyChat(post) { // MyChat
 
 function handleChatLogs(post) { // ChatLogs
     const item = buildMlElement(post);
-    // item.classList.add('UNdraggable');
     addBeingDraggedListeners(item);
     appendChild_IdScroll(item, post, true);
 }
 
-function handleMySurvey(post) { // MySurvey
-    const item = buildMlElement(post);
-    enableDragDrop(item);
-    appendChild_IdScroll(item, post, true);
-}
-
-// handleMemoLogs(memo); 自分メモ受信
-function handleMemoLogs(memo, shouldScroll = true) { // buildMlElement(message);に近い
+function handleMemoLogs(memo, shouldScroll = true) {
     const item = buildMlBaseStructure(memo, '[memo]');
     item.classList.add('memo');
     const memoSendContainer = buildMemoSendContainer(memo);
@@ -310,7 +300,7 @@ function buildMemoSendContainer(memo) {
     button.addEventListener('click', e => {
         button.classList.add("active");
         e.preventDefault();
-        socket.emit('open_downCard', memo);
+        socket.emit('revealMemo', memo);
         button.disabled = true;
         button.closest('.memo').classList.add('invisibleMemo');
     });
@@ -517,7 +507,7 @@ function buildMlElement(message) { // chat
 }
 
 function createSurveyContainer(message, item) {
-    if (message.question) {
+    if (message.options) {
         const surveyContainer = makeSurveyContainerElement(message);
         item.appendChild(surveyContainer);
     }
@@ -539,7 +529,7 @@ function createNameTimeMsg(message, nameText = message.name) {
     userName_time.append(userName, time);
     userNameTimeMsg.appendChild(userName_time);
 
-    const message_div = createElement('div', 'message-text', message.question || message.msg);
+    const message_div = createElement('div', 'message-text', message.msg);
     userNameTimeMsg.appendChild(message_div);
 
     return userNameTimeMsg;
@@ -611,15 +601,9 @@ function toggleMemoMode() {
 
 form.addEventListener('submit', (event) => {
     event.preventDefault();
-    checkBox.checked ? handleChatOrSurvey() : socket.emit('personal memo', input.value);
+    checkBox.checked ? socket.emit('chat message', input.value) : socket.emit('personal memo', input.value);
     input.value = '';
 });
-
-function handleChatOrSurvey() {
-    (input.value.match(/::/g) || []).length >= 2
-        ? socket.emit('submitSurvey', input.value)
-        : socket.emit('chat message', input.value);
-}
 
 function checkIsBefore(target, compare) {
     const targetDate = new Date(target);

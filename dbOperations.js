@@ -31,9 +31,9 @@ async function getPastLogs() {
     try {
         // const posts = await Post.find({}).limit(PAST_POST).sort({ createdAt: -1 });
         let posts = await Post.find({}).sort({ createdAt: -1 });
-        let stacks = posts.filter(e => e.isStackingOn === true);
+        let stacks = posts.filter(e => e.parentPostId === true);
 
-        posts = posts.filter(e => e.isStackingOn === false);
+        posts = posts.filter(e => e.parentPostId === false);
         posts.reverse();
 
         const pastLogs = await Promise.all(posts.map(organizeLogs));
@@ -59,25 +59,18 @@ function organizeCreatedAt(createdAt) {
 }
 
 // データベースにレコードを保存
-async function saveRecord(name, msg, question = '', options = [], voteOptions = [], ups = [], downs = [], bookmarks = [], isOpenCard = false, isStackingOn = false, stackedPostIds = [], memoId = '') {
+async function saveRecord(name, msg, inqury = {}, stack = {}, memo = {}) {
     try {
-        const npData = { name, msg, question, options, voteOptions, ups, downs, bookmarks, isOpenCard, isStackingOn, stackedPostIds, memoId };
+        const { options = [], voters = [] } = inqury;
+        const { parentPostId = null, childPostIds = [] } = stack;
+        const { memoId = null, memoCreatedAt = null } = memo;
+        const bookmarks = [];
+
+        const npData = { name, msg, options, voters, bookmarks, parentPostId, childPostIds, memoId, memoCreatedAt };
         const newPost = await Post.create(npData);
         return newPost;
     } catch (error) {
         handleErrors(error, 'データ保存時にエラーが発生しました');
-    }
-}
-
-// チャットメッセージ受送信
-async function SaveChatMessage(name, msg, isOpenCard) {
-    try {
-        const p = await saveRecord(name, msg, '', [], [], [], [], [], isOpenCard);
-        console.log('チャット保存しました💬:' + p.msg + p.isOpenCard);
-        return p;
-    }
-    catch (error) {
-        handleErrors(error, 'チャット受送信中にエラーが発生しました');
     }
 }
 
@@ -93,14 +86,64 @@ async function SavePersonalMemo(name, msg) {
     }
 }
 
-// アンケートメッセージ受送信
-async function SaveSurveyMessage(formattedQuestion, options, name) {
-    const voteOptions = options.map(() => []); // 選択肢数分の空配列を作成
+// チャットメッセージ受送信
+async function SaveChatMessage(name, msg) {
     try {
-        const surveyPost = await saveRecord(name, '', formattedQuestion, options, voteOptions);
+        const record = await saveRecord(name, msg);
+        console.log('チャット保存しました💬:' + record.msg + record.createdAt);
+        return record;
+    }
+    catch (error) {
+        handleErrors(error, 'チャット受送信中にエラーが発生しました');
+    }
+}
+
+// アンケートメッセージ受送信
+async function SaveSurveyMessage(name, msg, options) {
+    const voters = options.map(() => []); // 選択肢数分の空配列を作成
+    try {
+        const inqury = { options, voters };
+        const surveyPost = await saveRecord(name, msg, inqury);
+        console.log('アンケート保存しました📊:', surveyPost.msg, surveyPost.createdAt);
         return organizeLogs(surveyPost);
     } catch (error) {
         handleErrors(error, 'アンケート受送信中にエラーが発生しました');
+    }
+}
+
+// メモ公開
+async function SaveRevealMemo(name, msg, memoId, memoCreatedAt) {
+    try {
+        // inqury 追加してもいいかも
+        const memo = { memoId, memoCreatedAt };
+        const revealMemo = await saveRecord(name, msg, {}, {}, memo);
+        console.log(`メモ公開${revealMemo.memoCreatedAt}, ${revealMemo.createdAt}`);
+        return revealMemo;
+    } catch (error) {
+        handleErrors(error, 'メモ公開時にエラーが発生しました');
+    }
+}
+
+// 重ねてメモ公開
+async function SaveKasaneteMemo(name, msg, stack, memo) {
+    try {
+        // 重ねて公開するメモの方
+        const KasaneteMemo = await saveRecord(name, msg, {}, stack, memo);
+        console.log(`重ねてメモ公開${KasaneteMemo.memoCreatedAt}, ${KasaneteMemo.createdAt}`);
+        return KasaneteMemo;
+    } catch (error) {
+        handleErrors(error, '重ねてメモ公開時にエラーが発生しました');
+    }
+}
+
+// 重ねられた投稿に、stack 情報を追加
+async function SaveParentPost(child, parent) {
+    try {
+        if (!parent.childPostIds) parent.childPostIds = [];
+        parent.childPostIds.push(child._id);
+        await parent.save();
+    } catch (error) {
+        handleErrors(error, '重ねられた投稿に、stack 情報を追加中にエラーが発生しました');
     }
 }
 
@@ -184,8 +227,8 @@ async function saveStackRelation(dragedId, dropId) {
         if (!draggedPost) throw new Error(`Post with ID ${dragedId} not found.`);
         console.log('draggedPost: ', draggedPost);
 
-        // Update isStackingOn to true
-        draggedPost.isStackingOn = true;
+        // Update parentPostId to true
+        draggedPost.parentPostId = true;
         await draggedPost.save();
 
         // Find drop post and handle errors
@@ -193,8 +236,8 @@ async function saveStackRelation(dragedId, dropId) {
         if (!dropPost) throw new Error(`Post with ID ${dropId} not found.`);
         console.log('dropPost: ', dropPost);
 
-        // Add draggedId to stackedPostIds
-        dropPost.stackedPostIds.push(dragedId);
+        // Add draggedId to childPostIds
+        dropPost.childPostIds.push(dragedId);
         await dropPost.save();
 
         return { draggedPost, dropPost };
@@ -205,25 +248,4 @@ async function saveStackRelation(dragedId, dropId) {
     }
 }
 
-async function kasaneteOpen_saveStackRelation(draggedPost, dropPost) {
-    try {
-        console.log('draggedPost: ', draggedPost);
-        console.log('dropPost: ', dropPost);
-
-        // Update isStackingOn to true
-        draggedPost.isStackingOn = true;
-        await draggedPost.save();
-
-        // Add draggedId to stackedPostIds
-        dropPost.stackedPostIds.push(draggedPost._id);
-        await dropPost.save();
-
-        // return { draggedPost, dropPost };
-
-    } catch (error) {
-        console.error('Error saving stack relation:', error);
-        throw error;  // Re-throw the error to be handled by the caller
-    }
-}
-
-module.exports = { saveUser, getUserInfo, getPastLogs, organizeCreatedAt, SaveChatMessage, SavePersonalMemo, SaveSurveyMessage, findPost, findMemo, fetchPosts, saveStackRelation, kasaneteOpen_saveStackRelation };
+module.exports = { saveUser, getUserInfo, getPastLogs, organizeCreatedAt, SaveChatMessage, SavePersonalMemo, SaveSurveyMessage, SaveRevealMemo, SaveKasaneteMemo, findPost, findMemo, fetchPosts, saveStackRelation, SaveParentPost };

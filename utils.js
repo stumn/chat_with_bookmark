@@ -9,27 +9,22 @@ function handleErrors(error, customMsg = '') {
 
 // --dbOperations.js で使う post を整える 関数--
 function organizeLogs(post) {
-    const pastUpSum = post.ups.length;
-    const pastDownSum = post.downs.length;
     const pastBookmarkSum = post.bookmarks.length;
-
-    const voteSums = calculate_VoteSum(post.voteOptions);// 投票合計
+    const voteSums = calculate_VoteSum(post.voters);// 投票合計
 
     // 返り値
     return {
         _id: post._id,
         name: post.name,
         msg: post.msg,
-        question: post.question,
-        options: post.options,
-        ups: pastUpSum,
-        downs: pastDownSum,
         bookmarks: pastBookmarkSum,
-        voteSums: voteSums,
         createdAt: post.createdAt,
-        isOpenCard: post.isOpenCard,
-        isStackingOn: post.isStackingOn,
-        stackedPostIds: post.stackedPostIds
+        options: post.options,
+        voteSums: voteSums,
+        isStackingOn: post.parentPostId ? true : false,
+        stackedPostIds: post.childPostIds,
+        memoId: post.memoId,
+        memoCreatedAt: post.memoCreatedAt
     };
 }
 
