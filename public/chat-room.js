@@ -1,7 +1,7 @@
 const socket = io();
 
-// html要素の取得 ($は短縮形の関数名 = DOM要素の操作で使うと便利) 
 function $(id) {
+    if (!id) { console.error('id is not defined'); }
     const element = document.getElementById(id);
     if (!element) { console.error(`Element with id "${id}" not found`); }
     return element;
@@ -19,7 +19,7 @@ let dropElement;
 // プロンプト　ログインで名前を入力・サーバーに送信
 const myName = prompt("名前を入力してください", "");
 if (!myName) {
-    alert('名前が入力されていません。再読み込みしてください。');
+    alert('名前が入力されていません。再読み込み後、入力してください。');
     location.reload();
 }
 // 記号を含む場合は、変更してもらう（記号を含まないように指示しておく）
@@ -35,7 +35,7 @@ socket.on('randomString', (receivedString) => {
 function OpenDocumentWindow() {
     docURL
         ? window.open(docURL, '_blank')
-        : alert('ドキュメントURLが設定されていません。しばらくしてからもう一度お試しください。');
+        : alert('しばらくしてからもう一度お試しください。');
 }
 
 // オンラインメンバー
@@ -60,7 +60,7 @@ function updateStatus() {
         name = data.name;
         difference = Math.abs(data.difference);
         const second = Math.round(difference / 1000);
-        text = second < 20 ? '' : `${name}さんが${second}秒前のメモを公開しました`;
+        text = second < 0 ? '' : `${name}さんが${second}秒前のメモを公開しました`;
 
         if (difference > 60000) { // case: released memo was saved more than 60sec ago.
             const minute = Math.round(difference / 60000);
@@ -71,13 +71,14 @@ function updateStatus() {
 }
 
 function GoToTheOpenCard() {
-    // 目当ての投稿へひとっとび
+    // 目当ての投稿へひとっとび window.scrollTo(0, document.body.scrollHeight);
     // ～秒前∧名前∧伏せカード で探せる
 }
 
 // 過去ログ受信
 socket.on('pastLogs', ({ pastLogs, stackLogs }) => {
     handlePastLogs(pastLogs, stackLogs);
+    // window.scrollTo(0, document.body.scrollHeight);
 });
 
 // エキサイト機能
@@ -197,22 +198,22 @@ function handleMyKasaneOpen(data) {
     master.style.color = '';
 }
 
-// handlePastLogs(pastLogs, stackLogs);
 function handlePastLogs(pastLogs, stackLogs) {
 
     pastLogs.forEach((pastElement) => {
 
+        console.log('pastElement: ', pastElement);
         // 重ね子分が存在する場合
-        if (pastElement.stackedPostIds.length > 0) {
+        if (pastElement.childPostIds.length > 0) {
             appendNestedContainer_fromPastLogs(pastElement, stackLogs);
         }
         else { // 重ね子分が存在しない場合
             const item = buildMlElement(pastElement);
-            if (pastElement.isOpenCard) {
+            if (pastElement.memoId) {
                 item.classList.add('downCard', 'visible');
             }
             addBeingDraggedListeners(item);
-            appendChild_IdScroll(item, pastElement, false);
+            appendChild_IdScroll(item, pastElement, true);
         }
     });
 
@@ -343,23 +344,22 @@ function insertDownCard(msg, timeSpans, index, isLatest = false, isMine) {
 
     isMine ? enableDragDrop(item) : addBeingDraggedListeners(item);
 
-    if (isLatest) {
-        appendChild_IdScroll(item, msg, true);
-
-    } else {
-        let parentDIV = timeSpans[index].closest('.ml');
-
-        if (parentDIV.parentNode.classList.contains('kasane')) {
-            parentDIV = parentDIV.parentNode;
-        }
-        messageLists.insertBefore(item, parentDIV);
-    }
+    isLatest
+        ? appendChild_IdScroll(item, msg, true) // 最新の場合
+        : insertItemBeforeParent(timeSpans, index, item);
 
     item.id = msg.id;
     item.classList.add('ml', 'downCard', 'visible');
 }
 
-// handleUpdateVote(voteData);
+function insertItemBeforeParent(timeSpans, index, item) {
+    let parentDIV = timeSpans[index].closest('.ml');
+    if (parentDIV.parentNode.classList.contains('kasane')) {
+        parentDIV = parentDIV.parentNode;
+    }
+    messageLists.insertBefore(item, parentDIV);
+}
+
 function handleUpdateVote(voteData) {
     const item = $(voteData.id);
     voteData.voteSums.forEach((voteSum, i) => {
@@ -403,10 +403,7 @@ function handleDragOver(event) {
         event.dataTransfer.dropEffect = "none"; // Disable drop for invalid targets
         return;
     }
-
-    event.preventDefault();  // Allow dropping by preventing default behavior
-
-    // Provide visual feedback for valid targets
+    event.preventDefault();
     this.style.border = '3px solid';
     this.style.color = '#227B94';
 }
@@ -516,9 +513,9 @@ function createSurveyContainer(message, item) {
     }
 }
 
-function buildMlBaseStructure(data, nameText) {
+function buildMlBaseStructure(msg, nameText) {
     const item = createElement('div', 'ml');
-    const userNameTimeMsg = createNameTimeMsg(data, nameText);
+    const userNameTimeMsg = createNameTimeMsg(msg, nameText);
     item.appendChild(userNameTimeMsg);
     return item;
 }
@@ -527,7 +524,9 @@ function createNameTimeMsg(message, nameText = message.name) {
     const userNameTimeMsg = createElement('div', 'userName-time-msg');
     const userName_time = createElement('div', 'userName-time');
     const userName = createElement('span', 'userName', nameText);
-    const time = createElement('span', 'time', message.createdAt);
+
+    const timeData = message.memoCreatedAt ? message.memoCreatedAt : message.createdAt;
+    const time = createElement('span', 'time', timeData);
 
     userName_time.append(userName, time);
     userNameTimeMsg.appendChild(userName_time);
@@ -542,8 +541,9 @@ function makeSurveyContainerElement(message) {
     const surveyContainer = createElement('div', 'survey-container');
     for (let i = 0; i < message.options.length; i++) {
         const surveyOption = createElement('button', 'survey-option', message.options[i] || '');
-        surveyOption.addEventListener('click', () => { socket.emit('survey', message._id, i); });
-        console.log('message.voteSums: ', message.voteSums);
+        surveyOption.addEventListener('click', () => {
+            socket.emit('survey', message.id, i);
+        });
         const surveyNum = createElement('span', 'survey-num-' + (i), `${message.voteSums[i]}`);
         surveyContainer.append(surveyOption, surveyNum);
     }
@@ -562,7 +562,8 @@ function makeBookmarkButton(message) {
 
     button.addEventListener('click', () => {
         button.classList.toggle("active");
-        socket.emit('event', 'bookmark', message.id);
+        button.disabled = true;
+        socket.emit('bookmark', message.id);
     });
 
     container.append(button, count);
@@ -606,7 +607,9 @@ function toggleMemoMode() {
 
 form.addEventListener('submit', (event) => {
     event.preventDefault();
-    checkBox.checked ? socket.emit('chat message', input.value) : socket.emit('personal memo', input.value);
+    checkBox.checked
+        ? socket.emit('chat message', input.value)
+        : socket.emit('personal memo', input.value);
     input.value = '';
 });
 

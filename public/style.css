@@ -35,7 +35,7 @@ body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
 
-#status {
+#notification {
     border: none;
     cursor: pointer;
     padding: 0.3rem;
@@ -181,7 +181,8 @@ details.accordion {
 }
 
 #messageLists>.invisibleMemo {
-    display: none;
+    /* display: none; */
+    opacity: 0.5; /* 50%透明 */
 }
 
 #messageLists>div .ml {
@@ -292,8 +293,6 @@ details.accordion {
     font-size: 1rem;
 }
 
-.up-container button,
-.down-container button,
 .memoSend-container button {
     background: transparent;
     box-shadow: none;
@@ -305,8 +304,6 @@ details.accordion {
     font-size: 1rem;
 }
 
-span.up-count,
-span.down-count,
 span.bookmark-count,
 span.memoSend-count {
     /* 各ボタンのカウント */
@@ -315,50 +312,21 @@ span.memoSend-count {
     justify-content: flex-end;
 }
 
-/* 
-.up-container button {
-    background-color: #EF7D3C;
-}
-
-.down-container button {
-    background-color: #60955F;
-} */
-/* 
-.bookmark-container button {
-    background-color: #2879C2;
-} */
-
 .memoSend-container button {
     background-color: #263165;
 }
 
-.up-container button.active,
-.down-container button.active,
 .bookmark-container button.active,
 .memoSend-container button.active {
     font-weight: bold;
     color: #ffae00;
+    cursor: default;
 }
-
-/* 
-span.up-count {
-    color: #EF7D3C;
-}
-
-span.down-count {
-    color: #60955F;
-} */
 
 span.bookmark-count {
     color: #2879C2;
 }
 
-/* .UNdraggable {
-    /* ドラッグ不可 */
-    /* pointer-events: none; */
-/* } */ 
-
-/* ドラッグ */
 .draggable {
     cursor: grab;
     /* ドラッグ可能であることを示すカーソル */

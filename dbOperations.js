@@ -29,27 +29,24 @@ async function getUserInfo(name) {
 // ログイン時・過去ログをDBから取得
 async function getPastLogs() {
     try {
-        // const posts = await Post.find({}).limit(PAST_POST).sort({ createdAt: -1 });
         let posts = await Post.find({}).sort({ createdAt: -1 });
-        let stacks = posts.filter(e => e.parentPostId === true);
+        let stacks = posts.filter(e => e.parentPostId !== null);
 
-        posts = posts.filter(e => e.parentPostId === false);
+        posts = posts.filter(e => e.parentPostId === null);
         posts.reverse();
 
-        const pastLogs = await Promise.all(posts.map(organizeLogs));
-        pastLogs.forEach(e => {
-            e.createdAt = organizeCreatedAt(e.createdAt);
-        });
-
-        const stackLogs = await Promise.all(stacks.map(organizeLogs));
-        stackLogs.forEach(e => {
-            e.createdAt = organizeCreatedAt(e.createdAt);
-        });
-        console.log('過去ログ整理完了');
+        const pastLogs = await processXlogs(posts);
+        const stackLogs = await processXlogs(stacks);
         return { pastLogs, stackLogs };
     } catch (error) {
         handleErrors(error, 'getPastLogs 過去ログ取得中にエラーが発生しました');
     }
+}
+
+async function processXlogs(posts) {
+    const xLogs = await Promise.all(posts.map(organizeLogs));
+    xLogs.forEach(e => { e.createdAt = organizeCreatedAt(e.createdAt); });
+    return xLogs;
 }
 
 function organizeCreatedAt(createdAt) {
@@ -91,7 +88,7 @@ async function SaveChatMessage(name, msg) {
     try {
         const record = await saveRecord(name, msg);
         console.log('チャット保存しました💬:' + record.msg + record.createdAt);
-        return record;
+        return organizeLogs(record);
     }
     catch (error) {
         handleErrors(error, 'チャット受送信中にエラーが発生しました');
@@ -104,7 +101,7 @@ async function SaveSurveyMessage(name, msg, options) {
     try {
         const inqury = { options, voters };
         const surveyPost = await saveRecord(name, msg, inqury);
-        console.log('アンケート保存しました📊:', surveyPost.msg, surveyPost.createdAt);
+        console.log('アンケート保存しました📊:', surveyPost.msg, surveyPost._id);
         return organizeLogs(surveyPost);
     } catch (error) {
         handleErrors(error, 'アンケート受送信中にエラーが発生しました');
@@ -118,7 +115,7 @@ async function SaveRevealMemo(name, msg, memoId, memoCreatedAt) {
         const memo = { memoId, memoCreatedAt };
         const revealMemo = await saveRecord(name, msg, {}, {}, memo);
         console.log(`メモ公開${revealMemo.memoCreatedAt}, ${revealMemo.createdAt}`);
-        return revealMemo;
+        return organizeLogs(revealMemo);
     } catch (error) {
         handleErrors(error, 'メモ公開時にエラーが発生しました');
     }
@@ -147,25 +144,33 @@ async function SaveParentPost(child, parent) {
     }
 }
 
-// 投稿を見つける関数
+const retries = 3;
+const delay = 3000;
 async function findPost(msgId) {
-    try {
-        console.log('findPost: ', msgId);
-        if (!msgId) { throw new Error('msgId がありません'); }
-        const post = await Post.findById(msgId);
-        if (!post) { throw new Error(`投稿が見つかりません: ${msgId}`); }
-        return post;
-    } catch (error) {
-        handleErrors(error, `投稿見つからない${msgId}`);
+    for (let attempt = 1; attempt <= retries; attempt++) {
+        try {
+            console.log(`findPost (attempt ${attempt}): `, msgId);
+            if (!msgId) { throw new Error('msgId がありません'); }
+            const post = await Post.findById(msgId);
+            if (!post) { throw new Error(`投稿が見つかりません: ${msgId}`); }
+            return post; // 見つかった場合
+        } catch (error) {
+            console.error(`エラー (attempt ${attempt}):`, error.message);
+            if (attempt === retries) {
+                handleErrors(error, `投稿見つからない: ${msgId}`);
+                throw error; // 最後のリトライで失敗した場合はエラーを投げる
+            }
+            console.log(`リトライします (${delay / 1000}秒後)...`);
+            await new Promise(resolve => setTimeout(resolve, delay)); // 指定された時間待機
+        }
     }
 }
 
+
 async function findMemo(msgId) {
     try {
-        console.log('findMemo: ', msgId);
         const memo = await Memo.findById(msgId);
         if (!memo) { throw new Error(`メモが見つかりません: ${msgId}`); }
-        console.log('findMemo: ', memo);
         return memo;
     } catch (error) {
         handleErrors(error, `メモ見つからない${msgId}`);
@@ -189,15 +194,7 @@ async function fetchPosts(randomString, myName) {
 
     try {
         console.log('nameToMatch 入っているか再度確認: ', nameToMatch);
-        let posts = await Post.find(
-            {
-                'bookmarks': {
-                    '$elemMatch': {
-                        'name': nameToMatch
-                    }
-                }
-            }
-        ).sort({ createdAt: -1 });
+        let posts = await Post.find({ 'bookmarks': { '$elemMatch': { 'name': nameToMatch } } }).sort({ createdAt: -1 });
 
         // bookmarksが見つからない場合
         if (posts.length === 0) { console.log('bookmarksがありません'); }
@@ -210,7 +207,7 @@ async function fetchPosts(randomString, myName) {
         // memo を取得
         const memos = await Memo.find({ name: nameToMatch });
         memos.forEach(e => {
-            messages.push({ name: "personal memo", msg: e.msg, createdAt: e.createdAt });
+            messages.push({ name: "○", msg: e.msg, createdAt: e.createdAt });
         });
 
         // createdAt でソート
@@ -229,7 +226,6 @@ async function saveStackRelation(dragedId, dropId) {
         // Find dragged post and handle errors
         const draggedPost = await findPost(dragedId);
         if (!draggedPost) throw new Error(`Post with ID ${dragedId} not found.`);
-        console.log('draggedPost: ', draggedPost);
 
         // Update parentPostId to true
         draggedPost.parentPostId = true;
@@ -238,7 +234,6 @@ async function saveStackRelation(dragedId, dropId) {
         // Find drop post and handle errors
         const dropPost = await findPost(dropId);
         if (!dropPost) throw new Error(`Post with ID ${dropId} not found.`);
-        console.log('dropPost: ', dropPost);
 
         // Add draggedId to childPostIds
         dropPost.childPostIds.push(dragedId);

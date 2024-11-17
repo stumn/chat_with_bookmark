@@ -4,12 +4,8 @@ const MONGODB_URL = process.env.MONGODB_URL;
 
 // mongoose 接続~
 mongoose.connect(MONGODB_URL, { useNewUrlParser: true, useUnifiedTopology: true })
-    .then(() => {
-        console.log('MongoDB connected');
-    })
-    .catch(err => {
-        console.error('MongoDB connection error:', err);
-    });
+    .then(() => { console.log('MongoDB connected'); })
+    .catch(err => { console.error('MongoDB connection error:', err); });
 
 // オプション設定
 const options = {
@@ -17,7 +13,7 @@ const options = {
     toObject: {
         virtuals: true,
         versionKey: false,
-        // transform: (_, ret) => { delete ret._id; return ret; }
+        transform: (_, ret) => { delete ret._id; return ret; }
     }
 };
 
@@ -46,13 +42,10 @@ const postSchema = new mongoose.Schema({
     bookmarks: [{ type: bookmarkSchema, default: () => ({}) }],
 
     // 重ねる機能
-    // isStackingOn: { type: Boolean, default: false }, // スタックしているか（このポストは子分）
-    // stackedPostIds: [String], // スタックされているポストのID（このポストが親分、id は子分たち）
     parentPostId: { type: String, default: null },  // 親ポストのID
     childPostIds: [String],  // 子ポストのIDリスト
 
     // メモ機能（公開メモかどうか）
-    // isOpenCard: { type: Boolean, default: false },
     memoId: String,
     memoCreatedAt: Date
 }, options);
@@ -62,7 +55,8 @@ const Post = mongoose.model("Post", postSchema);
 // memo スキーマ / モデル
 const memoSchema = new mongoose.Schema({
     name: String,
-    msg: String
+    msg: String,
+    isBeingOpened: { type: Boolean, default: false } // メモが公開されているかどうか
 }, options);
 
 const Memo = mongoose.model("Memo", memoSchema);
