@@ -103,12 +103,12 @@ socket.on('memoLogs', (memo) => {
 
 // 自分のメモボタン公開（ドラッグ可能）
 socket.on('myOpenCard', (msg) => {
-    handleMyOpenCard(msg);
+    processMyOpenCard(msg);
 })
 
 // 他の人のメモボタン公開（ドラッグ不可）
 socket.on('downCard', (msg) => {
-    handleDownCard(msg);
+    processDownCard(msg);
 });
 
 // ドロップ自分の重ねてオープン
@@ -154,7 +154,7 @@ socket.on('dialog_to_html', (dialogMsg) => {
 
 // ↓↓↓ handle function ↓↓↓
 
-function handleMyKasaneOpen(data) {
+function handleMyKasaneOpen(data) { // 自分の重ねてオープン
     const post = data.postSet;
     const memoId = post.memoId;
     const dropId = data.dropId;
@@ -165,13 +165,13 @@ function handleMyKasaneOpen(data) {
     //     let parentDIV = dropElement.closest('.kasane');
     //     parentDIV.appendChild(draggedElement);
     // } 
-    const accordionContainer = createElement('details', 'accordion');
+    const accordionContainer = createHtmlElement('details', 'accordion');
     messageLists.insertBefore(accordionContainer, dropElement);
 
     const master = changeTagName(dropElement, 'summary');
     accordionContainer.appendChild(master);
 
-    let children = createElement('div', 'children');
+    let children = createHtmlElement('div', 'children');
     const draggedElement = buildMlElement(post);
     draggedElement.id = post.id;
     console.log('draggedElement: ', draggedElement);
@@ -199,35 +199,31 @@ function handleMyKasaneOpen(data) {
 }
 
 function handlePastLogs(pastLogs, stackLogs) {
-
     pastLogs.forEach((pastElement) => {
-
-        console.log('pastElement: ', pastElement);
-        // 重ね子分が存在する場合
-        if (pastElement.childPostIds.length > 0) {
-            appendNestedContainer_fromPastLogs(pastElement, stackLogs);
-        }
-        else { // 重ね子分が存在しない場合
-            const item = buildMlElement(pastElement);
-            if (pastElement.memoId) {
-                item.classList.add('downCard', 'visible');
-            }
-            addBeingDraggedListeners(item);
-            appendChild_IdScroll(item, pastElement, true);
-        }
+        pastElement.childPostIds.length > 0
+            ? appendNestedContainer_fromPastLogs(pastElement, stackLogs)
+            : addSimpleLog(pastElement);
     });
-
     markTheBeginingOfParticipate(); // ここから参加
 }
 
+function addSimpleLog(pastElement) {
+    const item = buildMlElement(pastElement);
+    if (pastElement.memoId) {
+        item.classList.add('downCard', 'visible');
+    }
+    addBeingDraggedListeners(item);
+    appendChildWithIdAndScroll(item, pastElement, true);
+}
+
 function markTheBeginingOfParticipate() {
-    const item = createElement('div', 'ml', '-----⇊ ここから参加 ⇊-----');
-    appendChild_IdScroll(item, {}, false);
+    const item = createHtmlElement('div', 'ml', '-----⇊ ここから参加 ⇊-----');
+    appendChildWithIdAndScroll(item, {}, false);
 }
 
 function appendNestedContainer_fromPastLogs(pastElement, stackLogs) {
 
-    const master = createElement('summary', 'ml');
+    const master = createHtmlElement('summary', 'ml');
     master.appendChild(createNameTimeMsg(pastElement));
     createSurveyContainer(pastElement, master);
     master.appendChild(createActionButtons(pastElement));
@@ -235,19 +231,19 @@ function appendNestedContainer_fromPastLogs(pastElement, stackLogs) {
     if (pastElement.isOpenCard) {
         master.classList.add('downCard', 'visible');
     }
-    // enableDragDrop(master);
-    appendChild_IdScroll(master, pastElement, false);
+    // enableDragAndDrop(master);
+    appendChildWithIdAndScroll(master, pastElement, false);
 
-    const accordionContainer = createElement('details', 'accordion');
+    const accordionContainer = createHtmlElement('details', 'accordion');
     accordionContainer.appendChild(master);
 
     let kobuns = makeKobunsArray(stackLogs, pastElement);
     accordionContainer.style.borderLeft = `${kobuns.length * 2}px solid #EF7D3C`;
 
-    let children = createElement('div', 'children');
+    let children = createHtmlElement('div', 'children');
     // 重ね子分を表示
     kobuns.forEach(kobun => {
-        const child = createElement('p', 'child');
+        const child = createHtmlElement('p', 'child');
         child.appendChild(createNameTimeMsg(kobun));
         createSurveyContainer(kobun, child);
         child.appendChild(createActionButtons(kobun));
@@ -274,14 +270,14 @@ function makeKobunsArray(stackLogs, pastElement) {
 
 function handleMyChat(post) { // MyChat
     const item = buildMlElement(post);
-    enableDragDrop(item);
-    appendChild_IdScroll(item, post, true);
+    enableDragAndDrop(item);
+    appendChildWithIdAndScroll(item, post, true);
 }
 
 function handleChatLogs(post) { // ChatLogs
     const item = buildMlElement(post);
     addBeingDraggedListeners(item);
-    appendChild_IdScroll(item, post, true);
+    appendChildWithIdAndScroll(item, post, true);
 }
 
 function handleMemoLogs(memo, shouldScroll = true) {
@@ -291,69 +287,67 @@ function handleMemoLogs(memo, shouldScroll = true) {
     item.appendChild(memoSendContainer);
     console.log('memo: ', memo);
 
-    enableDragDrop(item);
-    appendChild_IdScroll(item, memo, shouldScroll);
+    enableDragAndDrop(item);
+    appendChildWithIdAndScroll(item, memo, shouldScroll);
 }
 
 function buildMemoSendContainer(memo) {
-    const memoSendContainer = createElement('div', 'memoSend-container');
+    const memoSendContainer = createHtmlElement('div', 'memoSend-container');
 
-    const button = createElement('button', 'memoSendButton', '➤');
-    button.addEventListener('click', e => {
-        button.classList.add("active");
+    const memoSendButton = createHtmlElement('button', 'memoSendButton', '➤');
+    memoSendButton.addEventListener('click', e => {
+        memoSendButton.classList.add("active");
         e.preventDefault();
         socket.emit('revealMemo', memo);
-        button.disabled = true;
-        button.closest('.memo').classList.add('invisibleMemo');
+        memoSendButton.disabled = true;
+        memoSendButton.closest('.memo').classList.add('invisibleMemo');
     });
 
-    memoSendContainer.appendChild(button);
+    memoSendContainer.appendChild(memoSendButton);
     return memoSendContainer;
 }
 
-// handleMyOpenCard(msg);
-function handleMyOpenCard(msg) {
-    handleDownCard(msg, true);
+function processMyOpenCard(msg) {
+    processDownCard(msg, true);
 }
 
-// handleDownCard(msg);
-function handleDownCard(msg, isMine = false) {
-    const targetCreatedAt = msg.createdAt;
-    const timeSpans = document.querySelectorAll("#messageLists div span.time");
+function processDownCard(msg, isMine = false) {
+    const opencardCreatedAt = msg.createdAt;
+    const timeSpanArray = document.querySelectorAll("#messageLists div span.time");
 
-    for (let i = 0; i < timeSpans.length; i++) {
-        const compare = timeSpans[i].textContent;
-        const isBefore = checkIsBefore(targetCreatedAt, compare);
+    for (let i = 0; i < timeSpanArray.length; i++) {
+        const compareCreatedAt = timeSpanArray[i].textContent;
+        const isBefore = checkIsBefore(opencardCreatedAt, compareCreatedAt);
 
         if (isBefore === false) {
-            if (i === timeSpans.length - 1) { // 最新
-                insertDownCard(msg, timeSpans, i, true, isMine);
+            if (i === timeSpanArray.length - 1) { // 最新
+                insertDownCard(msg, timeSpanArray, i, true, isMine);
                 return;
             }
             continue;
         }
         else { // ここで messageLists に挿入
-            insertDownCard(msg, timeSpans, i, false, isMine);
+            insertDownCard(msg, timeSpanArray, i, false, isMine);
             return;
         }
     }
 }
 
-function insertDownCard(msg, timeSpans, index, isLatest = false, isMine) {
+function insertDownCard(msg, timeSpanArray, index, isLatest = false, isMine) {
     const item = buildMlElement(msg);
 
-    isMine ? enableDragDrop(item) : addBeingDraggedListeners(item);
+    isMine ? enableDragAndDrop(item) : addBeingDraggedListeners(item);
 
     isLatest
-        ? appendChild_IdScroll(item, msg, true) // 最新の場合
-        : insertItemBeforeParent(timeSpans, index, item);
+        ? appendChildWithIdAndScroll(item, msg, true) // 最新の場合
+        : insertItemBeforeParent(timeSpanArray, index, item);
 
     item.id = msg.id;
     item.classList.add('ml', 'downCard', 'visible');
 }
 
-function insertItemBeforeParent(timeSpans, index, item) {
-    let parentDIV = timeSpans[index].closest('.ml');
+function insertItemBeforeParent(timeSpanArray, index, item) {
+    let parentDIV = timeSpanArray[index].closest('.ml');
     if (parentDIV.parentNode.classList.contains('kasane')) {
         parentDIV = parentDIV.parentNode;
     }
@@ -450,7 +444,7 @@ function undercoverDrop(event, dropElement) {
 function changeTagName(oldElement, newTagName) {
     console.log('oldElement', oldElement);
     // 新しいタグを作成して、元の要素の属性と内容をコピー
-    const newElement = document.createElement(newTagName);
+    const newElement = document.createHtmlElement(newTagName);
     [...oldElement.attributes].forEach(attr => newElement.setAttribute(attr.name, attr.value));
     newElement.innerHTML = oldElement.innerHTML;
 
@@ -461,14 +455,15 @@ function changeTagName(oldElement, newTagName) {
     return newElement;
 }
 
+// 既に開いているものを重ねる
 function createKasaneDiv(draggedElement, dropElement) {
-    const accordionContainer = createElement('details', 'accordion');
+    const accordionContainer = createHtmlElement('details', 'accordion');
     messageLists.insertBefore(accordionContainer, dropElement);
 
     const master = changeTagName(dropElement, 'summary');
     accordionContainer.appendChild(master);
 
-    let children = createElement('div', 'children');
+    let children = createHtmlElement('div', 'children');
     const child = changeTagName(draggedElement, 'p');
     child.classList.add('child');
     child.style.visibility = '';
@@ -487,7 +482,7 @@ function createKasaneDiv(draggedElement, dropElement) {
     master.style.color = '';
 }
 
-function createElement(tag, className = '', text = '') {
+function createHtmlElement(tag, className = '', text = '') {
     try {
         const element = document.createElement(tag);
         if (className) element.classList.add(className);
@@ -514,51 +509,51 @@ function createSurveyContainer(message, item) {
 }
 
 function buildMlBaseStructure(msg, nameText) {
-    const item = createElement('div', 'ml');
+    const item = createHtmlElement('div', 'ml');
     const userNameTimeMsg = createNameTimeMsg(msg, nameText);
     item.appendChild(userNameTimeMsg);
     return item;
 }
 
 function createNameTimeMsg(message, nameText = message.name) {
-    const userNameTimeMsg = createElement('div', 'userName-time-msg');
-    const userName_time = createElement('div', 'userName-time');
-    const userName = createElement('span', 'userName', nameText);
+    const userNameTimeMsg = createHtmlElement('div', 'userName-time-msg');
+    const userName_time = createHtmlElement('div', 'userName-time');
+    const userName = createHtmlElement('span', 'userName', nameText);
 
     const timeData = message.memoCreatedAt ? message.memoCreatedAt : message.createdAt;
-    const time = createElement('span', 'time', timeData);
+    const time = createHtmlElement('span', 'time', timeData);
 
     userName_time.append(userName, time);
     userNameTimeMsg.appendChild(userName_time);
 
-    const message_div = createElement('div', 'message-text', message.msg);
+    const message_div = createHtmlElement('div', 'message-text', message.msg);
     userNameTimeMsg.appendChild(message_div);
 
     return userNameTimeMsg;
 }
 
 function makeSurveyContainerElement(message) {
-    const surveyContainer = createElement('div', 'survey-container');
+    const surveyContainer = createHtmlElement('div', 'survey-container');
     for (let i = 0; i < message.options.length; i++) {
-        const surveyOption = createElement('button', 'survey-option', message.options[i] || '');
+        const surveyOption = createHtmlElement('button', 'survey-option', message.options[i] || '');
         surveyOption.addEventListener('click', () => {
             socket.emit('survey', message.id, i);
         });
-        const surveyNum = createElement('span', 'survey-num-' + (i), `${message.voteSums[i]}`);
+        const surveyNum = createHtmlElement('span', 'survey-num-' + (i), `${message.voteSums[i]}`);
         surveyContainer.append(surveyOption, surveyNum);
     }
     return surveyContainer;
 }
 function createActionButtons(message) {
-    const buttons = createElement('div', 'buttons');
+    const buttons = createHtmlElement('div', 'buttons');
     buttons.appendChild(makeBookmarkButton(message));
     return buttons;
 }
 
 function makeBookmarkButton(message) {
-    const container = createElement('div', 'bookmark-container');
-    const button = createElement('button', 'actionButton', '☆');
-    const count = createElement('span', 'bookmark-count', message.bookmarks || 0);
+    const container = createHtmlElement('div', 'bookmark-container');
+    const button = createHtmlElement('button', 'actionButton', '☆');
+    const count = createHtmlElement('span', 'bookmark-count', message.bookmarks || 0);
 
     button.addEventListener('click', () => {
         button.classList.toggle("active");
@@ -570,18 +565,16 @@ function makeBookmarkButton(message) {
     return container;
 }
 
-function enableDragDrop(item) {
+function enableDragAndDrop(item) {
     item.setAttribute('draggable', 'true');
     item.classList.add('draggable');
     addDragListeners(item);
     addBeingDraggedListeners(item);
 }
 
-function appendChild_IdScroll(item, message = {}, shouldScroll = true) {
-    console.log('message: ', message);
-    console.log('message.id: ', message.id);
+function appendChildWithIdAndScroll(item, message = {}, shouldScroll = true) {
     messageLists.appendChild(item);
-    if (message.id) { item.id = message.id; } else { console.log('message.id is not found', message.msg); }
+    message.id ? item.id = message.id : console.log('message.id is not found', message.msg);
     if (shouldScroll) { window.scrollTo(0, document.body.scrollHeight); }
 }
 
@@ -613,10 +606,10 @@ form.addEventListener('submit', (event) => {
     input.value = '';
 });
 
-function checkIsBefore(target, compare) {
+function checkIsBefore(target, compareCreatedAt) {
     const targetDate = new Date(target);
-    const compareDate = new Date(compare);
-    return targetDate < compareDate;
+    const compareCreatedAtDate = new Date(compareCreatedAt);
+    return targetDate < compareCreatedAtDate;
 }
 
 // エキサイト機能
