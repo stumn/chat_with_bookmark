@@ -1,3 +1,12 @@
+body {
+    width: 95vw;
+    margin-top: 3rem;
+    padding-bottom: 5rem;
+    background-color: rgb(240, 240, 240);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+/* ヘッダー */
 header {
     background-color: #263165;
     color: white;
@@ -27,14 +36,7 @@ header {
     outline: none;
 }
 
-body {
-    width: 98vw;
-    margin-top: 3rem;
-    padding-bottom: 5rem;
-    background-color: (240, 240, 240);
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-}
-
+/* 通知 */
 #notification {
     border: none;
     cursor: pointer;
@@ -49,6 +51,7 @@ body {
     text-align: center;
 }
 
+/* 履歴 */
 #messageLists {
     margin: 0.3rem;
     padding: 0;
@@ -57,10 +60,13 @@ body {
 #messageLists>div {
     display: flex;
     justify-content: space-between;
-    /* margin-left: 1rem; */
     padding: 1rem;
     margin-bottom: 0.5rem;
     align-items: center;
+}
+
+#messageLists>div:hover {
+    background-color: lightgray;
 }
 
 .buttons {
@@ -79,7 +85,6 @@ details.accordion {
     margin-bottom: 7px;
     margin-right: 0.6rem;
     border: 2px solid #d0d0d052;
-    /* border-left: #EF7D3C 5px solid; */
     border-radius: 25px;
 }
 
@@ -96,7 +101,6 @@ details.accordion {
     position: relative;
     padding: 0.5rem;
     margin: 0.5rem;
-    /* box-shadow: 0 4px 6px rgba(0, 0, 0, 0.5); */
 }
 
 .accordion summary>div.userName-time-msg>div.userName-time>span.time {
@@ -172,8 +176,6 @@ details.accordion {
 #messageLists>.memo {
     /* メモ */
     font-size: 1rem;
-    /* color: gray; */
-    /* padding: 0.5rem 0.5rem; */
     position: relative;
     display: flex;
     align-items: center;
@@ -181,7 +183,6 @@ details.accordion {
 }
 
 #messageLists>.invisibleMemo {
-    /* display: none; */
     opacity: 0.5; /* 50%透明 */
 }
 
@@ -194,21 +195,6 @@ details.accordion {
     align-items: center;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
 }
-
-/* 
-#messageLists>div.kasane {
-    font-size: 0.6rem;
-    padding: 0.3rem 0.7rem;
-}
-
-#messageLists>div.kasane .ml {
-    font-size: 0.6rem;
-    padding: 0.3rem 0.7rem;
-    position: relative;
-    display: flex;
-    align-items: center;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.03);
-} */
 
 #messageLists>div.userName-time-msg {
     /* ユーザ名と投稿時間 まとめdiv */
@@ -327,33 +313,27 @@ span.bookmark-count {
 
 .draggable {
     cursor: grab;
-    /* ドラッグ可能であることを示すカーソル */
     transition: all 0.2s;
-    /* スムーズな移動 */
 }
 
 .draggable:active {
     cursor: grabbing;
-    /* ドラッグ中のカーソル */
 }
 
 /* 伏せカード */
 @keyframes slideInWithImpact {
     0% {
         transform: translateX(100%) scale(0.8);
-        /* 画面外、少し縮んでいる */
         opacity: 0;
     }
 
     100% {
         transform: translateX(0) scale(1);
-        /* 画面内にスライドインしつつ、通常サイズに */
         opacity: 1;
     }
 }
 
 .downCard {
-    /* position: relative; */
     right: 0;
     top: 50%;
     transform: translateY(-50%);
@@ -369,8 +349,7 @@ span.bookmark-count {
     animation: slideInWithImpact 0.4s cubic-bezier(0.25, 1, 0.5, 1) forwards;
 }
 
-/* 入力欄 以降*/
-
+/* 入力 */
 #form {
     background: rgba(0, 0, 0, 0.15);
     padding: 0.25rem;
@@ -416,13 +395,4 @@ span.bookmark-count {
 
 #form>button.chatButton {
     background: rgb(56, 92, 168);
-    border: none;
-    padding: 0 2rem;
-    margin: 0.25rem;
-    border-radius: 3px;
-    outline: none;
-    color: #fff;
-    font-size: 1.25rem;
 }
-
-/* アンケート投稿 */

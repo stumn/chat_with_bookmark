@@ -225,7 +225,7 @@ function generateRandomString(length) {
 
 // ログイン時（名前・オンラインユーザーリスト・過去ログ）
 async function logInFunction(rawname, socket) {
-  const name = rawname !== null && rawname !== '' ? rawname : ANONYMOUS_NAME;
+  const name = rawname !== null && rawname !== '' ? rawname : '匿名';
   console.log(name + ' (' + socket.id + ') 接続完了💨');
 
   onlineUsers.push(name);

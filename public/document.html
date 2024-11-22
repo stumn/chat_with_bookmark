@@ -9,11 +9,12 @@
 
 <body>
   <header>
-    <button id="backButton" onclick="BackToChatRoom()">back to chat page</button>
-    <button id="CopyButton" onclick="copyText()">copy the text</button>
-
-    <span id="pageName">ドキュメントページ</span>
     <span id="login-name"></span>
+    <div>
+      <!-- <button id="backButton" onclick="BackToChatRoom()">back to chat page</button> -->
+      <button id="CopyButton" onclick="copyText()">copy the text</button>
+      <button id="toggleButton" onclick="hideName()">hide name</button>
+    </div>
   </header>
 
   <main>
@@ -47,15 +48,16 @@
 
             const li = document.createElement('li');
             li.classList.add('doc');
-            let displayName;
-            if (msg.name) {
-              li.classList.add('otherPersonPost');
-              displayName = ` (${msg.name})`;
-            } else {
-              li.classList.add('myMemo');
-              displayName = '';
-            }
-            li.textContent = msg.msg + displayName;
+            li.textContent = msg.msg;
+
+            let displayName = msg.name ? `  - ${msg.name}` : '';
+            li.classList.add(msg.name ? 'otherPersonPost' : 'myMemo');
+
+            const span = document.createElement('span');
+            span.textContent = displayName;
+            span.classList.add('displayName');
+            li.append(span);
+
             li.setAttribute("id", msg.id);
             documentList.appendChild(li);
           });
@@ -80,6 +82,17 @@
       // const loginName = decodeURIComponent(pathname.split('/')[2]);
       // window.location.href = `/chat/${randomString}/${loginName}`;
       window.location.href = `/`; // 今のところ、別人になっちゃう
+    }
+
+    function hideName() {
+      const nameDisplayElements = document.getElementsByClassName('displayName');
+      const toggleButton = document.getElementById('toggleButton');
+      const isHidden = nameDisplayElements[0].style.visibility === 'hidden';
+
+      for (let i = 0; i < nameDisplayElements.length; i++) {
+        nameDisplayElements[i].style.visibility = isHidden ? 'visible' : 'hidden';
+      }
+      toggleButton.textContent = isHidden ? 'hide name' : 'show name';
     }
 
 

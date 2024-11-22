@@ -18,11 +18,27 @@ let dropElement;
 
 // プロンプト　ログインで名前を入力・サーバーに送信
 const myName = prompt("名前を入力してください", "");
-if (!myName) {
+
+if (!myName) {// 入力がない場合
     alert('名前が入力されていません。再読み込み後、入力してください。');
     location.reload();
+} else {// 入力がある場合のみ処理
+    const errors = []; // エラーをまとめて管理
+
+    if (myName.length > 10) { errors.push('名前が長すぎます（10文字以内で入力してください）。'); }
+    if (myName.includes(' ') || myName.includes('　')) { errors.push('名前にスペースが含まれています。'); }
+    if (/[^a-zA-Z0-9\u3040-\u30FF\u4E00-\u9FFF\-_\uFF66-\uFF9F]/.test(myName)) {
+        errors.push('名前に使用できない記号が含まれています。記号を除いて入力してください。');
+    }
+
+    // エラーがある場合
+    if (errors.length > 0) {
+        alert(errors.join('\n') + '\n再読み込み後、修正してください。');
+        location.reload();
+    } else {
+        alert('名前の入力が完了しました！');
+    }
 }
-// 記号を含む場合は、変更してもらう（記号を含まないように指示しておく）
 
 socket.emit('sign-up', myName);
 $('sign-up-name').textContent = 'あなた： ' + myName;
@@ -204,7 +220,7 @@ function handlePastLogs(pastLogs, stackLogs) {
             ? appendNestedContainer_fromPastLogs(pastElement, stackLogs)
             : addSimpleLog(pastElement);
     });
-    markTheBeginingOfParticipate(); // ここから参加
+    // markTheBeginingOfParticipate(); // ここから参加
 }
 
 function addSimpleLog(pastElement) {
@@ -216,10 +232,10 @@ function addSimpleLog(pastElement) {
     appendChildWithIdAndScroll(item, pastElement, true);
 }
 
-function markTheBeginingOfParticipate() {
-    const item = createHtmlElement('div', 'ml', '-----⇊ ここから参加 ⇊-----');
-    appendChildWithIdAndScroll(item, {}, false);
-}
+// function markTheBeginingOfParticipate() {
+//     const item = createHtmlElement('div', 'ml', '-----⇊ ここから参加 ⇊-----');
+//     appendChildWithIdAndScroll(item, {}, false);
+// }
 
 function appendNestedContainer_fromPastLogs(pastElement, stackLogs) {
 
@@ -558,6 +574,7 @@ function makeBookmarkButton(message) {
     button.addEventListener('click', () => {
         button.classList.toggle("active");
         button.disabled = true;
+        button.textContent = '★';
         socket.emit('bookmark', message.id);
     });
 
