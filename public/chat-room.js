@@ -1,5 +1,6 @@
 const socket = io();
 
+// html要素の取得
 function $(id) {
     if (!id) { console.error('id is not defined'); }
     const element = document.getElementById(id);
@@ -16,13 +17,13 @@ const checkBox = $('checkBox');
 
 let dropElement;
 
-// プロンプト　ログインで名前を入力・サーバーに送信
+// ログイン
 const myName = prompt("名前を入力してください", "");
 
-if (!myName) {// 入力がない場合
+if (!myName) {
     alert('名前が入力されていません。再読み込み後、入力してください。');
     location.reload();
-} else {// 入力がある場合のみ処理
+} else {
     const errors = []; // エラーをまとめて管理
 
     if (myName.length > 10) { errors.push('名前が長すぎます（10文字以内で入力してください）。'); }
@@ -31,18 +32,17 @@ if (!myName) {// 入力がない場合
         errors.push('名前に使用できない記号が含まれています。記号を除いて入力してください。');
     }
 
-    // エラーがある場合
     if (errors.length > 0) {
         alert(errors.join('\n') + '\n再読み込み後、修正してください。');
         location.reload();
-    } else {
-        alert('名前の入力が完了しました！');
     }
 }
 
+// ログイン情報をサーバに送信
 socket.emit('sign-up', myName);
 $('sign-up-name').textContent = 'あなた： ' + myName;
 
+// ドキュメントページへのリンク
 let docURL;
 socket.on('randomString', (receivedString) => {
     docURL = `/${receivedString}/${myName}/document`;
@@ -54,12 +54,12 @@ function OpenDocumentWindow() {
         : alert('しばらくしてからもう一度お試しください。');
 }
 
-// オンラインメンバー
+// 同時参加者数
 socket.on('onlineUsers', (onlines) => {
     $('onlines').textContent = '接続中: ' + onlines.length + '人';
 });
 
-// notification
+// 伏せカードオープン通知
 const openCardStatus = new Map();
 setInterval(updateStatus, 1000); // update
 
@@ -97,65 +97,29 @@ socket.on('pastLogs', ({ pastLogs, stackLogs }) => {
     // window.scrollTo(0, document.body.scrollHeight);
 });
 
-// エキサイト機能
-// socket.on('memoCount', (memoCount) => {
-//     updateHeaderColorBasedOnMemoCount(memoCount);
-// });
+// ソケットイベントと対応するハンドラをマッピング
+const socketEventHandlers = {
+    myChat: handleMyChat,                 // 自分のチャット・アンケート（ドラッグ可能）
+    chatLogs: handleChatLogs,             // 他の人のチャット・アンケート（ドラッグ不可）
 
-// 自分のチャット・アンケート（ドラッグ可能）
-socket.on('myChat', (post) => {
-    handleMyChat(post);
-});
+    memoLogs: handleMemoLogs,             // 自分メモ（ドラッグ可能）
 
-// 他の人のチャット・アンケート（ドラッグ不可）
-socket.on('chatLogs', (post) => {
-    handleChatLogs(post);
-});
+    myOpenCard: processMyOpenCard,        // 自分のメモボタン公開（ドラッグ可能）
+    downCard: processDownCard,            // 他の人のメモボタン公開（ドラッグ不可）
 
-// 自分メモ（ドラッグ可能）
-socket.on('memoLogs', (memo) => {
-    handleMemoLogs(memo);
-});
+    myKasaneOpen: handleMyKasaneOpen,     // ドロップ自分の重ねてオープン
+    kasaneOpen: handleKasaneOpen,         // ドロップ他の人の重ねてオープン
 
-// 自分のメモボタン公開（ドラッグ可能）
-socket.on('myOpenCard', (msg) => {
-    processMyOpenCard(msg);
-})
+    updateVote: handleUpdateVote,         // 投票を受信
+    bookmark: updateBookmark,             // bookmark を受信
 
-// 他の人のメモボタン公開（ドラッグ不可）
-socket.on('downCard', (msg) => {
-    processDownCard(msg);
-});
+    dragstart: handleDragStart,           // 他の人が D & D をしている（ドラッグ開始）
+    dragend: handleDragEnd,               // 他の人が D & D をしている（ドラッグ終了）
+};
 
-// ドロップ自分の重ねてオープン
-socket.on('myKasaneOpen', data => {
-    handleMyKasaneOpen(data);
-});
-
-// ドロップ他の人の重ねてオープン
-socket.on('kasaneOpen', (post, dropId) => {
-
-});
-
-// < 投票を受信
-socket.on('updateVote', (voteData) => {
-    handleUpdateVote(voteData);
-});
-
-// < bookmark を受信
-socket.on('bookmark', (data) => {
-    const item = $(data.id);
-    const countElement = item.querySelector(`.bookmark-container span`);
-    countElement.textContent = data.count;
-});
-
-// 他の人が D & D をしている
-socket.on('dragstart', (draggedId) => {// < ドラッグ開始 >
-    $(draggedId).style.border = '3px dotted';
-});
-
-socket.on('dragend', (draggedId) => {// < ドラッグ終了 >
-    $(draggedId).style.border = '';
+// ソケットイベントの登録を一括で行う
+Object.entries(socketEventHandlers).forEach(([eventName, handler]) => {
+    socket.on(eventName, handler);
 });
 
 // < アラート
@@ -181,11 +145,11 @@ function handleMyKasaneOpen(data) { // 自分の重ねてオープン
     //     let parentDIV = dropElement.closest('.kasane');
     //     parentDIV.appendChild(draggedElement);
     // } 
-    const accordionContainer = createHtmlElement('details', 'accordion');
-    messageLists.insertBefore(accordionContainer, dropElement);
+    const detailsContainer = createHtmlElement('details', 'accordion');
+    messageLists.insertBefore(detailsContainer, dropElement);
 
-    const master = changeTagName(dropElement, 'summary');
-    accordionContainer.appendChild(master);
+    const parentSummary = changeTagName(dropElement, 'summary');
+    detailsContainer.appendChild(parentSummary);
 
     let children = createHtmlElement('div', 'children');
     const draggedElement = buildMlElement(post);
@@ -203,85 +167,97 @@ function handleMyKasaneOpen(data) { // 自分の重ねてオープン
 
     children.appendChild(child);
     console.log('children: ', children);
-    accordionContainer.appendChild(children);
+    detailsContainer.appendChild(children);
 
-    const childCount = accordionContainer.children.length; // 要素ノードの数を取得
+    const childCount = detailsContainer.children.length; // 要素ノードの数を取得
 
-    accordionContainer.style.borderLeft = `${(childCount - 1) * 2}px solid #EF7D3C`;
+    detailsContainer.style.borderLeft = `${(childCount - 1) * 2}px solid #EF7D3C`;
 
     draggedElement.style.visibility = '';
-    master.style.border = "";
-    master.style.color = '';
+    parentSummary.style.border = "";
+    parentSummary.style.color = '';
+}
+
+function handleKasaneOpen(data) { // 他の人の重ねてオープン
 }
 
 function handlePastLogs(pastLogs, stackLogs) {
     pastLogs.forEach((pastElement) => {
         pastElement.childPostIds.length > 0
-            ? appendNestedContainer_fromPastLogs(pastElement, stackLogs)
-            : addSimpleLog(pastElement);
+            ? addAccordionLog(pastElement, stackLogs) // 子分がいる
+            : addSimpleLog(pastElement); // 子分がいない
     });
-    // markTheBeginingOfParticipate(); // ここから参加
 }
 
+// 子分がいない過去ログ
 function addSimpleLog(pastElement) {
     const item = buildMlElement(pastElement);
-    if (pastElement.memoId) {
-        item.classList.add('downCard', 'visible');
-    }
+    if (pastElement.memoId) { item.classList.add('downCard', 'visible'); }
     addBeingDraggedListeners(item);
     appendChildWithIdAndScroll(item, pastElement, true);
 }
 
-// function markTheBeginingOfParticipate() {
-//     const item = createHtmlElement('div', 'ml', '-----⇊ ここから参加 ⇊-----');
-//     appendChildWithIdAndScroll(item, {}, false);
-// }
+// 子分がいる過去ログ
+function addAccordionLog(pastElement, stackLogs) {
+    const detailsContainer = createDetailsContainer(stackLogs, pastElement);
+    addBeingDraggedListeners(detailsContainer);
+    messageLists.appendChild(detailsContainer);
+}
 
-function appendNestedContainer_fromPastLogs(pastElement, stackLogs) {
+function createDetailsContainer(stackLogs, pastElement) {
+    // <details .ml>
+    const detailsContainer = createHtmlElement('details', 'accordion');
 
-    const master = createHtmlElement('summary', 'ml');
-    master.appendChild(createNameTimeMsg(pastElement));
-    createSurveyContainer(pastElement, master);
-    master.appendChild(createActionButtons(pastElement));
+    // <summary .ml>
+    const parentSummary = createParentSummary(pastElement);
+    detailsContainer.appendChild(parentSummary);
+
+    // <div .children> <p>child</p> </div>
+    const children = createChildrenContainer(stackLogs, pastElement);
+    detailsContainer.appendChild(children);
+
+    const kobuns = filterKobuns(stackLogs, pastElement.childPostIds);
+    detailsContainer.style.borderLeft = `${kobuns.length * 2}px solid #EF7D3C`;
+    return detailsContainer;
+}
+
+function createParentSummary(pastElement) { // <summary .ml>
+    const parentSummary = createHtmlElement('summary');
+    parentSummary.appendChild(createNameTimeMsg(pastElement));
+    createSurveyContainer(pastElement, parentSummary);
+    parentSummary.appendChild(createActionButtons(pastElement));
 
     if (pastElement.isOpenCard) {
-        master.classList.add('downCard', 'visible');
+        parentSummary.classList.add('downCard', 'visible');
     }
-    // enableDragAndDrop(master);
-    appendChildWithIdAndScroll(master, pastElement, false);
+    appendChildWithIdAndScroll(parentSummary, pastElement, false);
 
-    const accordionContainer = createHtmlElement('details', 'accordion');
-    accordionContainer.appendChild(master);
+    return parentSummary;
+}
 
-    let kobuns = makeKobunsArray(stackLogs, pastElement);
-    accordionContainer.style.borderLeft = `${kobuns.length * 2}px solid #EF7D3C`;
+function filterKobuns(stackLogs, childPostIds) {
+    return stackLogs.filter(stackElement => childPostIds.includes(stackElement.id));
+}
 
-    let children = createHtmlElement('div', 'children');
-    // 重ね子分を表示
+function createChildrenContainer(stackLogs, pastElement) { // <div .children>
+    const children = createHtmlElement('div', 'children');
+    const kobuns = filterKobuns(stackLogs, pastElement.childPostIds);
+
     kobuns.forEach(kobun => {
-        const child = createHtmlElement('p', 'child');
-        child.appendChild(createNameTimeMsg(kobun));
-        createSurveyContainer(kobun, child);
-        child.appendChild(createActionButtons(kobun));
-        child.id = kobun.id;
+        const child = createChildElement(kobun); // <p .child>
         children.appendChild(child);
     });
 
-    accordionContainer.appendChild(children);
-    addBeingDraggedListeners(accordionContainer);
-    messageLists.appendChild(accordionContainer);
+    return children;
 }
 
-function makeKobunsArray(stackLogs, pastElement) {
-    let kobuns = [];
-    stackLogs.forEach(stackElement => {
-        for (let i = 0; i < pastElement.stackedPostIds.length; i++) {
-            if (stackElement.id == pastElement.stackedPostIds[i]) {
-                kobuns.push(stackElement);
-            }
-        }
-    });
-    return kobuns;
+function createChildElement(kobun) { // <p .child>
+    const child = createHtmlElement('p', 'child');
+    child.appendChild(createNameTimeMsg(kobun));
+    createSurveyContainer(kobun, child);
+    child.appendChild(createActionButtons(kobun));
+    child.id = kobun.id;
+    return child;
 }
 
 function handleMyChat(post) { // MyChat
@@ -378,6 +354,28 @@ function handleUpdateVote(voteData) {
     });
 }
 
+function updateBookmark(data) {
+    const item = $(data.id);
+    if (item) {
+        const countElement = item.querySelector('.bookmark-container span');
+        if (countElement) { countElement.textContent = data.count; }
+    }
+}
+
+// 個別ハンドラの定義
+function handleDragStart(draggedId) {
+    updateElementBorder(draggedId, '3px dotted');
+}
+
+function handleDragEnd(draggedId) {
+    updateElementBorder(draggedId, '');
+}
+
+function updateElementBorder(elementId, borderStyle) {
+    const element = $(elementId);
+    if (element) { element.style.border = borderStyle; }
+}
+
 // Initialize the dragged element
 let draggedElement = null;
 
@@ -460,8 +458,12 @@ function undercoverDrop(event, dropElement) {
 function changeTagName(oldElement, newTagName) {
     console.log('oldElement', oldElement);
     // 新しいタグを作成して、元の要素の属性と内容をコピー
-    const newElement = document.createHtmlElement(newTagName);
-    [...oldElement.attributes].forEach(attr => newElement.setAttribute(attr.name, attr.value));
+    const newElement = document.createElement(newTagName);
+    [...oldElement.attributes].forEach(attr => {
+        if (attr.name !== 'class' && attr.name !== 'draggable') {
+            newElement.setAttribute(attr.name, attr.value);
+        }
+    });
     newElement.innerHTML = oldElement.innerHTML;
 
     // 元の要素を新しい要素で置き換える
@@ -473,29 +475,28 @@ function changeTagName(oldElement, newTagName) {
 
 // 既に開いているものを重ねる
 function createKasaneDiv(draggedElement, dropElement) {
-    const accordionContainer = createHtmlElement('details', 'accordion');
-    messageLists.insertBefore(accordionContainer, dropElement);
+    const detailsContainer = createHtmlElement('details', 'accordion');
+    messageLists.insertBefore(detailsContainer, dropElement);
 
-    const master = changeTagName(dropElement, 'summary');
-    accordionContainer.appendChild(master);
+    const parentSummary = changeTagName(dropElement, 'summary');
+    detailsContainer.appendChild(parentSummary);
 
-    let children = createHtmlElement('div', 'children');
+    const children = createHtmlElement('div', 'children');
+
     const child = changeTagName(draggedElement, 'p');
     child.classList.add('child');
     child.style.visibility = '';
-    console.log('child: ', child);
 
     children.appendChild(child);
-    console.log('children: ', children);
-    accordionContainer.appendChild(children);
+    detailsContainer.appendChild(children);
 
-    const childCount = accordionContainer.children.length; // 要素ノードの数を取得
+    const childCount = detailsContainer.children.length; // 要素ノードの数を取得
 
-    accordionContainer.style.borderLeft = `${(childCount - 1) * 2}px solid #EF7D3C`;
+    detailsContainer.style.borderLeft = `${(childCount - 1) * 2}px solid #EF7D3C`;
 
     draggedElement.style.visibility = '';
-    master.style.border = "";
-    master.style.color = '';
+    parentSummary.style.border = "";
+    parentSummary.style.color = '';
 }
 
 function createHtmlElement(tag, className = '', text = '') {
@@ -628,20 +629,3 @@ function checkIsBefore(target, compareCreatedAt) {
     const compareCreatedAtDate = new Date(compareCreatedAt);
     return targetDate < compareCreatedAtDate;
 }
-
-// エキサイト機能
-// let currentColor = { r: 38, g: 49, b: 101 }; // 初期の色
-// function updateHeaderColorBasedOnMemoCount(memoCount) {
-//     const header = document.querySelector('header');
-//     const endColor = { r: 184, g: 46, b: 46 }; // 最終的に目指す色
-//     const maxMemoCount = 30; // memoCount がこの値に達すると完全に赤になる
-//     const progress = Math.min(memoCount / maxMemoCount, 1); // 0から1までの範囲で進捗率を計算
-
-
-//     // memoCount に応じて現在の色を更新
-//     const redIntensity = Math.round(currentColor.r + (endColor.r - currentColor.r) * progress);
-//     const greenIntensity = Math.round(currentColor.g + (endColor.g - currentColor.g) * progress);
-//     const blueIntensity = Math.round(currentColor.b + (endColor.b - currentColor.b) * progress);
-
-//     header.style.backgroundColor = `rgb(${redIntensity}, ${greenIntensity}, ${blueIntensity})`;
-// }
