@@ -132,55 +132,9 @@ socket.on('dialog_to_html', (dialogMsg) => {
     socket.emit('dialog_to_js', confirm(dialogMsg) ? true : false);
 });
 
-// ↓↓↓ handle function ↓↓↓
+// ここからハンドラ関数定義
 
-function handleMyKasaneOpen(data) { // 自分の重ねてオープン
-    const post = data.postSet;
-    const memoId = post.memoId;
-    const dropId = data.dropId;
-
-    const dropElement = $(dropId);
-    // console.log('dropElement: ', dropElement);
-    // if (dropElement.classList.contains('kasane') || dropElement.parentNode.classList.contains('kasane')) {
-    //     let parentDIV = dropElement.closest('.kasane');
-    //     parentDIV.appendChild(draggedElement);
-    // } 
-    const detailsContainer = createHtmlElement('details', 'accordion');
-    messageLists.insertBefore(detailsContainer, dropElement);
-
-    const parentSummary = changeTagName(dropElement, 'summary');
-    detailsContainer.appendChild(parentSummary);
-
-    let children = createHtmlElement('div', 'children');
-    const draggedElement = buildMlElement(post);
-    draggedElement.id = post.id;
-    console.log('draggedElement: ', draggedElement);
-
-    const child = changeTagName(draggedElement, 'p');
-    console.log('child', child);
-    const memo = $(memoId);
-    memo.remove();
-
-    child.classList.add('child');
-    child.style.visibility = '';
-    console.log('child: ', child);
-
-    children.appendChild(child);
-    console.log('children: ', children);
-    detailsContainer.appendChild(children);
-
-    const childCount = detailsContainer.children.length; // 要素ノードの数を取得
-
-    detailsContainer.style.borderLeft = `${(childCount - 1) * 2}px solid #EF7D3C`;
-
-    draggedElement.style.visibility = '';
-    parentSummary.style.border = "";
-    parentSummary.style.color = '';
-}
-
-function handleKasaneOpen(data) { // 他の人の重ねてオープン
-}
-
+// 過去ログ
 function handlePastLogs(pastLogs, stackLogs) {
     pastLogs.forEach((pastElement) => {
         pastElement.childPostIds.length > 0
@@ -189,16 +143,14 @@ function handlePastLogs(pastLogs, stackLogs) {
     });
 }
 
-// 子分がいない過去ログ
-function addSimpleLog(pastElement) {
+function addSimpleLog(pastElement) {// 子分がいない過去ログ
     const item = buildMlElement(pastElement);
     if (pastElement.memoId) { item.classList.add('downCard', 'visible'); }
     addBeingDraggedListeners(item);
     appendChildWithIdAndScroll(item, pastElement, true);
 }
 
-// 子分がいる過去ログ
-function addAccordionLog(pastElement, stackLogs) {
+function addAccordionLog(pastElement, stackLogs) {// 子分がいる過去ログ
     const detailsContainer = createDetailsContainer(stackLogs, pastElement);
     addBeingDraggedListeners(detailsContainer);
     messageLists.appendChild(detailsContainer);
@@ -260,43 +212,29 @@ function createChildElement(kobun) { // <p .child>
     return child;
 }
 
+// 自分のチャット
 function handleMyChat(post) { // MyChat
     const item = buildMlElement(post);
     enableDragAndDrop(item);
     appendChildWithIdAndScroll(item, post, true);
 }
 
+// 他の人のチャット
 function handleChatLogs(post) { // ChatLogs
     const item = buildMlElement(post);
     addBeingDraggedListeners(item);
     appendChildWithIdAndScroll(item, post, true);
 }
 
+// 自分のメモ
 function handleMemoLogs(memo, shouldScroll = true) {
     const item = buildMlBaseStructure(memo, '[memo]');
     item.classList.add('memo');
     const memoSendContainer = buildMemoSendContainer(memo);
     item.appendChild(memoSendContainer);
-    console.log('memo: ', memo);
 
     enableDragAndDrop(item);
     appendChildWithIdAndScroll(item, memo, shouldScroll);
-}
-
-function buildMemoSendContainer(memo) {
-    const memoSendContainer = createHtmlElement('div', 'memoSend-container');
-
-    const memoSendButton = createHtmlElement('button', 'memoSendButton', '➤');
-    memoSendButton.addEventListener('click', e => {
-        memoSendButton.classList.add("active");
-        e.preventDefault();
-        socket.emit('revealMemo', memo);
-        memoSendButton.disabled = true;
-        memoSendButton.closest('.memo').classList.add('invisibleMemo');
-    });
-
-    memoSendContainer.appendChild(memoSendButton);
-    return memoSendContainer;
 }
 
 function processMyOpenCard(msg) {
@@ -324,6 +262,70 @@ function processDownCard(msg, isMine = false) {
         }
     }
 }
+
+function handleMyKasaneOpen(data) { // 自分の重ねてオープン
+    const post = data.postSet;
+    const memoId = post.memoId;
+    const dropId = data.dropId;
+
+    const dropElement = $(dropId);
+    // console.log('dropElement: ', dropElement);
+    // if (dropElement.classList.contains('kasane') || dropElement.parentNode.classList.contains('kasane')) {
+    //     let parentDIV = dropElement.closest('.kasane');
+    //     parentDIV.appendChild(draggedElement);
+    // } 
+    const detailsContainer = createHtmlElement('details', 'accordion');
+    messageLists.insertBefore(detailsContainer, dropElement);
+
+    const parentSummary = changeTagName(dropElement, 'summary');
+    detailsContainer.appendChild(parentSummary);
+
+    let children = createHtmlElement('div', 'children');
+    const draggedElement = buildMlElement(post);
+    draggedElement.id = post.id;
+    console.log('draggedElement: ', draggedElement);
+
+    const child = changeTagName(draggedElement, 'p');
+    console.log('child', child);
+    const memo = $(memoId);
+    memo.remove();
+
+    child.classList.add('child');
+    child.style.visibility = '';
+    console.log('child: ', child);
+
+    children.appendChild(child);
+    console.log('children: ', children);
+    detailsContainer.appendChild(children);
+
+    const childCount = detailsContainer.children.length; // 要素ノードの数を取得
+
+    detailsContainer.style.borderLeft = `${(childCount - 1) * 2}px solid #EF7D3C`;
+
+    draggedElement.style.visibility = '';
+    parentSummary.style.border = "";
+    parentSummary.style.color = '';
+}
+
+function handleKasaneOpen(data) { // 他の人の重ねてオープン
+}
+
+function buildMemoSendContainer(memo) {
+    const memoSendContainer = createHtmlElement('div', 'memoSend-container');
+
+    const memoSendButton = createHtmlElement('button', 'memoSendButton', '➤');
+    memoSendButton.addEventListener('click', e => {
+        memoSendButton.classList.add("active");
+        e.preventDefault();
+        socket.emit('revealMemo', memo);
+        memoSendButton.disabled = true;
+        memoSendButton.closest('.memo').classList.add('invisibleMemo');
+    });
+
+    memoSendContainer.appendChild(memoSendButton);
+    return memoSendContainer;
+}
+
 
 function insertDownCard(msg, timeSpanArray, index, isLatest = false, isMine) {
     const item = buildMlElement(msg);
