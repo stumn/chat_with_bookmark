@@ -3,17 +3,17 @@
 
 <head>
   <meta charset="UTF-8">
-  <title>Chat Documents</title>
-  <link rel="stylesheet" type="texr/css" href="/document.css">
+  <title>ドキュメントページ</title>
+  <link rel="stylesheet" type="text/css" href="/document.css">
 </head>
 
 <body>
   <header>
-    <h1>Chat Documents</h1><span id="login-name"></span>
-    <span id = "name"></span>
-    <br>
-    <!-- <button id="backButton" onclick="BackToChatRoom()">チャットページに戻る</button> -->
-    <button id="CopyButton" onclick="copyText()">テキストをコピー</button>
+    <button id="backButton" onclick="BackToChatRoom()">back to chat page</button>
+    <button id="CopyButton" onclick="copyText()">copy the text</button>
+
+    <span id="pageName">ドキュメントページ</span>
+    <span id="login-name"></span>
   </header>
 
   <main>
@@ -47,10 +47,17 @@
 
             const li = document.createElement('li');
             li.classList.add('doc');
-            li.textContent = msg.name + ': ' + msg.msg;
+            let displayName;
+            if (msg.name) {
+              li.classList.add('otherPersonPost');
+              displayName = ` (${msg.name})`;
+            } else {
+              li.classList.add('myMemo');
+              displayName = '';
+            }
+            li.textContent = msg.msg + displayName;
             li.setAttribute("id", msg.id);
             documentList.appendChild(li);
-
           });
         });
     });

@@ -29,6 +29,12 @@ router.get('/:randomString/:myName/document', (req, res) => {
     res.sendFile(__dirname + '/public/document.html');
 });
 
+// ドキュメントページ用CSS
+router.get('/document.css', (_, res) => {
+    res.header('Content-Type', 'text/css');
+    res.sendFile(__dirname + '/public/document.css');
+});
+
 // ドキュメントページ用 DBアクセスAPI
 router.get('/api/:randomString/messages', async (req, res) => {
     try {

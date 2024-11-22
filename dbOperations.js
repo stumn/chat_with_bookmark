@@ -207,7 +207,7 @@ async function fetchPosts(randomString, myName) {
         // memo を取得
         const memos = await Memo.find({ name: nameToMatch });
         memos.forEach(e => {
-            messages.push({ name: "○", msg: e.msg, createdAt: e.createdAt });
+            messages.push({ name: null, msg: e.msg, createdAt: e.createdAt });
         });
 
         // createdAt でソート
