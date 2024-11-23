@@ -244,19 +244,22 @@ function processMyOpenCard(msg) {
 
 // 他の人のメモボタン公開
 function processDownCard(msg, isMine = false) {
-    const opencardCreatedAt = msg.createdAt;
+    const opencardCreatedAt = msg.memoCreatedAt;
     const timeSpanArray = document.querySelectorAll("#messageLists div span.time");
 
     for (let i = 0; i < timeSpanArray.length; i++) {
         const compareCreatedAt = timeSpanArray[i].textContent;
         const isBefore = checkIsBefore(opencardCreatedAt, compareCreatedAt);
+        console.log('isBefore: ', isBefore);
 
         if (isBefore) {// メモ作成時の時間が入る場所がある
+            console.log('isBefore: ', isBefore);
             insertDownCard(msg, timeSpanArray, i, false, isMine);
             return;
         }
 
         if (i === timeSpanArray.length - 1) { // 最新
+            console.log('isBefore 最新');
             insertDownCard(msg, timeSpanArray, i, true, isMine);
             return;
         }
@@ -315,7 +318,7 @@ function buildMemoSendContainer(memo) {
         socket.emit('revealMemo', memo);
         memoSendButton.disabled = true;
         const memoDiv = memoSendButton.closest('.memo');
-        memoDiv.classList.add('invisibleMemo');
+        memoDiv.classList.add('translucent');
         memoDiv.classList.remove('draggable');
         memoDiv.attributes.removeNamedItem('draggable');
     });
@@ -629,6 +632,8 @@ form.addEventListener('submit', (event) => {
 });
 
 function checkIsBefore(target, compareCreatedAt) {
+    console.log('target: ', target);
+    console.log('compareCreatedAt: ', compareCreatedAt);
     const targetDate = new Date(target);
     const compareCreatedAtDate = new Date(compareCreatedAt);
     return targetDate < compareCreatedAtDate;
