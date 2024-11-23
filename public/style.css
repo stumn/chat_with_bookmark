@@ -183,7 +183,8 @@ details.accordion {
 }
 
 #messageLists>.invisibleMemo {
-    opacity: 0.5; /* 50%透明 */
+    opacity: 0.5;
+    /* 50%透明 */
 }
 
 #messageLists>div .ml {
@@ -226,13 +227,14 @@ details.accordion {
     font-size: medium;
 }
 
-#messageLists>div span.survey-container {
+div.survey-container {
     /* アンケートの場合 */
     flex: auto;
-    align-items: left;
+    padding-top: 0.8rem;
+    margin-left: 0.8rem;
 }
 
-#messageLists>div span.survey-container button {
+div.survey-container button {
     /* アンケートの選択肢ボタン */
     background-color: blue;
     border: none;
@@ -243,9 +245,10 @@ details.accordion {
     outline: none;
 }
 
-#messageLists>div span.survey-num span {
+span.survey-num {
     /* アンケート選択肢の投票カウント */
-    margin-left: 5px;
+    margin-left: 3px;
+    margin-right: 6px;
     font-weight: bold;
     color: blue;
 }
@@ -312,12 +315,14 @@ span.bookmark-count {
 }
 
 .draggable {
-    cursor: grab;
+    /* cursor: grab; */
+    cursor: move;
     transition: all 0.2s;
 }
 
 .draggable:active {
-    cursor: grabbing;
+    /* cursor: grabbing; */
+    cursor: move;
 }
 
 /* 伏せカード */

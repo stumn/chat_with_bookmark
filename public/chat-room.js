@@ -237,10 +237,12 @@ function handleMemoLogs(memo, shouldScroll = true) {
     appendChildWithIdAndScroll(item, memo, shouldScroll);
 }
 
+// 自分のメモボタン公開
 function processMyOpenCard(msg) {
     processDownCard(msg, true);
 }
 
+// 他の人のメモボタン公開
 function processDownCard(msg, isMine = false) {
     const opencardCreatedAt = msg.createdAt;
     const timeSpanArray = document.querySelectorAll("#messageLists div span.time");
@@ -249,15 +251,13 @@ function processDownCard(msg, isMine = false) {
         const compareCreatedAt = timeSpanArray[i].textContent;
         const isBefore = checkIsBefore(opencardCreatedAt, compareCreatedAt);
 
-        if (isBefore === false) {
-            if (i === timeSpanArray.length - 1) { // 最新
-                insertDownCard(msg, timeSpanArray, i, true, isMine);
-                return;
-            }
-            continue;
-        }
-        else { // ここで messageLists に挿入
+        if (isBefore) {// メモ作成時の時間が入る場所がある
             insertDownCard(msg, timeSpanArray, i, false, isMine);
+            return;
+        }
+
+        if (i === timeSpanArray.length - 1) { // 最新
+            insertDownCard(msg, timeSpanArray, i, true, isMine);
             return;
         }
     }
@@ -269,11 +269,6 @@ function handleMyKasaneOpen(data) { // 自分の重ねてオープン
     const dropId = data.dropId;
 
     const dropElement = $(dropId);
-    // console.log('dropElement: ', dropElement);
-    // if (dropElement.classList.contains('kasane') || dropElement.parentNode.classList.contains('kasane')) {
-    //     let parentDIV = dropElement.closest('.kasane');
-    //     parentDIV.appendChild(draggedElement);
-    // } 
     const detailsContainer = createHtmlElement('details', 'accordion');
     messageLists.insertBefore(detailsContainer, dropElement);
 
@@ -313,13 +308,16 @@ function handleKasaneOpen(data) { // 他の人の重ねてオープン
 function buildMemoSendContainer(memo) {
     const memoSendContainer = createHtmlElement('div', 'memoSend-container');
 
-    const memoSendButton = createHtmlElement('button', 'memoSendButton', '➤');
+    const memoSendButton = createHtmlElement('button', 'memoSendButton', '🚀');
     memoSendButton.addEventListener('click', e => {
         memoSendButton.classList.add("active");
         e.preventDefault();
         socket.emit('revealMemo', memo);
         memoSendButton.disabled = true;
-        memoSendButton.closest('.memo').classList.add('invisibleMemo');
+        const memoDiv = memoSendButton.closest('.memo');
+        memoDiv.classList.add('invisibleMemo');
+        memoDiv.classList.remove('draggable');
+        memoDiv.attributes.removeNamedItem('draggable');
     });
 
     memoSendContainer.appendChild(memoSendButton);
@@ -351,7 +349,10 @@ function insertItemBeforeParent(timeSpanArray, index, item) {
 function handleUpdateVote(voteData) {
     const item = $(voteData.id);
     voteData.voteSums.forEach((voteSum, i) => {
-        const surveyNum = item.querySelector(`.survey-container .survey-num-${i}`);
+        console.log('voteSum: ', voteSum);
+        console.log('i: ', i);
+        const surveyNum = item.querySelector(`.survey-num.option${i}`);
+        console.log('surveyNum: ', surveyNum);
         surveyNum.textContent = voteSum;
     });
 }
@@ -558,7 +559,8 @@ function makeSurveyContainerElement(message) {
         surveyOption.addEventListener('click', () => {
             socket.emit('survey', message.id, i);
         });
-        const surveyNum = createHtmlElement('span', 'survey-num-' + (i), `${message.voteSums[i]}`);
+        const surveyNum = createHtmlElement('span', 'survey-num', `${message.voteSums[i]}`);
+        surveyNum.classList.add(`option${i}`);
         surveyContainer.append(surveyOption, surveyNum);
     }
     return surveyContainer;
