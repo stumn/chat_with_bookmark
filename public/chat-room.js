@@ -467,8 +467,11 @@ function changeTagName(oldElement, newTagName) {
         newElement.appendChild(oldElement.firstChild);
     }
 
-    // 要素を置き換える
-    oldElement.parentNode.replaceChild(newElement, oldElement);
+    // 元の要素を新しい要素で置き換える
+    oldElement.parentNode
+    ? oldElement.parentNode.replaceChild(newElement, oldElement)
+    : console.log('newElement: ', newElement);
+
     return newElement;
 }
 
