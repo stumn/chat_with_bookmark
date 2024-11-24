@@ -137,9 +137,15 @@ socket.on('dialog_to_html', (dialogMsg) => {
 // 過去ログ
 function handlePastLogs(pastLogs, stackLogs) {
     pastLogs.forEach((pastElement) => {
-        pastElement.childPostIds.length > 0
-            ? addAccordionLog(pastElement, stackLogs) // 子分がいる
-            : addSimpleLog(pastElement); // 子分がいない
+        if (pastElement.options) {
+            console.log('chatdesu', pastElement);
+            pastElement.childPostIds.length > 0
+                ? addAccordionLog(pastElement, stackLogs) // 子分がいる
+                : addSimpleLog(pastElement); // 子分がいない
+        } else {
+            console.log('memodesu', pastElement);
+            handleMemoLogs(pastElement, false);
+        }
     });
 }
 
@@ -543,7 +549,10 @@ function createNameTimeMsg(message, nameText = message.name) {
     const userName_time = createHtmlElement('div', 'userName-time');
     const userName = createHtmlElement('span', 'userName', nameText);
 
+    console.log('message.memoCreatedAt: ', message.memoCreatedAt);
+    console.log('message.createdAt: ', message.createdAt);
     const timeData = message.memoCreatedAt ? message.memoCreatedAt : message.createdAt;
+    console.log('timeData: ', timeData);
     const time = createHtmlElement('span', 'time', timeData);
 
     userName_time.append(userName, time);

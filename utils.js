@@ -9,23 +9,30 @@ function handleErrors(error, customMsg = '') {
 
 // --dbOperations.js で使う post を整える 関数--
 function organizeLogs(post) {
-    return {
-        // MongoDB が自動生成してくれる
-        id: post._id,
-        createdAt: post.createdAt,
-        // 基本情報
-        name: post.name,
-        msg: post.msg,
-        options: post.options,
-        voteSums: calculate_VoteSum(post.voters),
-        bookmarks: post.bookmarks.length,
-        // 重ねる機能
-        parentPostId: post.parentPostId,
-        childPostIds: post.childPostIds,
-        // メモ機能
-        memoId: post.memoId,
-        memoCreatedAt: post.memoCreatedAt
-    };
+    const data = post.options
+        ? {
+            id: post._id,
+            createdAt: post.createdAt,
+            name: post.name,
+            msg: post.msg,
+
+            options: post.options,
+            voteSums: calculate_VoteSum(post.voters),
+            bookmarks: post.bookmarks.length,
+            // 重ねる機能
+            parentPostId: post.parentPostId,
+            childPostIds: post.childPostIds,
+            // メモ機能
+            memoId: post.memoId,
+            memoCreatedAt: post.memoCreatedAt
+        }
+        : {
+            id: post._id,
+            createdAt: post.createdAt,
+            name: post.name,
+            msg: post.msg
+        };
+    return data;
 }
 
 //　--以下、index.js で使う関数--

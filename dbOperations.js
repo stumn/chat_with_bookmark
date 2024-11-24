@@ -27,15 +27,17 @@ async function getUserInfo(name) {
 // const PAST_POST = 10 // 過去ログ取得数
 
 // ログイン時・過去ログをDBから取得
-async function getPastLogs() {
+async function getPastLogs(name) {
     try {
-        let posts = await Post.find({}).sort({ createdAt: -1 });
+        let memos = await Memo.find({ 'name': name });
+        let posts = await Post.find({});
         let stacks = posts.filter(e => e.parentPostId !== null);
 
         posts = posts.filter(e => e.parentPostId === null);
-        posts.reverse();
+        myPastArray = memos.concat(posts);
+        myPastArray.sort((a, b) => a.createdAt - b.createdAt);
 
-        const pastLogs = await processXlogs(posts);
+        const pastLogs = await processXlogs(myPastArray);
         const stackLogs = await processXlogs(stacks);
         return { pastLogs, stackLogs };
     } catch (error) {
@@ -45,7 +47,10 @@ async function getPastLogs() {
 
 async function processXlogs(posts) {
     const xLogs = await Promise.all(posts.map(organizeLogs));
-    xLogs.forEach(e => { e.createdAt = organizeCreatedAt(e.createdAt); });
+    xLogs.forEach(e => {
+        e.createdAt = organizeCreatedAt(e.createdAt);
+        if (e.memoCreatedAt) { e.memoCreatedAt = organizeCreatedAt(e.memoCreatedAt); }
+    });
     return xLogs;
 }
 
@@ -74,7 +79,7 @@ async function saveRecord(name, msg, inqury = {}, stack = {}, memo = {}) {
 // 自分メモ保存
 async function SavePersonalMemo(name, msg) {
     try {
-        const memoData = { name, msg };
+        const memoData = { name, msg, isBeingOpened: false };
         const newMemo = await Memo.create(memoData);
         console.log('自分メモ保存完了', newMemo.name, newMemo.msg, newMemo.createdAt);
         return newMemo;

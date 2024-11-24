@@ -1,5 +1,5 @@
 body {
-    width: 95vw;
+    /* width: 95vw; */
     margin-top: 3rem;
     padding-bottom: 5rem;
     background-color: rgb(240, 240, 240);
@@ -60,7 +60,9 @@ header {
 #messageLists>div {
     display: flex;
     justify-content: space-between;
-    padding: 1rem;
+    padding: 0.6rem;
+    /* padding-left: 1rem; */
+    margin-left: 2rem;
     margin-bottom: 0.5rem;
     align-items: center;
 }
@@ -78,12 +80,12 @@ header {
     display: flex;
     justify-content: flex-end;
     margin-left: auto;
+    padding-right: 0.6rem;
     white-space: nowrap;
 }
 
 details.accordion {
     margin-bottom: 7px;
-    margin-right: 0.6rem;
     border: 2px solid #d0d0d052;
     border-radius: 25px;
 }
@@ -99,8 +101,8 @@ details.accordion {
 
 .accordion summary>div.userName-time-msg {
     position: relative;
-    padding: 0.5rem;
-    margin: 0.5rem;
+    padding: 0.6rem;
+    padding-left: 0.8rem;
 }
 
 .accordion summary>div.userName-time-msg>div.userName-time>span.time {
@@ -119,26 +121,28 @@ details.accordion {
     display: none;
 }
 
-.accordion summary::after {
+.accordion summary::before {
     transform: translateY(-25%) rotate(45deg);
     width: 7px;
     height: 7px;
-    margin-left: 10px;
+    margin-left: 1rem;
     border-bottom: 3px solid #333333b3;
     border-right: 3px solid #333333b3;
     content: '';
     transition: transform .3s;
 }
 
-.accordion[open] summary::after {
+.accordion[open] summary::before {
     transform: rotate(225deg);
 }
 
 .accordion .children {
     box-sizing: border-box;
-    padding: 0 2em;
+    padding-left: 4rem;
+    padding-right: 2rem;
     display: flex;
     flex-wrap: wrap;
+    margin-bottom: 0.5rem;
 }
 
 .accordion .child {
@@ -150,22 +154,20 @@ details.accordion {
     transform: translateY(-10px);
     opacity: 0;
     margin: 0;
-    /* padding: .3em 2em 1.5em; */
     color: rgb(56, 56, 56);
     transition: transform .5s, opacity .5s;
     font-size: 0.8rem;
 }
 
-.accordion p>div>div.userName-time-msg>div.userName-time>span.time {
+details.accordion>div.children>p.child>div.userName-time-msg>div.userName-time>span.time {
     margin-left: 0.5rem;
     font-size: 0.6rem;
     color: gray;
     font-weight: normal;
 }
 
-.accordion p>div>div.userName-time-msg>div.message-text {
+details.accordion>div.children>p.child>div.userName-time-msg>div.message-text {
     margin-left: 0.5rem;
-    font-size: 0.8rem;
 }
 
 .accordion[open] p {
