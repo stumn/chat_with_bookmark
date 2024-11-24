@@ -166,7 +166,6 @@ io.on('connection', async (socket) => {
         memoCreatedAt: organizeCreatedAt(record.memoCreatedAt),
         memoId: record.memoId,
       }
-
       const data = { postSet, dropId };
 
       socket.emit('myKasaneOpen', data);

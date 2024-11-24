@@ -138,12 +138,10 @@ socket.on('dialog_to_html', (dialogMsg) => {
 function handlePastLogs(pastLogs, stackLogs) {
     pastLogs.forEach((pastElement) => {
         if (pastElement.options) {
-            console.log('chatdesu', pastElement);
             pastElement.childPostIds.length > 0
                 ? addAccordionLog(pastElement, stackLogs) // 子分がいる
                 : addSimpleLog(pastElement); // 子分がいない
         } else {
-            console.log('memodesu', pastElement);
             handleMemoLogs(pastElement, false);
         }
     });
@@ -164,23 +162,25 @@ function addAccordionLog(pastElement, stackLogs) {// 子分がいる過去ログ
 
 function createDetailsContainer(stackLogs, pastElement) {
     // <details .ml>
-    const detailsContainer = createHtmlElement('details', 'accordion');
+    const detailsContainer = createHTMLelement('details', 'accordion');
 
     // <summary .ml>
     const parentSummary = createParentSummary(pastElement);
+    // ここで☆についても追加
     detailsContainer.appendChild(parentSummary);
 
     // <div .children> <p>child</p> </div>
     const children = createChildrenContainer(stackLogs, pastElement);
+    // ここで☆についても追加
     detailsContainer.appendChild(children);
 
     const kobuns = filterKobuns(stackLogs, pastElement.childPostIds);
-    detailsContainer.style.borderLeft = `${kobuns.length * 2}px solid #EF7D3C`;
+    detailsContainer.style.borderLeft = `${kobuns.length * 2}px solid #EF7D3C`; // 色が付くときと付かない時がある？
     return detailsContainer;
 }
 
 function createParentSummary(pastElement) { // <summary .ml>
-    const parentSummary = createHtmlElement('summary');
+    const parentSummary = createHTMLelement('summary');
     parentSummary.appendChild(createNameTimeMsg(pastElement));
     createSurveyContainer(pastElement, parentSummary);
     parentSummary.appendChild(createActionButtons(pastElement));
@@ -198,7 +198,7 @@ function filterKobuns(stackLogs, childPostIds) {
 }
 
 function createChildrenContainer(stackLogs, pastElement) { // <div .children>
-    const children = createHtmlElement('div', 'children');
+    const children = createHTMLelement('div', 'children');
     const kobuns = filterKobuns(stackLogs, pastElement.childPostIds);
 
     kobuns.forEach(kobun => {
@@ -210,7 +210,7 @@ function createChildrenContainer(stackLogs, pastElement) { // <div .children>
 }
 
 function createChildElement(kobun) { // <p .child>
-    const child = createHtmlElement('p', 'child');
+    const child = createHTMLelement('p', 'child');
     child.appendChild(createNameTimeMsg(kobun));
     createSurveyContainer(kobun, child);
     child.appendChild(createActionButtons(kobun));
@@ -256,16 +256,12 @@ function processDownCard(msg, isMine = false) {
     for (let i = 0; i < timeSpanArray.length; i++) {
         const compareCreatedAt = timeSpanArray[i].textContent;
         const isBefore = checkIsBefore(opencardCreatedAt, compareCreatedAt);
-        console.log('isBefore: ', isBefore);
 
         if (isBefore) {// メモ作成時の時間が入る場所がある
-            console.log('isBefore: ', isBefore);
             insertDownCard(msg, timeSpanArray, i, false, isMine);
             return;
         }
-
         if (i === timeSpanArray.length - 1) { // 最新
-            console.log('isBefore 最新');
             insertDownCard(msg, timeSpanArray, i, true, isMine);
             return;
         }
@@ -278,28 +274,24 @@ function handleMyKasaneOpen(data) { // 自分の重ねてオープン
     const dropId = data.dropId;
 
     const dropElement = $(dropId);
-    const detailsContainer = createHtmlElement('details', 'accordion');
+    const detailsContainer = createHTMLelement('details', 'accordion');
     messageLists.insertBefore(detailsContainer, dropElement);
 
     const parentSummary = changeTagName(dropElement, 'summary');
     detailsContainer.appendChild(parentSummary);
 
-    let children = createHtmlElement('div', 'children');
+    let children = createHTMLelement('div', 'children');
     const draggedElement = buildMlElement(post);
     draggedElement.id = post.id;
-    console.log('draggedElement: ', draggedElement);
 
     const child = changeTagName(draggedElement, 'p');
-    console.log('child', child);
     const memo = $(memoId);
     memo.remove();
 
     child.classList.add('child');
     child.style.visibility = '';
-    console.log('child: ', child);
 
     children.appendChild(child);
-    console.log('children: ', children);
     detailsContainer.appendChild(children);
 
     const childCount = detailsContainer.children.length; // 要素ノードの数を取得
@@ -315,9 +307,9 @@ function handleKasaneOpen(data) { // 他の人の重ねてオープン
 }
 
 function buildMemoSendContainer(memo) {
-    const memoSendContainer = createHtmlElement('div', 'memoSend-container');
+    const memoSendContainer = createHTMLelement('div', 'memoSend-container');
 
-    const memoSendButton = createHtmlElement('button', 'memoSendButton', '🚀');
+    const memoSendButton = createHTMLelement('button', 'memoSendButton', '🚀');
     memoSendButton.addEventListener('click', e => {
         memoSendButton.classList.add("active");
         e.preventDefault();
@@ -358,10 +350,7 @@ function insertItemBeforeParent(timeSpanArray, index, item) {
 function handleUpdateVote(voteData) {
     const item = $(voteData.id);
     voteData.voteSums.forEach((voteSum, i) => {
-        console.log('voteSum: ', voteSum);
-        console.log('i: ', i);
         const surveyNum = item.querySelector(`.survey-num.option${i}`);
-        console.log('surveyNum: ', surveyNum);
         surveyNum.textContent = voteSum;
     });
 }
@@ -461,39 +450,38 @@ function overtDrop(dropElement) {
 
 // memo を重ねてオープン
 function undercoverDrop(event, dropElement) {
-    console.log('draggedElement: ', draggedElement.id);
-    console.log('dropElement: ', dropElement.id);
-
     socket.emit('undercoverDrop', draggedElement.id, dropElement.id); // サーバでメモをポストにする
 };
 
 function changeTagName(oldElement, newTagName) {
-    console.log('oldElement', oldElement);
-    // 新しいタグを作成して、元の要素の属性と内容をコピー
     const newElement = document.createElement(newTagName);
+
     [...oldElement.attributes].forEach(attr => {
         if (attr.name !== 'class' && attr.name !== 'draggable') {
             newElement.setAttribute(attr.name, attr.value);
         }
     });
-    newElement.innerHTML = oldElement.innerHTML;
 
-    // 元の要素を新しい要素で置き換える
-    oldElement.parentNode
-        ? oldElement.parentNode.replaceChild(newElement, oldElement)
-        : console.log('newElement: ', newElement);
+    // 子ノードをコピー
+    while (oldElement.firstChild) {
+        newElement.appendChild(oldElement.firstChild);
+    }
+
+    // 要素を置き換える
+    oldElement.parentNode.replaceChild(newElement, oldElement);
     return newElement;
 }
 
+
 // 既に開いているものを重ねる
 function createKasaneDiv(draggedElement, dropElement) {
-    const detailsContainer = createHtmlElement('details', 'accordion');
+    const detailsContainer = createHTMLelement('details', 'accordion');
     messageLists.insertBefore(detailsContainer, dropElement);
 
     const parentSummary = changeTagName(dropElement, 'summary');
     detailsContainer.appendChild(parentSummary);
 
-    const children = createHtmlElement('div', 'children');
+    const children = createHTMLelement('div', 'children');
 
     const child = changeTagName(draggedElement, 'p');
     child.classList.add('child');
@@ -511,7 +499,7 @@ function createKasaneDiv(draggedElement, dropElement) {
     parentSummary.style.color = '';
 }
 
-function createHtmlElement(tag, className = '', text = '') {
+function createHTMLelement(tag, className = '', text = '') {
     try {
         const element = document.createElement(tag);
         if (className) element.classList.add(className);
@@ -538,65 +526,70 @@ function createSurveyContainer(message, item) {
 }
 
 function buildMlBaseStructure(msg, nameText) {
-    const item = createHtmlElement('div', 'ml');
+    const item = createHTMLelement('div', 'ml');
     const userNameTimeMsg = createNameTimeMsg(msg, nameText);
     item.appendChild(userNameTimeMsg);
     return item;
 }
 
 function createNameTimeMsg(message, nameText = message.name) {
-    const userNameTimeMsg = createHtmlElement('div', 'userName-time-msg');
-    const userName_time = createHtmlElement('div', 'userName-time');
-    const userName = createHtmlElement('span', 'userName', nameText);
+    const userNameTimeMsg = createHTMLelement('div', 'userName-time-msg');
+    const userName_time = createHTMLelement('div', 'userName-time');
+    const userName = createHTMLelement('span', 'userName', nameText);
 
-    console.log('message.memoCreatedAt: ', message.memoCreatedAt);
-    console.log('message.createdAt: ', message.createdAt);
     const timeData = message.memoCreatedAt ? message.memoCreatedAt : message.createdAt;
-    console.log('timeData: ', timeData);
-    const time = createHtmlElement('span', 'time', timeData);
+    const time = createHTMLelement('span', 'time', timeData);
 
     userName_time.append(userName, time);
     userNameTimeMsg.appendChild(userName_time);
 
-    const message_div = createHtmlElement('div', 'message-text', message.msg);
+    const message_div = createHTMLelement('div', 'message-text', message.msg);
     userNameTimeMsg.appendChild(message_div);
 
     return userNameTimeMsg;
 }
 
 function makeSurveyContainerElement(message) {
-    const surveyContainer = createHtmlElement('div', 'survey-container');
+    const surveyContainer = createHTMLelement('div', 'survey-container');
     for (let i = 0; i < message.options.length; i++) {
-        const surveyOption = createHtmlElement('button', 'survey-option', message.options[i] || '');
+        const surveyOption = createHTMLelement('button', 'survey-option', message.options[i] || '');
         surveyOption.addEventListener('click', () => {
             socket.emit('survey', message.id, i);
         });
-        const surveyNum = createHtmlElement('span', 'survey-num', `${message.voteSums[i]}`);
+        const surveyNum = createHTMLelement('span', 'survey-num', `${message.voteSums[i]}`);
         surveyNum.classList.add(`option${i}`);
         surveyContainer.append(surveyOption, surveyNum);
     }
     return surveyContainer;
 }
 function createActionButtons(message) {
-    const buttons = createHtmlElement('div', 'buttons');
+    const buttons = createHTMLelement('div', 'buttons');
     buttons.appendChild(makeBookmarkButton(message));
     return buttons;
 }
 
 function makeBookmarkButton(message) {
-    const container = createHtmlElement('div', 'bookmark-container');
-    const button = createHtmlElement('button', 'actionButton', '☆');
-    const count = createHtmlElement('span', 'bookmark-count', message.bookmarks || 0);
+    const container = createHTMLelement('div', 'bookmark-container');
+    const button = createHTMLelement('button', 'actionButton', '☆');
+    const count = createHTMLelement('span', 'bookmark-count', message.bookmarks || 0);
 
-    button.addEventListener('click', () => {
+    setupBookmarkClickHandler(button, message);
+
+    container.append(button, count);
+    return container;
+}
+
+function setupBookmarkClickHandler(button, message) {
+    button.addEventListener('click', (event) => {
+        event.stopPropagation(); // 親や子への伝播を防ぐ
+        console.log('pushed bookmark button', 'message.id: ', message.id);
+        console.log('event.target: ', event.target);
+
         button.classList.toggle("active");
         button.disabled = true;
         button.textContent = '★';
         socket.emit('bookmark', message.id);
     });
-
-    container.append(button, count);
-    return container;
 }
 
 function enableDragAndDrop(item) {
@@ -641,8 +634,6 @@ form.addEventListener('submit', (event) => {
 });
 
 function checkIsBefore(target, compareCreatedAt) {
-    console.log('target: ', target);
-    console.log('compareCreatedAt: ', compareCreatedAt);
     const targetDate = new Date(target);
     const compareCreatedAtDate = new Date(compareCreatedAt);
     return targetDate < compareCreatedAtDate;
