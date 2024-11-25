@@ -132,6 +132,8 @@ io.on('connection', async (socket) => {
       const record = await SaveRevealMemo(memo.name, memo.msg, memo._id, memo.createdAt);
       notifyRevealMemo(record, name);
 
+      await updateMemoStatusToOpened(memo.id);
+
       const postSet = {
         id: record.id,
         name: record.name,
@@ -144,8 +146,8 @@ io.on('connection', async (socket) => {
       socket.broadcast.emit('downCard', postSet);
     });
 
-    socket.on('undercoverDrop', async (memoId, dropId) => { // 重ねてオープン
-      console.log('undercoverDrop memoID: ', memoId, 'dropId: ', dropId);
+    socket.on('undisclosedMemoDrop', async (memoId, dropId) => { // 重ねてオープン
+      console.log('undisclosedMemoDrop memoID: ', memoId, 'dropId: ', dropId);
       const memo = await findMemo(memoId);
       const target = await findPost(dropId);
 
@@ -155,6 +157,7 @@ io.on('connection', async (socket) => {
 
       const record = await SaveKasaneteMemo(memo.name, memo.msg, stackData, memoData);
       notifyRevealMemo(record, name);
+      updateMemoStatusToOpened(memoId);
 
       // 重ねられた投稿に、stack 情報を追加
       SaveParentPost(record, target);
@@ -168,8 +171,7 @@ io.on('connection', async (socket) => {
       }
       const data = { postSet, dropId };
 
-      socket.emit('myKasaneOpen', data);
-      socket.broadcast.emit('kasaneOpen', data);
+      io.emit('kasaneMemoOpen', data);
     });
 
     // ドラッグstart
@@ -187,9 +189,7 @@ io.on('connection', async (socket) => {
 
     // ドラッグドロップ
     socket.on('drop', async (kasaneData) => {
-      console.log('kasaneData:', kasaneData);
       socket.broadcast.emit('drop', kasaneData); // 操作したユーザ以外に送信
-      
       await saveStackRelation(kasaneData.draggedId, kasaneData.dropId);
     });
   });
@@ -199,6 +199,12 @@ io.on('connection', async (socket) => {
     disconnectFunction(socket);
   });
 });
+
+async function updateMemoStatusToOpened(memoId) {
+  const DBMemo = await findMemo(memoId);
+  DBMemo.isBeingOpened = true;
+  await DBMemo.save();
+}
 
 function notifyRevealMemo(record, name) {
   const difference = new Date(record.createdAt) - new Date(record.memoCreatedAt);

@@ -29,7 +29,7 @@ async function getUserInfo(name) {
 // ログイン時・過去ログをDBから取得
 async function getPastLogs(name) {
     try {
-        let memos = await Memo.find({ 'name': name });
+        let memos = await Memo.find({ 'isBeingOpened': false, 'name': name });
         let posts = await Post.find({});
         let stacks = posts.filter(e => e.parentPostId !== null);
 

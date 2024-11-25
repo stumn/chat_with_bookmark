@@ -89,8 +89,7 @@ const socketEventHandlers = {
     myOpenCard: processMyOpenCard,        // 自分のメモボタン公開（ドラッグ可能）
     downCard: processDownCard,            // 他の人のメモボタン公開
 
-    myKasaneOpen: handleMyKasaneOpen,     // ドロップ自分の重ねてオープン
-    kasaneOpen: handleKasaneOpen,         // ドロップ他の人の重ねてオープン
+    kasaneMemoOpen: handleKasaneMemoOpen,     // ドロップ自分の重ねてオープン
 
     updateVote: handleUpdateVote,         // 投票を受信
     bookmark: updateBookmark,             // bookmark を受信
@@ -249,44 +248,35 @@ function processDownCard(msg, isMine = false) {
     }
 }
 
-function handleMyKasaneOpen(data) { // 自分の重ねてオープン
+function handleKasaneMemoOpen(data) {
+
+    // まず公開したメモをチャット投稿として表示
     const post = data.postSet;
+    const item = buildMlElement(post);
+    appendChildWithIdAndScroll(item, post, false);
+
+    // ドロップ先の要素を取得
+    const dropElement = $(data.dropId);
+    const parentDIV = dropElement.closest('.accordion');
+    if (parentDIV) {
+        addChildElement(parentDIV, item);
+
+        const detailsContainer = $(data.postSet.id).closest('.accordion');
+        const childCount = detailsContainer.children.length; // 要素ノードの数を取得
+        detailsContainer.style.borderLeft = `${(childCount - 1) * 2}px solid #EF7D3C`;
+
+        const parentSummary = parentDIV.querySelector('summary');
+        item.style.visibility = '';
+        parentSummary.style.border = "";
+        parentSummary.style.color = '';
+    } else {
+        createKasaneDiv(item, dropElement);
+    }
+
+    // 元メモを履歴欄から削除
     const memoId = post.memoId;
-    const dropId = data.dropId;
-
-    const dropElement = $(dropId);
-    const detailsContainer = createHTMLelement('details', 'accordion');
-    detailsContainer.classList.add('ml');
-    addBeingDraggedListeners(detailsContainer);
-    messageLists.insertBefore(detailsContainer, dropElement);
-
-    const parentSummary = changeTagName(dropElement, 'summary');
-    detailsContainer.appendChild(parentSummary);
-
-    let children = createHTMLelement('div', 'children');
-    const draggedElement = buildMlElement(post);
-    draggedElement.id = post.id;
-
-    const child = changeTagName(draggedElement, 'p');
     const memo = $(memoId);
     memo.remove();
-
-    child.classList.add('child');
-    child.style.visibility = '';
-
-    children.appendChild(child);
-    detailsContainer.appendChild(children);
-
-    const childCount = detailsContainer.children.length; // 要素ノードの数を取得
-
-    detailsContainer.style.borderLeft = `${(childCount - 1) * 2}px solid #EF7D3C`;
-
-    draggedElement.style.visibility = '';
-    parentSummary.style.border = "";
-    parentSummary.style.color = '';
-}
-
-function handleKasaneOpen(data) { // 他の人の重ねてオープン
 }
 
 function buildMemoSendContainer(memo) {
@@ -414,16 +404,15 @@ function handleDrop(event) {
     if (!dropElement) { console.log('no dropElement'); return; }
 
     draggedElement.classList.contains('memo')
-        ? undercoverDrop(event, dropElement)
+        ? undisclosedMemoDrop(event, dropElement)
         : overtDrop(dropElement);
-
 }
 
 // chat / opencard を重ねる
 function overtDrop(dropElement) {
     const parentDIV = dropElement.closest('.accordion');
     let dropId;
-    if (dropElement.classList.contains('accordion') || parentDIV) {
+    if (parentDIV) {
         addChildElement(parentDIV, draggedElement);
         const summaryElement = parentDIV.querySelector('summary');
         dropId = summaryElement.id;
@@ -436,8 +425,10 @@ function overtDrop(dropElement) {
 }
 
 // memo を重ねてオープン
-function undercoverDrop(event, dropElement) {
-    socket.emit('undercoverDrop', draggedElement.id, dropElement.id); // サーバでメモをポストにする
+function undisclosedMemoDrop(event, dropElement) { // dropElement: ml / detailsContainer
+    const parentDIV = dropElement.closest('.accordion');
+    const dropId = parentDIV ? parentDIV.querySelector('summary').id : dropElement.id;
+    socket.emit('undisclosedMemoDrop', draggedElement.id, dropId); // サーバでメモをポストにする
 };
 
 function changeTagName(oldElement, newTagName) {
@@ -462,7 +453,6 @@ function changeTagName(oldElement, newTagName) {
     return newElement;
 }
 
-
 // 既に開いているものを重ねる
 function createKasaneDiv(draggedElement, dropElement) {
     const detailsContainer = createHTMLelement('details', 'accordion');
@@ -483,7 +473,6 @@ function createKasaneDiv(draggedElement, dropElement) {
     detailsContainer.appendChild(children);
 
     const childCount = detailsContainer.children.length; // 要素ノードの数を取得
-
     detailsContainer.style.borderLeft = `${(childCount - 1) * 2}px solid #EF7D3C`;
 
     draggedElement.style.visibility = '';
