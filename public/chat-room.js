@@ -16,36 +16,29 @@ const formButton = $('formButton');
 const checkBox = $('checkBox');
 
 let dropElement;
+let loginName, randomString, myName, docURL;
 
 // ログイン
-const myName = prompt("名前を入力してください", "");
+document.addEventListener('DOMContentLoaded', () => {
+    const pathname = window.location.pathname;
 
-if (!myName) {
-    alert('名前が入力されていません。再読み込み後、入力してください。');
-    location.reload();
-} else {
-    const errors = []; // エラーをまとめて管理
+    loginName = decodeURIComponent(pathname.split('/')[2]);
+    console.log('loginName: ' + loginName);
+    myName = loginName;
+    console.log('myName: ' + myName);
 
-    if (myName.length > 10) { errors.push('名前が長すぎます（10文字以内で入力してください）。'); }
-    if (myName.includes(' ') || myName.includes('　')) { errors.push('名前にスペースが含まれています。'); }
-    if (/[^a-zA-Z0-9\u3040-\u30FF\u4E00-\u9FFF\-_\uFF66-\uFF9F]/.test(myName)) {
-        errors.push('名前に使用できない記号が含まれています。記号を除いて入力してください。');
-    }
+    randomString = decodeURIComponent(pathname.split('/')[1]);
+    console.log('randomString: ' + randomString);
 
-    if (errors.length > 0) {
-        alert(errors.join('\n') + '\n再読み込み後、修正してください。');
-        location.reload();
-    }
-}
+    docURL = `/${randomString}/${myName}/document`;
+    console.log('docURL: ' + docURL);
 
-// ログイン情報をサーバに送信
-socket.emit('sign-up', myName);
-$('sign-up-name').textContent = 'あなた： ' + myName;
+    const loginData = { loginName, randomString };
 
-// ドキュメントページへのリンク
-let docURL;
-socket.on('randomString', (receivedString) => {
-    docURL = `/${receivedString}/${myName}/document`;
+
+    // ログイン情報をサーバに送信
+    socket.emit('sign-up', loginData);
+    $('sign-up-name').textContent = 'あなた： ' + myName;
 });
 
 function OpenDocumentWindow() {
@@ -469,8 +462,8 @@ function changeTagName(oldElement, newTagName) {
 
     // 元の要素を新しい要素で置き換える
     oldElement.parentNode
-    ? oldElement.parentNode.replaceChild(newElement, oldElement)
-    : console.log('newElement: ', newElement);
+        ? oldElement.parentNode.replaceChild(newElement, oldElement)
+        : console.log('newElement: ', newElement);
 
     return newElement;
 }

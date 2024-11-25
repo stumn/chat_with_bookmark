@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ログイン</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <div class="login-container">
+        <h2>ログイン</h2>
+        <p>ユーザー名を入力してください</p>
+
+        <form action="/login" method="post">
+            <label for="username">ユーザー名:</label>
+            <input type="text" id="username" name="username" required>
+            <button type="submit">ログイン</button>
+        </form>
+    </div>
+</body>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+    const form = document.querySelector('form');
+    form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const username = document.querySelector('#username').value;
+        console.log(username);
+
+        if (username) {
+            const errors = []; // エラーをまとめて管理
+
+            if (username.length > 10) { errors.push('名前が長すぎます（10文字以内で入力してください）。'); }
+            if (username.includes(' ') || username.includes('　')) { errors.push('名前にスペースが含まれています。'); }
+            if (/[^a-zA-Z0-9\u3040-\u30FF\u4E00-\u9FFF\-_\uFF66-\uFF9F]/.test(username)) {
+                errors.push('名前に使用できない記号が含まれています。記号を除いて入力してください。');
+            }
+
+            if (errors.length > 0) {
+                alert(errors.join('\n') + '\n再読み込み後、修正してください。');
+                location.reload();
+            }
+
+            const receivedString = generateRandomString(username.length);
+
+            const chatURL = `/${receivedString}/${username}/chat`;
+            console.log(chatURL);
+            window.open(chatURL, '_blank');
+
+        } else {
+            alert('名前を入力してください。');
+        }
+    });
+
+    function generateRandomString(length) {
+        const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+        let result = '';
+        const charactersLength = characters.length;
+        for (let i = 0; i < length; i++) {
+            result += characters.charAt(Math.floor(Math.random() * charactersLength));
+        }
+        return result;
+    }
+</script>
+
+</html>

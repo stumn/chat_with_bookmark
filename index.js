@@ -36,9 +36,8 @@ let memoCount = 0;
 io.on('connection', async (socket) => {
 
   // ログイン時
-  socket.on('sign-up', async (rawname) => {
-    const { name, randomString } = await logInFunction(rawname, socket);
-    socket.emit('randomString', randomString);
+  socket.on('sign-up', async (loginData) => {
+    const name = await logInFunction(loginData, socket);
 
     // 自分メモが記録された場合、自分だけに送信
     socket.on('personal memo', async (memo) => {
@@ -212,27 +211,16 @@ function parseQuestionOptions(data) {
   return { formattedQuestion, options };
 }
 
-function generateRandomString(length) {
-  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  let result = '';
-  const charactersLength = characters.length;
-  for (let i = 0; i < length; i++) {
-    result += characters.charAt(Math.floor(Math.random() * charactersLength));
-  }
-  return result;
-}
-
 // ログイン時（名前・オンラインユーザーリスト・過去ログ）
-async function logInFunction(rawname, socket) {
+async function logInFunction(loginData, socket) {
+  const { rawname, randomString } = loginData;
+  
   const name = rawname !== null && rawname !== '' ? rawname : '匿名';
   console.log(name + ' (' + socket.id + ') 接続完了💨');
 
   onlineUsers.push(name);
   idsOnlineUsers.push({ id: socket.id, name: name });
   io.emit('onlineUsers', onlineUsers);
-
-  // ランダム文字列生成
-  const randomString = generateRandomString(10); // 10文字
 
   try { // ユーザー情報を保存 
     await saveUser(name, socket.id, randomString);

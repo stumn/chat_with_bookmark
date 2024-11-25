@@ -1,7 +1,7 @@
 // routes.js
 const express = require('express');
 const router = express.Router();
-const { fetchPosts } = require('./dbOperations'); 
+const { fetchPosts } = require('./dbOperations');
 
 // // ルーム選択ページHTML
 // router.get('/rooms', (req, res) => {
@@ -13,8 +13,17 @@ const { fetchPosts } = require('./dbOperations');
 //     res.sendFile(__dirname + '/public/chat-room.html');
 // });
 
+// ログインページHTML
+router.get('/login', (req, res) => {
+    res.sendFile(__dirname + '/public/login.html');
+});
+
 // チャットページHTML
-router.get('/', (req, res) => {
+// router.get('/chat', (req, res) => {
+//     res.sendFile(__dirname + '/public/chat-room.html');
+// });
+
+router.get('/:randomString/:myName/chat', (req, res) => {
     res.sendFile(__dirname + '/public/chat-room.html');
 });
 
