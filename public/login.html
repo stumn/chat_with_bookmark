@@ -43,11 +43,12 @@
                 location.reload();
             }
 
-            const receivedString = generateRandomString(username.length);
+            const receivedString = generateRandomString(10);
 
             const chatURL = `/${receivedString}/${username}/chat`;
             console.log(chatURL);
-            window.open(chatURL, '_blank');
+            // window.open(chatURL, '_blank');
+            window.location.href = chatURL;
 
         } else {
             alert('名前を入力してください。');

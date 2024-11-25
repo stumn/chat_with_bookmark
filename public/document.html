@@ -11,7 +11,7 @@
   <header>
     <span id="login-name"></span>
     <div>
-      <!-- <button id="backButton" onclick="BackToChatRoom()">back to chat page</button> -->
+      <button id="backButton" onclick="BackToChatRoom()">back to chat page</button>
       <button id="CopyButton" onclick="copyText()">copy the text</button>
       <button id="toggleButton" onclick="hideName()">hide name</button>
     </div>
@@ -24,19 +24,18 @@
   <!-- ブラウザ側のスクリプト -->
   <!-- <script src="/socket.io/socket.io.js"></script> -->
   <script>
-    // const socket = io();
-
+    let loginName, randomString;
     // ドキュメントリスト要素の取得
     const documentList = document.getElementById('textToCopy');
 
     document.addEventListener('DOMContentLoaded', () => {
       const pathname = window.location.pathname;
 
-      const loginName = decodeURIComponent(pathname.split('/')[2]);
+      loginName = decodeURIComponent(pathname.split('/')[2]);
       console.log('loginName: ' + loginName);
       document.getElementById('login-name').textContent = loginName + ' さん';
 
-      const randomString = decodeURIComponent(pathname.split('/')[1]);
+      randomString = decodeURIComponent(pathname.split('/')[1]);
       console.log('randomString: ' + randomString);
 
       // APIに接続して、ブックマークされたポストだけ取得
@@ -77,11 +76,7 @@
     }
 
     function BackToChatRoom() {
-      // const pathname = window.location.pathname;
-      // const randomString = decodeURIComponent(pathname.split('/')[1]);
-      // const loginName = decodeURIComponent(pathname.split('/')[2]);
-      // window.location.href = `/chat/${randomString}/${loginName}`;
-      window.location.href = `/`; // 今のところ、別人になっちゃう
+      window.location.href = `/${randomString}/${loginName}/chat`; // 今のところ、別人になっちゃう
     }
 
     function hideName() {

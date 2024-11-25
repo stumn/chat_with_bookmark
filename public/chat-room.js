@@ -43,7 +43,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function OpenDocumentWindow() {
     docURL
-        ? window.open(docURL, '_blank')
+        // ? window.open(docURL, '_blank')
+        ? window.location.href = docURL
         : alert('しばらくしてからもう一度お試しください。');
 }
 

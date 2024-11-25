@@ -22,7 +22,7 @@ const userSchema = new mongoose.Schema({
     name: String,
     socketId: [],
     randomString: String
-});
+}, options);
 
 const User = mongoose.model("User", userSchema);
 

@@ -79,6 +79,7 @@ async function saveRecord(name, msg, inqury = {}, stack = {}, memo = {}) {
 // 自分メモ保存
 async function SavePersonalMemo(name, msg) {
     try {
+        console.log(name, msg);
         const memoData = { name, msg, isBeingOpened: false };
         const newMemo = await Memo.create(memoData);
         console.log('自分メモ保存完了', newMemo.name, newMemo.msg, newMemo.createdAt);
@@ -192,37 +193,41 @@ async function getUserInfo_rsnm(randomString) {
 }
 
 // ドキュメントページ用 DBからの過去ログ取得の関数
-async function fetchPosts(randomString, myName) {
+async function fetchPosts(randomString) {
+    console.log(randomString);
 
     // まずユーザー情報のDBから、nameTomatchを取得
     const nameToMatch = await getUserInfo_rsnm(randomString);
+    if (!nameToMatch) {
+        console.log('nameToMatch がありません');
+    } else {
+        try {
+            console.log('nameToMatch 入っているか再度確認: ', nameToMatch);
+            let posts = await Post.find({ 'bookmarks': { '$elemMatch': { 'name': nameToMatch } } }).sort({ createdAt: -1 });
 
-    try {
-        console.log('nameToMatch 入っているか再度確認: ', nameToMatch);
-        let posts = await Post.find({ 'bookmarks': { '$elemMatch': { 'name': nameToMatch } } }).sort({ createdAt: -1 });
+            // bookmarksが見つからない場合
+            if (posts.length === 0) { console.log('bookmarksがありません'); }
 
-        // bookmarksが見つからない場合
-        if (posts.length === 0) { console.log('bookmarksがありません'); }
+            let messages = [];
+            posts.forEach(e => {
+                messages.push({ name: e.name, msg: e.msg, createdAt: e.createdAt });
+            });
 
-        let messages = [];
-        posts.forEach(e => {
-            messages.push({ name: e.name, msg: e.msg, createdAt: e.createdAt });
-        });
+            // memo を取得
+            const memos = await Memo.find({ name: nameToMatch });
+            memos.forEach(e => {
+                messages.push({ name: null, msg: e.msg, createdAt: e.createdAt });
+            });
 
-        // memo を取得
-        const memos = await Memo.find({ name: nameToMatch });
-        memos.forEach(e => {
-            messages.push({ name: null, msg: e.msg, createdAt: e.createdAt });
-        });
+            // createdAt でソート
+            messages.sort((a, b) => a.createdAt - b.createdAt);
 
-        // createdAt でソート
-        messages.sort((a, b) => a.createdAt - b.createdAt);
-
-        console.log('api 過去ログ messaages: ', messages);
-        return messages;
-    }
-    catch (error) {
-        handleErrors(error, 'api 過去ログ取得中にエラーが発生しました');
+            console.log('api 過去ログ messaages: ', messages);
+            return messages;
+        }
+        catch (error) {
+            handleErrors(error, 'api 過去ログ取得中にエラーが発生しました');
+        }
     }
 }
 

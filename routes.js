@@ -3,26 +3,12 @@ const express = require('express');
 const router = express.Router();
 const { fetchPosts } = require('./dbOperations');
 
-// // ルーム選択ページHTML
-// router.get('/rooms', (req, res) => {
-//     res.sendFile(__dirname + '/public/room-selection.html');
-// });
-
-// // チャットページHTML
-// router.get('/rooms/:roomId', (req, res) => {
-//     res.sendFile(__dirname + '/public/chat-room.html');
-// });
-
 // ログインページHTML
 router.get('/login', (req, res) => {
     res.sendFile(__dirname + '/public/login.html');
 });
 
 // チャットページHTML
-// router.get('/chat', (req, res) => {
-//     res.sendFile(__dirname + '/public/chat-room.html');
-// });
-
 router.get('/:randomString/:myName/chat', (req, res) => {
     res.sendFile(__dirname + '/public/chat-room.html');
 });
@@ -47,8 +33,14 @@ router.get('/document.css', (_, res) => {
 // ドキュメントページ用 DBアクセスAPI
 router.get('/api/:randomString/messages', async (req, res) => {
     try {
+        console.log('api called');
+
         const apiString = req.params.randomString;
+        console.log(apiString);
+
         const messages = await fetchPosts(apiString);
+        console.log(messages);
+        
         res.json(messages);
     } catch (error) {
         res.status(500).json({ error: 'Failed to fetch messages in API' });

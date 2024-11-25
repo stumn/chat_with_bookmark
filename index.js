@@ -37,7 +37,8 @@ io.on('connection', async (socket) => {
 
   // ログイン時
   socket.on('sign-up', async (loginData) => {
-    const name = await logInFunction(loginData, socket);
+    console.log(loginData);
+    const { name, randomString } = await logInFunction(loginData, socket);
 
     // 自分メモが記録された場合、自分だけに送信
     socket.on('personal memo', async (memo) => {
@@ -213,17 +214,22 @@ function parseQuestionOptions(data) {
 
 // ログイン時（名前・オンラインユーザーリスト・過去ログ）
 async function logInFunction(loginData, socket) {
-  const { rawname, randomString } = loginData;
-  
-  const name = rawname !== null && rawname !== '' ? rawname : '匿名';
-  console.log(name + ' (' + socket.id + ') 接続完了💨');
+  const { loginName, randomString } = loginData;
+  console.log('loginName:', loginName, 'randomString:', randomString);
+
+  const name = loginName !== null && loginName !== '' ? loginName : '匿名';
+  console.log(name + ' (' + socket.id + ') 接続完了💨' + randomString);
 
   onlineUsers.push(name);
   idsOnlineUsers.push({ id: socket.id, name: name });
   io.emit('onlineUsers', onlineUsers);
 
   try { // ユーザー情報を保存 
-    await saveUser(name, socket.id, randomString);
+    let user;
+    name
+      ? user = await saveUser(name, socket.id, randomString)
+      : user = 'NONAME';
+    console.log('ユーザー情報保存完了📝:', user);
   } catch (error) {
     handleErrors(error, 'LogInFunction ユーザー情報保存中にエラーが発生しました');
   }
