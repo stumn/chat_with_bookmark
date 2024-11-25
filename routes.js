@@ -4,7 +4,7 @@ const router = express.Router();
 const { fetchPosts } = require('./dbOperations');
 
 // ログインページHTML
-router.get('/login', (req, res) => {
+router.get('/', (req, res) => {
     res.sendFile(__dirname + '/public/login.html');
 });
 
