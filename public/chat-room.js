@@ -14,39 +14,27 @@ const form = $('form');
 const input = $('input');
 const formButton = $('formButton');
 const checkBox = $('checkBox');
+const docsButton = $('docsButton');
 
 let dropElement;
-let loginName, randomString, myName, docURL;
 
 // ログイン
 document.addEventListener('DOMContentLoaded', () => {
     const pathname = window.location.pathname;
-
-    loginName = decodeURIComponent(pathname.split('/')[2]);
-    console.log('loginName: ' + loginName);
-    myName = loginName;
-    console.log('myName: ' + myName);
-
-    randomString = decodeURIComponent(pathname.split('/')[1]);
-    console.log('randomString: ' + randomString);
-
-    docURL = `/${randomString}/${myName}/document`;
-    console.log('docURL: ' + docURL);
-
-    const loginData = { loginName, randomString };
-
+    const loginName = decodeURIComponent(pathname.split('/')[2]);
+    const randomString = decodeURIComponent(pathname.split('/')[1]);
+    const docURL = `/${randomString}/${loginName}/document`;
+    docsButton.addEventListener('click', e => {
+        docURL
+            ? window.location.href = docURL
+            : alert('しばらくしてからもう一度お試しください。');
+    });
 
     // ログイン情報をサーバに送信
+    const loginData = { loginName, randomString };
     socket.emit('sign-up', loginData);
-    $('sign-up-name').textContent = 'あなた： ' + myName;
+    $('sign-up-name').textContent = 'あなた： ' + loginName;
 });
-
-function OpenDocumentWindow() {
-    docURL
-        // ? window.open(docURL, '_blank')
-        ? window.location.href = docURL
-        : alert('しばらくしてからもう一度お試しください。');
-}
 
 // 同時参加者数
 socket.on('onlineUsers', (onlines) => {
@@ -88,18 +76,18 @@ function GoToTheOpenCard() {
 // 過去ログ受信
 socket.on('pastLogs', ({ pastLogs, stackLogs }) => {
     handlePastLogs(pastLogs, stackLogs);
-    // window.scrollTo(0, document.body.scrollHeight);
+    window.scrollTo(0, document.body.scrollHeight);
 });
 
 // ソケットイベントと対応するハンドラをマッピング
 const socketEventHandlers = {
     myChat: handleMyChat,                 // 自分のチャット・アンケート（ドラッグ可能）
-    chatLogs: handleChatLogs,             // 他の人のチャット・アンケート（ドラッグ不可）
+    chatLogs: handleChatLogs,             // 他の人のチャット・アンケート
 
     memoLogs: handleMemoLogs,             // 自分メモ（ドラッグ可能）
 
     myOpenCard: processMyOpenCard,        // 自分のメモボタン公開（ドラッグ可能）
-    downCard: processDownCard,            // 他の人のメモボタン公開（ドラッグ不可）
+    downCard: processDownCard,            // 他の人のメモボタン公開
 
     myKasaneOpen: handleMyKasaneOpen,     // ドロップ自分の重ねてオープン
     kasaneOpen: handleKasaneOpen,         // ドロップ他の人の重ねてオープン
@@ -141,6 +129,12 @@ function handlePastLogs(pastLogs, stackLogs) {
     });
 }
 
+function addAccordionLog(pastElement, stackLogs) {// 子分がいる過去ログ
+    const detailsContainer = createDetailsContainer(stackLogs, pastElement);
+    addBeingDraggedListeners(detailsContainer);
+    messageLists.appendChild(detailsContainer);
+}
+
 function addSimpleLog(pastElement) {// 子分がいない過去ログ
     const item = buildMlElement(pastElement);
     if (pastElement.memoId) { item.classList.add('downCard', 'visible'); }
@@ -148,24 +142,17 @@ function addSimpleLog(pastElement) {// 子分がいない過去ログ
     appendChildWithIdAndScroll(item, pastElement, true);
 }
 
-function addAccordionLog(pastElement, stackLogs) {// 子分がいる過去ログ
-    const detailsContainer = createDetailsContainer(stackLogs, pastElement);
-    addBeingDraggedListeners(detailsContainer);
-    messageLists.appendChild(detailsContainer);
-}
-
 function createDetailsContainer(stackLogs, pastElement) {
     // <details .ml>
     const detailsContainer = createHTMLelement('details', 'accordion');
+    detailsContainer.classList.add('ml');
 
     // <summary .ml>
     const parentSummary = createParentSummary(pastElement);
-    // ここで☆についても追加
     detailsContainer.appendChild(parentSummary);
 
     // <div .children> <p>child</p> </div>
     const children = createChildrenContainer(stackLogs, pastElement);
-    // ここで☆についても追加
     detailsContainer.appendChild(children);
 
     const kobuns = filterKobuns(stackLogs, pastElement.childPostIds);
@@ -213,7 +200,7 @@ function createChildElement(kobun) { // <p .child>
 }
 
 // 自分のチャット
-function handleMyChat(post) { // MyChat
+function handleMyChat(post) { // MyChat ドラッグ可能
     const item = buildMlElement(post);
     enableDragAndDrop(item);
     appendChildWithIdAndScroll(item, post, true);
@@ -227,7 +214,7 @@ function handleChatLogs(post) { // ChatLogs
 }
 
 // 自分のメモ
-function handleMemoLogs(memo, shouldScroll = true) {
+function handleMemoLogs(memo, shouldScroll = true) { // ドラッグ可能
     const item = buildMlBaseStructure(memo, '[memo]');
     item.classList.add('memo');
     const memoSendContainer = buildMemoSendContainer(memo);
@@ -238,11 +225,11 @@ function handleMemoLogs(memo, shouldScroll = true) {
 }
 
 // 自分のメモボタン公開
-function processMyOpenCard(msg) {
+function processMyOpenCard(msg) { // ドラッグ可能
     processDownCard(msg, true);
 }
 
-// 他の人のメモボタン公開
+// メモボタン公開(共通)
 function processDownCard(msg, isMine = false) {
     const opencardCreatedAt = msg.memoCreatedAt;
     const timeSpanArray = document.querySelectorAll("#messageLists div span.time");
@@ -269,6 +256,8 @@ function handleMyKasaneOpen(data) { // 自分の重ねてオープン
 
     const dropElement = $(dropId);
     const detailsContainer = createHTMLelement('details', 'accordion');
+    detailsContainer.classList.add('ml');
+    addBeingDraggedListeners(detailsContainer);
     messageLists.insertBefore(detailsContainer, dropElement);
 
     const parentSummary = changeTagName(dropElement, 'summary');
@@ -432,13 +421,17 @@ function handleDrop(event) {
 
 // chat / opencard を重ねる
 function overtDrop(dropElement) {
-    const parentDIV = dropElement.closest('.kasane');
-
-    dropElement.classList.contains('kasane') || parentDIV
-        ? parentDIV.appendChild(draggedElement)
-        : createKasaneDiv(draggedElement, dropElement);
-
-    const twoID = { draggedId: draggedElement.id, dropId: dropElement.id };
+    const parentDIV = dropElement.closest('.accordion');
+    let dropId;
+    if (dropElement.classList.contains('accordion') || parentDIV) {
+        addChildElement(parentDIV, draggedElement);
+        const summaryElement = parentDIV.querySelector('summary');
+        dropId = summaryElement.id;
+    } else {
+        createKasaneDiv(draggedElement, dropElement);
+        dropId = dropElement.id;
+    }
+    const twoID = { draggedId: draggedElement.id, dropId: dropId };
     socket.emit('drop', twoID);
 }
 
@@ -473,6 +466,8 @@ function changeTagName(oldElement, newTagName) {
 // 既に開いているものを重ねる
 function createKasaneDiv(draggedElement, dropElement) {
     const detailsContainer = createHTMLelement('details', 'accordion');
+    detailsContainer.classList.add('ml');
+    addBeingDraggedListeners(detailsContainer);
     messageLists.insertBefore(detailsContainer, dropElement);
 
     const parentSummary = changeTagName(dropElement, 'summary');
@@ -494,6 +489,14 @@ function createKasaneDiv(draggedElement, dropElement) {
     draggedElement.style.visibility = '';
     parentSummary.style.border = "";
     parentSummary.style.color = '';
+}
+
+function addChildElement(parentDIV, draggedElement) {
+    const childrenContainer = parentDIV.querySelector('.children');
+    const child = changeTagName(draggedElement, 'p');
+    child.classList.add('child');
+    child.style.visibility = '';
+    childrenContainer.appendChild(child);
 }
 
 function createHTMLelement(tag, className = '', text = '') {

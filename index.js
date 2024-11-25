@@ -187,7 +187,9 @@ io.on('connection', async (socket) => {
 
     // ドラッグドロップ
     socket.on('drop', async (kasaneData) => {
+      console.log('kasaneData:', kasaneData);
       socket.broadcast.emit('drop', kasaneData); // 操作したユーザ以外に送信
+      
       await saveStackRelation(kasaneData.draggedId, kasaneData.dropId);
     });
   });

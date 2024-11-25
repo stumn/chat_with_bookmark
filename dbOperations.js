@@ -232,13 +232,13 @@ async function fetchPosts(randomString) {
 }
 
 async function saveStackRelation(dragedId, dropId) {
+    console.log('saveStackRelation drag:', dragedId, 'drop', dropId);
     try {
         // Find dragged post and handle errors
         const draggedPost = await findPost(dragedId);
         if (!draggedPost) throw new Error(`Post with ID ${dragedId} not found.`);
 
-        // Update parentPostId to true
-        draggedPost.parentPostId = true;
+        draggedPost.parentPostId = dropId;
         await draggedPost.save();
 
         // Find drop post and handle errors
