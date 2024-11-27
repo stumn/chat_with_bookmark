@@ -45,13 +45,22 @@ async function getPastLogs(name) {
     }
 }
 
-async function processXlogs(posts) {
-    const xLogs = await Promise.all(posts.map(organizeLogs));
+async function processXlogs(xLogs, name) {
+    // const xLogs = await Promise.all(xLogs.map(organizeLogs));
+    const result = [];
     xLogs.forEach(e => {
+        console.log('e:', e);
         e.createdAt = organizeCreatedAt(e.createdAt);
         if (e.memoCreatedAt) { e.memoCreatedAt = organizeCreatedAt(e.memoCreatedAt); }
+        if (e.bookmarks > 0) {
+            e.bookmarks.forEach(e => {
+                e.isBookmarked = e.name === name ? true : false;
+            });
+        }
+        e = organizeLogs(e);
+        result.push(e);
     });
-    return xLogs;
+    return result;
 }
 
 function organizeCreatedAt(createdAt) {
@@ -120,7 +129,7 @@ async function SaveRevealMemo(name, msg, memoId, memoCreatedAt) {
         // inqury 追加してもいいかも
         const memo = { memoId, memoCreatedAt };
         const revealMemo = await saveRecord(name, msg, {}, {}, memo);
-        console.log(`メモ公開${revealMemo.memoCreatedAt}, ${revealMemo.createdAt}`);
+        console.log(`メモ公開${organizeCreatedAt(revealMemo.memoCreatedAt)}, ${organizeCreatedAt(revealMemo.createdAt)}`);
         return organizeLogs(revealMemo);
     } catch (error) {
         handleErrors(error, 'メモ公開時にエラーが発生しました');
