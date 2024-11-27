@@ -65,8 +65,11 @@ async function processXlogs(xLogs, name) {
 
 function organizeCreatedAt(createdAt) {
     const UTCdate = new Date(createdAt);
-    const formattedCreatedAt = UTCdate.toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' });
-    return formattedCreatedAt;
+    if (isNaN(UTCdate.getTime())) {
+        console.error("無効な日時:", createdAt);
+        return "Invalid Date";
+    }
+    return UTCdate.toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' });
 }
 
 // データベースにレコードを保存
@@ -128,9 +131,13 @@ async function SaveRevealMemo(name, msg, memoId, memoCreatedAt) {
     try {
         // inqury 追加してもいいかも
         const memo = { memoId, memoCreatedAt };
+        console.log("自分メモ保存完了:", new Date(memoCreatedAt).toISOString());
         const revealMemo = await saveRecord(name, msg, {}, {}, memo);
-        console.log(`メモ公開${organizeCreatedAt(revealMemo.memoCreatedAt)}, ${organizeCreatedAt(revealMemo.createdAt)}`);
-        return organizeLogs(revealMemo);
+        console.log("メモ公開 UTC:", revealMemo.memoCreatedAt, revealMemo.createdAt);
+        console.log("メモ公開 JST:",
+            organizeCreatedAt(revealMemo.memoCreatedAt),
+            organizeCreatedAt(revealMemo.createdAt)
+        ); return organizeLogs(revealMemo);
     } catch (error) {
         handleErrors(error, 'メモ公開時にエラーが発生しました');
     }
