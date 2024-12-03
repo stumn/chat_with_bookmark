@@ -531,6 +531,7 @@ function createNameTimeMsg(message, nameText = message.name) {
     const userName = createHTMLelement('span', 'userName', nameText);
 
     const timeData = message.memoCreatedAt ? message.memoCreatedAt : message.createdAt;
+    console.log('timeData: ', message.memoCreatedAt ? 'memoCreatedAt' : 'createdAt');
     const time = createHTMLelement('span', 'time', organizeCreatedAt(timeData));
 
     userName_time.append(userName, time);
