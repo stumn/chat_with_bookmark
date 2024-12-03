@@ -46,13 +46,19 @@ const openCardStatus = new Map();
 setInterval(updateStatus, 1000); // update
 
 socket.on('notification', (data) => {
-    openCardStatus.set(data, new Date());
+    console.log('notification: ', data);
+    openCardStatus.set(data, data.nowTime);
+    console.log('openCardStatus: ', openCardStatus);
 });
 
 function updateStatus() {
     let name, difference, text;
 
     for (let [data, date] of openCardStatus) {
+        console.log('data: ', data);
+        console.log('date: ', date);
+
+        console.log('Date.now(): ', Date.now());
         if (Date.now() - date > 60000) { openCardStatus.delete(data); } // 60sec passed => delete notification
 
         name = data.name;
@@ -553,7 +559,13 @@ function makeSurveyContainerElement(message) {
 }
 function createActionButtons(message) {
     const buttons = createHTMLelement('div', 'buttons');
-    buttons.appendChild(makeBookmarkButton(message));
+    const bookmarkButton = makeBookmarkButton(message);
+
+    if (message.isBookmarked) {
+        bookmarkButton.classList.add("active");
+        bookmarkButton.textContent = '★';
+    }
+    buttons.appendChild(bookmarkButton);
     return buttons;
 }
 
@@ -575,9 +587,10 @@ function setupBookmarkClickHandler(button, message) {
         console.log('event.target: ', event.target);
 
         button.classList.toggle("active");
-        button.disabled = true;
-        button.textContent = '★';
-        socket.emit('bookmark', message.id);
+        const isActive = button.classList.contains("active");
+        button.textContent = isActive ? '★' : '☆';
+        const data = { id: message.id, active: isActive };
+        socket.emit('bookmark', data);
     });
 }
 

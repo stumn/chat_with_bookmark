@@ -100,11 +100,13 @@ io.on('connection', async (socket) => {
     });
 
     // ブックマークされたとき
-    socket.on('bookmark', async (msgId) => {
-      await handleBookmark(msgId, name, socket);
+    socket.on('bookmark', async (data) => {
+      const msgId = data.id;
+      data.active === true
+        ? await handleBookmark(msgId, name, socket)
+        : await handleUnbookmark(msgId, name, socket);
     });
 
-    // bookmark
     async function handleBookmark(msgId, name, socket) {
       try {
         const post = await findPost(msgId);
@@ -124,6 +126,25 @@ io.on('connection', async (socket) => {
 
       } catch (error) {
         handleErrors(error, `handleBookmark処理中にエラーが発生しました`);
+      }
+    }
+
+    async function handleUnbookmark(msgId, name, socket) {
+      try {
+        const post = await findPost(msgId);
+        const bookmarks = post.bookmarks;
+
+        const target = bookmarks.find(obj => obj.userSocketId === socket.id);
+        if (target) {
+          const index = bookmarks.indexOf(target);
+          bookmarks.splice(index, 1);
+          await post.save();
+
+          const eventData = { id: post._id, count: bookmarks.length };
+          io.emit('bookmark', eventData); // 結果を送信
+        }
+      } catch (error) {
+        handleErrors(error, `handleUnbookmark処理中にエラーが発生しました`);
       }
     }
 
@@ -208,7 +229,9 @@ async function updateMemoStatusToOpened(memoId) {
 
 function notifyRevealMemo(record, name) {
   const difference = new Date(record.createdAt) - new Date(record.memoCreatedAt);
-  const data = { name, difference };
+  const nowTime = Date.now();
+  const data = { name, difference, nowTime };
+  console.log(data);
   io.emit('notification', data);
 }
 
