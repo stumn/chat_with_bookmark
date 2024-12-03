@@ -48,7 +48,7 @@ io.on('connection', async (socket) => {
         id: m._id,
         name: m.name,
         msg: m.msg,
-        createdAt: organizeCreatedAt(m.createdAt)
+        createdAt: m.createdAt
       }
       socket.emit('memoLogs', organizedMemo); // 自分だけに送信
 

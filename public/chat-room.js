@@ -55,11 +55,9 @@ function updateStatus() {
     let name, difference, text;
 
     for (let [data, date] of openCardStatus) {
-        console.log('data: ', data);
-        console.log('date: ', date);
-
-        console.log('Date.now(): ', Date.now());
-        if (Date.now() - date > 60000) { openCardStatus.delete(data); } // 60sec passed => delete notification
+        const elapsedTime = Date.now() - date;
+        console.log('elapsedTime: ', elapsedTime);
+        if (elapsedTime > 20000) { openCardStatus.delete(data); } // 60sec passed => delete notification
 
         name = data.name;
         difference = Math.abs(data.difference);
@@ -533,7 +531,7 @@ function createNameTimeMsg(message, nameText = message.name) {
     const userName = createHTMLelement('span', 'userName', nameText);
 
     const timeData = message.memoCreatedAt ? message.memoCreatedAt : message.createdAt;
-    const time = createHTMLelement('span', 'time', timeData);
+    const time = createHTMLelement('span', 'time', organizeCreatedAt(timeData));
 
     userName_time.append(userName, time);
     userNameTimeMsg.appendChild(userName_time);
@@ -639,4 +637,13 @@ function checkIsBefore(target, compareCreatedAt) {
     const targetDate = new Date(target);
     const compareCreatedAtDate = new Date(compareCreatedAt);
     return targetDate < compareCreatedAtDate;
+}
+
+function organizeCreatedAt(createdAt) {
+    const UTCdate = new Date(createdAt);
+    if (isNaN(UTCdate.getTime())) {
+        console.error("無効な日時:", createdAt);
+        return "Invalid Date";
+    }
+    return UTCdate.toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' });
 }
