@@ -228,7 +228,9 @@ async function updateMemoStatusToOpened(memoId) {
 }
 
 function notifyRevealMemo(record, name) {
-  const difference = new Date(record.createdAt) - new Date(record.memoCreatedAt);
+  console.log('メモ公開通知:', record.memoCreatedAt, record.createdAt);
+  const difference = Date.now(record.createdAt) - Date.now(record.memoCreatedAt);
+  console.log('差分:', difference);
   const nowTime = Date.now();
   const data = { name, difference, nowTime };
   console.log(data);
