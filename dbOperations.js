@@ -94,7 +94,7 @@ async function SavePersonalMemo(name, msg) {
         console.log(name, msg);
         const memoData = { name, msg, isBeingOpened: false };
         const newMemo = await Memo.create(memoData);
-        console.log('自分メモ保存完了', newMemo.name, newMemo.msg, newMemo.createdAt);
+        console.log('自分メモ保存完了１', newMemo.name, newMemo.msg, newMemo.createdAt);
         return newMemo;
     } catch (error) {
         handleErrors(error, '自分メモ保存時にエラーが発生しました');
@@ -131,12 +131,12 @@ async function SaveRevealMemo(name, msg, memoId, memoCreatedAt) {
     try {
         // inqury 追加してもいいかも
         const memo = { memoId, memoCreatedAt };
-        console.log("自分メモ保存完了:", new Date(memoCreatedAt).toISOString());
+        console.log("自分メモ保存完了２:", new Date(memoCreatedAt).toISOString()); // Z で合ってる
         const revealMemo = await saveRecord(name, msg, {}, {}, memo);
-        console.log("メモ公開 UTC:", revealMemo.memoCreatedAt, revealMemo.createdAt);
+        console.log("メモ公開 UTC:", revealMemo.memoCreatedAt, revealMemo.createdAt); // memoCreatedAT は会っている、createdAt はズレている
         console.log("メモ公開 JST:",
-            organizeCreatedAt(revealMemo.memoCreatedAt),
-            organizeCreatedAt(revealMemo.createdAt)
+            organizeCreatedAt(revealMemo.memoCreatedAt), // むしろこれはズレている
+            organizeCreatedAt(revealMemo.createdAt) // これは合っている
         ); return organizeLogs(revealMemo);
     } catch (error) {
         handleErrors(error, 'メモ公開時にエラーが発生しました');

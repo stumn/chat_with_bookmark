@@ -151,6 +151,7 @@ io.on('connection', async (socket) => {
     // メモ送信ボタンが押されたとき
     socket.on('revealMemo', async (memo) => {
       const record = await SaveRevealMemo(memo.name, memo.msg, memo._id, memo.createdAt);
+      console.log('メモ送信ボタンが押されたとき', record);
       notifyRevealMemo(record, name);
 
       await updateMemoStatusToOpened(memo.id);
@@ -228,9 +229,15 @@ async function updateMemoStatusToOpened(memoId) {
 }
 
 function notifyRevealMemo(record, name) {
+  // console.log('メモ公開通知:', record.memoCreatedAt, record.createdAt);
+  // const difference = Date.now(record.createdAt) - Date.now(record.memoCreatedAt);
+  // console.log('差分:', difference);
   console.log('メモ公開通知:', record.memoCreatedAt, record.createdAt);
-  const difference = Date.now(record.createdAt) - Date.now(record.memoCreatedAt);
+  const createdAt = new Date(record.createdAt).getTime();
+  const memoCreatedAt = new Date(record.memoCreatedAt).getTime();
+  const difference = createdAt - memoCreatedAt;
   console.log('差分:', difference);
+
   const nowTime = Date.now();
   const data = { name, difference, nowTime };
   console.log(data);
