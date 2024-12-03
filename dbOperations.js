@@ -50,8 +50,8 @@ async function processXlogs(xLogs, name) {
     const result = [];
     xLogs.forEach(e => {
         console.log('e:', e);
-        e.createdAt = organizeCreatedAt(e.createdAt);
-        if (e.memoCreatedAt) { e.memoCreatedAt = organizeCreatedAt(e.memoCreatedAt); }
+        e.createdAt = e.createdAt;
+        if (e.memoCreatedAt) { e.memoCreatedAt = e.memoCreatedAt; }
         if (e.bookmarks > 0) {
             e.bookmarks.forEach(e => {
                 e.isBookmarked = e.name === name ? true : false;
