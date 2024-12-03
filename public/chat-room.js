@@ -94,12 +94,13 @@ const socketEventHandlers = {
     downCard: processDownCard,            // 他の人のメモボタン公開
 
     kasaneMemoOpen: handleKasaneMemoOpen,     // ドロップ自分の重ねてオープン
+    broadcastDrop: handleBroadcastDrop,       // ドロップ他の人の重ねてオープン
 
     updateVote: handleUpdateVote,         // 投票を受信
     bookmark: updateBookmark,             // bookmark を受信
 
-    dragstart: handleDragStart,           // 他の人が D & D をしている（ドラッグ開始）
-    dragend: handleDragEnd,               // 他の人が D & D をしている（ドラッグ終了）
+    dragstart: handleBroadcastDragStart,           // 他の人が D & D をしている（ドラッグ開始）
+    dragend: handleBroadcastDragEnd,               // 他の人が D & D をしている（ドラッグ終了）
 };
 
 // ソケットイベントの登録を一括で行う
@@ -253,7 +254,6 @@ function processDownCard(msg, isMine = false) {
 }
 
 function handleKasaneMemoOpen(data) {
-
     // まず公開したメモをチャット投稿として表示
     const post = data.postSet;
     const item = buildMlElement(post);
@@ -280,7 +280,28 @@ function handleKasaneMemoOpen(data) {
     // 元メモを履歴欄から削除
     const memoId = post.memoId;
     const memo = $(memoId);
-    memo.remove();
+    if (memo) { memo.remove(); }
+}
+
+function handleBroadcastDrop(data) {
+    console.log('handleBroadcastDrop: ', data);
+    const draggedElement = $(data.draggedId);
+    const dropElement = $(data.dropId);
+    const parentDIV = dropElement.closest('.accordion');
+    if (parentDIV) {
+        addChildElement(parentDIV, draggedElement);
+
+        const detailsContainer = $(data.postSet.id).closest('.accordion');
+        const childCount = detailsContainer.children.length; // 要素ノードの数を取得
+        detailsContainer.style.borderLeft = `${(childCount - 1) * 2}px solid #EF7D3C`;
+
+        const parentSummary = parentDIV.querySelector('summary');
+        draggedElement.style.visibility = '';
+        parentSummary.style.border = "";
+        parentSummary.style.color = '';
+    } else {
+        createKasaneDiv(draggedElement, dropElement);
+    }
 }
 
 function buildMemoSendContainer(memo) {
@@ -340,12 +361,11 @@ function updateBookmark(data) {
     }
 }
 
-// 個別ハンドラの定義
-function handleDragStart(draggedId) {
+function handleBroadcastDragStart(draggedId) {
     updateElementBorder(draggedId, '3px dotted');
 }
 
-function handleDragEnd(draggedId) {
+function handleBroadcastDragEnd(draggedId) {
     updateElementBorder(draggedId, '');
 }
 
@@ -414,6 +434,7 @@ function handleDrop(event) {
 
 // chat / opencard を重ねる
 function overtDrop(dropElement) {
+    console.log('start overtDrop');
     const parentDIV = dropElement.closest('.accordion');
     let dropId;
     if (parentDIV) {
@@ -426,6 +447,7 @@ function overtDrop(dropElement) {
     }
     const twoID = { draggedId: draggedElement.id, dropId: dropId };
     socket.emit('drop', twoID);
+    console.log('end overtDrop');
 }
 
 // memo を重ねてオープン
