@@ -17,11 +17,12 @@ const checkBox = $('checkBox');
 const docsButton = $('docsButton');
 
 let dropElement;
+let loginName;
 
 // ログイン
 document.addEventListener('DOMContentLoaded', () => {
     const pathname = window.location.pathname;
-    const loginName = decodeURIComponent(pathname.split('/')[2]);
+    loginName = decodeURIComponent(pathname.split('/')[2]);
     const randomString = decodeURIComponent(pathname.split('/')[1]);
     const docURL = `/${randomString}/${loginName}/document`;
     docsButton.addEventListener('click', e => {
@@ -44,6 +45,12 @@ socket.on('onlineUsers', (onlines) => {
 // 伏せカードオープン通知
 const openCardStatus = new Map();
 setInterval(updateStatus, 1000); // update
+setInterval(alert_reload, 300000);
+
+function alert_reload() {
+    alert('再読み込みします');
+    location.reload();
+}
 
 socket.on('notification', (data) => {
     console.log('notification: ', data);
@@ -142,7 +149,7 @@ function addAccordionLog(pastElement, stackLogs) {// 子分がいる過去ログ
 function addSimpleLog(pastElement) {// 子分がいない過去ログ
     const item = buildMlElement(pastElement);
     if (pastElement.memoId) { item.classList.add('downCard', 'visible'); }
-    addBeingDraggedListeners(item);
+    pastElement.name === loginName ? enableDragAndDrop(item) : addBeingDraggedListeners;
     appendChildWithIdAndScroll(item, pastElement, true);
 }
 
@@ -160,7 +167,8 @@ function createDetailsContainer(stackLogs, pastElement) {
     detailsContainer.appendChild(children);
 
     const kobuns = filterKobuns(stackLogs, pastElement.childPostIds);
-    detailsContainer.style.borderLeft = `${kobuns.length * 2}px solid #EF7D3C`; // 色が付くときと付かない時がある？
+    const childCount = kobuns.length;
+    detailsContainer.style.borderLeft = `${(childCount - 1) * 2}px solid #EF7D3C`; // 色が付くときと付かない時がある？
     return detailsContainer;
 }
 
@@ -439,7 +447,6 @@ function handleDrop(event) {
 
 // chat / opencard を重ねる
 function overtDrop(dropElement) {
-    console.log('start overtDrop');
     const parentDIV = dropElement.closest('.accordion');
     let dropId;
     if (parentDIV) {
@@ -452,7 +459,6 @@ function overtDrop(dropElement) {
     }
     const twoID = { draggedId: draggedElement.id, dropId: dropId };
     socket.emit('drop', twoID);
-    console.log('end overtDrop');
 }
 
 // memo を重ねてオープン

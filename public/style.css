@@ -61,8 +61,8 @@ header {
     display: flex;
     justify-content: space-between;
     padding: 0.6rem;
-    /* padding-left: 1rem; */
-    margin-left: 2rem;
+    padding-left: 3rem;
+    /* margin-left: 2rem; */
     margin-bottom: 0.5rem;
     align-items: center;
 }
@@ -181,7 +181,12 @@ details.accordion>div.children>p.child>div.userName-time-msg>div.message-text {
     position: relative;
     display: flex;
     align-items: center;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 2px 4px #20b2aa;
+}
+
+#messageLists>.memo>div.userName-time-msg div.userName-time span.userName {
+    font-weight: bold;
+    color: #20B2AA;
 }
 
 #messageLists>.translucent {
