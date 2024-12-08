@@ -1,5 +1,5 @@
 // const socket = io();
-const socket = io.connect('http://yourserver.com', {
+const socket = io.connect('https://chat-with-bookmark-1.onrender.com', {
     reconnect: true,                // 自動再接続を有効にする
     reconnectionAttempts: Infinity, // 無限回再接続を試みる
     reconnectionDelay: 1000,        // 再接続前の待機時間（ミリ秒）
