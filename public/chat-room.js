@@ -1,5 +1,12 @@
-// const socket = io();
-const socket = io.connect('https://chat-with-bookmark-1.onrender.com', {
+// const socket = io.connect('https://chat-with-bookmark-1.onrender.com', {
+//     reconnect: true,                // 自動再接続を有効にする
+//     reconnectionAttempts: Infinity, // 無限回再接続を試みる
+//     reconnectionDelay: 1000,        // 再接続前の待機時間（ミリ秒）
+//     reconnectionDelayMax: 5000,     // 最大待機時間（ミリ秒）
+//     timeout: 10000,                 // 接続試行のタイムアウト時間（ミリ秒）
+// });
+
+var socket = io.connect('localhost:3000', {
     reconnect: true,                // 自動再接続を有効にする
     reconnectionAttempts: Infinity, // 無限回再接続を試みる
     reconnectionDelay: 1000,        // 再接続前の待機時間（ミリ秒）
@@ -29,9 +36,11 @@ let loginName;
 // ログイン
 document.addEventListener('DOMContentLoaded', () => {
     const pathname = window.location.pathname;
-    loginName = decodeURIComponent(pathname.split('/')[2]);
+    // loginName = decodeURIComponent(pathname.split('/')[2]);
+    loginName = getCookie('userName');
+    console.log('loginName: ', loginName);
     const randomString = decodeURIComponent(pathname.split('/')[1]);
-    const docURL = `/${randomString}/${loginName}/document`;
+    const docURL = `/${randomString}/document`;
     docsButton.addEventListener('click', e => {
         docURL
             ? window.location.href = docURL
@@ -43,6 +52,12 @@ document.addEventListener('DOMContentLoaded', () => {
     socket.emit('sign-up', loginData);
     $('sign-up-name').textContent = 'あなた： ' + loginName;
 });
+
+function getCookie(name) {
+    let match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+    if (match) return match[2];
+    return null;
+}
 
 // 同時参加者数
 socket.on('onlineUsers', (onlines) => {

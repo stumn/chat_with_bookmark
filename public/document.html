@@ -31,7 +31,7 @@
     document.addEventListener('DOMContentLoaded', () => {
       const pathname = window.location.pathname;
 
-      loginName = decodeURIComponent(pathname.split('/')[2]);
+      loginName = getCookie('userName');
       console.log('loginName: ' + loginName);
       document.getElementById('login-name').textContent = loginName + ' さん';
 
@@ -63,6 +63,12 @@
         });
     });
 
+    function getCookie(name) {
+      let match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+      if (match) return match[2];
+      return null;
+    }
+
     function copyText() {
       // テキストを取得
       var text = document.getElementById('textToCopy').innerText;
@@ -76,7 +82,7 @@
     }
 
     function BackToChatRoom() {
-      window.location.href = `/${randomString}/${loginName}/chat`; // 今のところ、別人になっちゃう
+      window.location.href = `/${randomString}/chat`; // 今のところ、別人になっちゃう
     }
 
     function hideName() {

@@ -9,7 +9,7 @@ router.get('/', (req, res) => {
 });
 
 // チャットページHTML
-router.get('/:randomString/:myName/chat', (req, res) => {
+router.get('/:randomString/chat', (req, res) => {
     res.sendFile(__dirname + '/public/chat-room.html');
 });
 
@@ -20,7 +20,7 @@ router.get('/style.css', (_, res) => {
 });
 
 // ドキュメントページHTML
-router.get('/:randomString/:myName/document', (req, res) => {
+router.get('/:randomString/document', (req, res) => {
     res.sendFile(__dirname + '/public/document.html');
 });
 

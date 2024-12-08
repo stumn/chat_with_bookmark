@@ -44,8 +44,9 @@
             }
 
             const receivedString = generateRandomString(10);
+            document.cookie = `userName=${username}; path=/`;
 
-            const chatURL = `/${receivedString}/${username}/chat`;
+            const chatURL = `/${receivedString}/chat`;
             console.log(chatURL);
             // window.open(chatURL, '_blank');
             window.location.href = chatURL;
