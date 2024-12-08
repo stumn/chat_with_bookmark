@@ -129,15 +129,13 @@ async function SaveSurveyMessage(name, msg, options) {
 // メモ公開
 async function SaveRevealMemo(name, msg, memoId, memoCreatedAt) {
     try {
+        console.log('memoId:', memoId, 'memoCreatedAt:', memoCreatedAt);
         // inqury 追加してもいいかも
         const memo = { memoId, memoCreatedAt };
-        console.log("自分メモ保存完了２: UTC", memoCreatedAt);
+        console.log("自分メモ保存完了２: UTC", memoId, memoCreatedAt);
         const revealMemo = await saveRecord(name, msg, {}, {}, memo);
-        console.log("メモ公開 UTC:", revealMemo.memoCreatedAt, revealMemo.createdAt); // memoCreatedAT は会っている、createdAt はズレている
-        console.log("メモ公開 JST:",
-            organizeCreatedAt(revealMemo.memoCreatedAt),
-            organizeCreatedAt(revealMemo.createdAt)
-        ); return organizeLogs(revealMemo);
+        console.log("メモ公開 UTC:", revealMemo.memoId, revealMemo.memoCreatedAt, revealMemo.createdAt); // memoCreatedAT は会っている、createdAt はズレている
+        return organizeLogs(revealMemo);
     } catch (error) {
         handleErrors(error, 'メモ公開時にエラーが発生しました');
     }
@@ -210,40 +208,67 @@ async function getUserInfo_rsnm(randomString) {
 
 // ドキュメントページ用 DBからの過去ログ取得の関数
 async function fetchPosts(randomString) {
-    console.log(randomString);
-
     // まずユーザー情報のDBから、nameTomatchを取得
     const nameToMatch = await getUserInfo_rsnm(randomString);
-    if (!nameToMatch) {
-        console.log('nameToMatch がありません');
-    } else {
+    if (nameToMatch) {
         try {
-            console.log('nameToMatch 入っているか再度確認: ', nameToMatch);
-            let posts = await Post.find({ 'bookmarks': { '$elemMatch': { 'name': nameToMatch } } }).sort({ createdAt: -1 });
+            // 配列を用意
+            const messages = [];
 
-            // bookmarksが見つからない場合
-            if (posts.length === 0) { console.log('bookmarksがありません'); }
+            // チャットを取得・格納
+            const posts = await Post.find({ 'bookmarks': { '$elemMatch': { 'name': nameToMatch } } });
+            posts.forEach(e => organizeAndPush(messages, e));
 
-            let messages = [];
-            posts.forEach(e => {
-                messages.push({ name: e.name, msg: e.msg, createdAt: e.createdAt });
-            });
-
-            // memo を取得
+            // memo を取得・格納
             const memos = await Memo.find({ name: nameToMatch });
-            memos.forEach(e => {
-                messages.push({ name: null, msg: e.msg, createdAt: e.createdAt });
-            });
+            memos.forEach(e => organizeAndPush(messages, e, false));
 
             // createdAt でソート
             messages.sort((a, b) => a.createdAt - b.createdAt);
 
-            console.log('api 過去ログ messaages: ', messages);
             return messages;
         }
         catch (error) {
             handleErrors(error, 'api 過去ログ取得中にエラーが発生しました');
         }
+    }
+}
+
+async function fetchPosts_everybody() {
+    try {
+        // 配列を用意
+        const messages = [];
+
+        // チャットを取得
+        const posts = await Post.find({
+            $or: [
+                { "bookmarks.1": { $exists: true } }, // bookmarks配列の長さが2以上
+                { "childPostIds.0": { $exists: true } } // childPostIds配列の長さが1以上
+            ]
+        });
+
+        // チャットを格納
+        posts.forEach(e => {
+            console.log('fetchPosts_everybody posts:', e.bookmarks.length, e.childPostIds.length);
+        });
+        posts.forEach(e => { organizeAndPush(messages, e); });
+
+        // console.log('fetchPosts_everybody messages:', messages);
+        return messages;
+    } catch (error) {
+        handleErrors(error, 'api 過去ログ取得中にエラーが発生しました');
+    }
+}
+
+function organizeAndPush(messages, e, isChat = true) {
+    if (isChat) {
+        const wasRocketed = e.memoId ? true : false;
+        console.log('chat -> e.memoId:', e, 'wasRocketed:', wasRocketed);
+        messages.push({ name: e.name, msg: e.msg, createdAt: e.createdAt, id: e.id, wasRocketed: wasRocketed });
+
+    } else {
+        console.log('memo');
+        messages.push({ name: '', msg: e.msg, createdAt: e.createdAt, id: e.id, wasRocketed: false });
     }
 }
 
@@ -273,4 +298,4 @@ async function saveStackRelation(dragedId, dropId) {
     }
 }
 
-module.exports = { saveUser, getUserInfo, getPastLogs, organizeCreatedAt, SaveChatMessage, SavePersonalMemo, SaveSurveyMessage, SaveRevealMemo, SaveKasaneteMemo, findPost, findMemo, fetchPosts, saveStackRelation, SaveParentPost };
+module.exports = { saveUser, getUserInfo, getPastLogs, organizeCreatedAt, SaveChatMessage, SavePersonalMemo, SaveSurveyMessage, SaveRevealMemo, SaveKasaneteMemo, findPost, findMemo, fetchPosts, fetchPosts_everybody, saveStackRelation, SaveParentPost };

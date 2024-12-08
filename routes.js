@@ -1,7 +1,7 @@
 // routes.js
 const express = require('express');
 const router = express.Router();
-const { fetchPosts } = require('./dbOperations');
+const { fetchPosts, fetchPosts_everybody } = require('./dbOperations');
 
 // ログインページHTML
 router.get('/', (req, res) => {
@@ -33,15 +33,14 @@ router.get('/document.css', (_, res) => {
 // ドキュメントページ用 DBアクセスAPI
 router.get('/api/:randomString/messages', async (req, res) => {
     try {
-        console.log('api called');
-
         const apiString = req.params.randomString;
-        console.log(apiString);
 
-        const messages = await fetchPosts(apiString);
-        console.log(messages);
-        
-        res.json(messages);
+        const mine = await fetchPosts(apiString);
+        const everybody = await fetchPosts_everybody();
+
+        const data = { mine, everybody };
+
+        res.json(data);
     } catch (error) {
         res.status(500).json({ error: 'Failed to fetch messages in API' });
     }
