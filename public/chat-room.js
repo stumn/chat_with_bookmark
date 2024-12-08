@@ -1,4 +1,11 @@
-const socket = io();
+// const socket = io();
+const socket = io.connect('http://yourserver.com', {
+    reconnect: true,                // 自動再接続を有効にする
+    reconnectionAttempts: Infinity, // 無限回再接続を試みる
+    reconnectionDelay: 1000,        // 再接続前の待機時間（ミリ秒）
+    reconnectionDelayMax: 5000,     // 最大待機時間（ミリ秒）
+    timeout: 10000,                 // 接続試行のタイムアウト時間（ミリ秒）
+});
 
 // html要素の取得
 function $(id) {
@@ -45,12 +52,12 @@ socket.on('onlineUsers', (onlines) => {
 // 伏せカードオープン通知
 const openCardStatus = new Map();
 setInterval(updateStatus, 1000); // update
-setInterval(alert_reload, 300000);
+// setInterval(alert_reload, 300000);
 
-function alert_reload() {
-    alert('再読み込みします');
-    location.reload();
-}
+// function alert_reload() {
+//     alert('再読み込みします');
+//     location.reload();
+// }
 
 socket.on('notification', (data) => {
     console.log('notification: ', data);
