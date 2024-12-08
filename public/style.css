@@ -22,8 +22,11 @@ header {
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-#onlines {
-    margin-left: 2rem;
+#sign-up-name{
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
 }
 
 #docsButton {

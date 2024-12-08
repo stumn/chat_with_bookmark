@@ -50,7 +50,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // ログイン情報をサーバに送信
     const loginData = { loginName, randomString };
     socket.emit('sign-up', loginData);
-    $('sign-up-name').textContent = 'あなた： ' + loginName;
+    $('sign-up-name').textContent = loginName + 'さん';
 });
 
 function getCookie(name) {
