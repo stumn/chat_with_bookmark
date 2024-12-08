@@ -11,19 +11,19 @@
 
 <body>
   <header>
+    <button id="backButton" onclick="BackToLogin()"> ⇦ back to login </button>
     <div>
       <span id="onlines"></span>
       <span id="sign-up-name"></span>
     </div>
     <button id="docsButton"> go to document ⇨ </button>
-    
   </header>
 
   <main>
 
     <div id="messageLists"></div>
 
-    <button id = "notification" onclick="GoToTheOpenCard()"></button>
+    <button id="notification" onclick="GoToTheOpenCard()"></button>
 
     <form id="form" action="">
       <input id="input" autocomplete="off" placeholder="メモ あなただけに表示" pattern=".*\S+.*" required>

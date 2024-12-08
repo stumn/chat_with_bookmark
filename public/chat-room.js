@@ -59,6 +59,10 @@ function getCookie(name) {
     return null;
 }
 
+function BackToLogin() {
+    location.href = '/';
+}
+
 // 同時参加者数
 socket.on('onlineUsers', (onlines) => {
     $('onlines').textContent = '接続中: ' + onlines.length + '人';
