@@ -150,7 +150,7 @@ io.on('connection', async (socket) => {
 
     // メモ送信ボタンが押されたとき
     socket.on('revealMemo', async (memo) => {
-      const record = await SaveRevealMemo(memo.name, memo.msg, memo._id, memo.createdAt);
+      const record = await SaveRevealMemo(memo.name, memo.msg, memo.id, memo.createdAt);
       console.log('メモ送信ボタンが押されたとき', record);
       notifyRevealMemo(record, name);
 
@@ -175,7 +175,9 @@ io.on('connection', async (socket) => {
 
       // const inquryData = { options, voters };
       const stackData = { parentPostId: target._id, childPostIds: [] };
+      console.log('undisclosedMemoDrop stackData:', stackData);
       const memoData = { memoId: memo._id, memoCreatedAt: memo.createdAt };
+      console.log('undisclosedMemoDrop memoData:', memoData);
 
       const record = await SaveKasaneteMemo(memo.name, memo.msg, stackData, memoData);
       notifyRevealMemo(record, name);
