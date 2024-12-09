@@ -27,7 +27,6 @@ const notification = $('notification');
 const form = $('form');
 const input = $('input');
 const formButton = $('formButton');
-const checkBox = $('checkBox');
 const docsButton = $('docsButton');
 
 let dropElement;
@@ -39,6 +38,10 @@ document.addEventListener('DOMContentLoaded', () => {
     // loginName = decodeURIComponent(pathname.split('/')[2]);
     loginName = getCookie('userName');
     console.log('loginName: ', loginName);
+    const nameSelect = $('name-select');
+    const nameSelectIndex = nameSelect.selectedIndex;
+    nameSelect.options[nameSelectIndex].textContent = loginName;
+
     const randomString = decodeURIComponent(pathname.split('/')[1]);
     const docURL = `/${randomString}/document`;
     docsButton.addEventListener('click', e => {
@@ -665,14 +668,15 @@ function appendChildWithIdAndScroll(item, message = {}, shouldScroll = true) {
     if (shouldScroll) { window.scrollTo(0, document.body.scrollHeight); }
 }
 
-input.addEventListener('focus', () => {
-    input.style.outlineColor = checkBox.checked ? 'rgb(56, 92, 168)' : 'rgb(32, 178, 170)';
+const sendTo = $('sendTo')
+console.log('sendTo: ', sendTo);
+sendTo.addEventListener('change', () => {
+    console.log('sendTo.value: ', sendTo.value);
+    toggleMemoMode(sendTo.value);
 });
 
-checkBox.addEventListener('change', toggleMemoMode);
-
-function toggleMemoMode() {
-    if (checkBox.checked) {
+function toggleMemoMode(value) {
+    if (value === 'all') {
         input.placeholder = 'チャット みんなに表示';
         input.style.outlineColor = 'rgb(56, 92, 168)';
         formButton.textContent = 'Send';
@@ -685,9 +689,13 @@ function toggleMemoMode() {
     }
 }
 
+input.addEventListener('focus', () => {
+    input.style.outlineColor = sendTo.value === 'all' ? 'rgb(56, 92, 168)' : 'rgb(32, 178, 170)';
+});
+
 form.addEventListener('submit', (event) => {
     event.preventDefault();
-    checkBox.checked
+    sendTo.value === 'all'
         ? socket.emit('chat message', input.value)
         : socket.emit('personal memo', input.value);
     input.value = '';

@@ -28,11 +28,11 @@ header>div {
     align-items: center;
 }
 
-#onlines{
+#onlines {
     margin-right: 1rem;
 }
 
-header>button{
+header>button {
     background-color: #f0f0f0;
     color: #263165;
     border: none;
@@ -41,6 +41,7 @@ header>button{
     cursor: pointer;
     outline: none;
 }
+
 /*  */
 
 
@@ -58,12 +59,30 @@ header>button{
     align-content: center;
     text-align: center;
 }
+
 /*  */
+
+/* メイン */
+div#listsContainer {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    margin-top: 3rem;
+}
+
+#memoLists {
+    margin: 0.3rem;
+    padding: 0.5rem;
+    background-color: #20b2aa;
+    width: 25%;
+}
 
 /* 履歴 */
 #messageLists {
     margin: 0.3rem;
     padding: 0;
+    /* width: 75%; */
+    width: 100%;
 }
 
 #messageLists>div {
@@ -369,6 +388,7 @@ span.bookmark-count {
 .downCard.visible {
     animation: slideInWithImpact 0.4s cubic-bezier(0.25, 1, 0.5, 1) forwards;
 }
+
 /*  */
 
 /* 入力 */
@@ -386,6 +406,23 @@ span.bookmark-count {
     text-align: center;
 }
 
+#form>select {
+    border: none;
+    padding: 0 1rem;
+    flex-basis: 20%;
+    border-radius: 2rem;
+    margin: 0.25rem;
+    text-align: center;
+}
+
+#form>select:focus {
+    outline-color: gray;
+}
+
+#form>select>option {
+    text-align: center;
+}
+
 #form>#input {
     border: none;
     padding: 0 1rem;
@@ -396,12 +433,6 @@ span.bookmark-count {
 
 #form>#input:focus {
     outline-color: gray;
-}
-
-#form>#checkBox {
-    margin: 1.5rem;
-    display: flex;
-    transform: scale(5);
 }
 
 #form>button {
@@ -418,4 +449,5 @@ span.bookmark-count {
 #form>button.chatButton {
     background: rgb(56, 92, 168);
 }
+
 /*  */
