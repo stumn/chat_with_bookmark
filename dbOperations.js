@@ -49,7 +49,6 @@ async function processXlogs(xLogs, name) {
     // const xLogs = await Promise.all(xLogs.map(organizeLogs));
     const result = [];
     xLogs.forEach(e => {
-        console.log('e:', e);
         e.createdAt = e.createdAt;
         if (e.memoCreatedAt) { e.memoCreatedAt = e.memoCreatedAt; }
         if (e.bookmarks > 0) {
