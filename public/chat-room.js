@@ -669,9 +669,7 @@ function appendChildWithIdAndScroll(item, message = {}, shouldScroll = true) {
 }
 
 const sendTo = $('sendTo')
-console.log('sendTo: ', sendTo);
 sendTo.addEventListener('change', () => {
-    console.log('sendTo.value: ', sendTo.value);
     toggleMemoMode(sendTo.value);
 });
 
@@ -690,6 +688,12 @@ function toggleMemoMode(value) {
 }
 
 input.addEventListener('focus', () => {
+    console.log(sendTo.value);
+    if (sendTo.value === 'default') {
+        alert('送信先を選択してください');
+        sendTo.value = 'personal';
+        return;
+    }
     input.style.outlineColor = sendTo.value === 'all' ? 'rgb(56, 92, 168)' : 'rgb(32, 178, 170)';
 });
 
