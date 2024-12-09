@@ -82,9 +82,7 @@ setInterval(updateStatus, 1000); // update
 // }
 
 socket.on('notification', (data) => {
-    console.log('notification: ', data);
     openCardStatus.set(data, data.nowTime);
-    console.log('openCardStatus: ', openCardStatus);
 });
 
 function updateStatus() {
@@ -92,7 +90,6 @@ function updateStatus() {
 
     for (let [data, date] of openCardStatus) {
         const elapsedTime = Date.now() - date;
-        // console.log('elapsedTime: ', elapsedTime);
         if (elapsedTime > 20000) { openCardStatus.delete(data); } // 60sec passed => delete notification
 
         name = data.name;
@@ -108,9 +105,24 @@ function updateStatus() {
     notification.textContent = openCardStatus.size > 0 ? text : '';
 }
 
-function GoToTheOpenCard() {
-    // 目当ての投稿へひとっとび window.scrollTo(0, document.body.scrollHeight);
-    // ～秒前∧名前∧伏せカード で探せる
+notification.addEventListener('click', () => {
+    GoToTheOpenCard(Array.from(openCardStatus.keys())[0].id);
+});
+
+function GoToTheOpenCard(targetId) {
+    const targetElement = $(`${targetId}`);
+    if (targetElement) {
+        targetElement.scrollIntoView({
+            behavior: "smooth",
+            block: "center"
+        });
+        targetElement.style.backgroundColor = 'rgba(255, 255, 0, 0.5)';
+        setTimeout(() => {
+            targetElement.style.backgroundColor = '';
+        }, 3000);
+    } else {
+        console.error("指定された要素が見つかりませんでした");
+    }
 }
 
 // 過去ログ受信
