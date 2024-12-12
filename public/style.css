@@ -70,13 +70,6 @@ div#listsContainer {
     margin-top: 3rem;
 }
 
-#memoLists {
-    margin: 0.3rem;
-    padding: 0.5rem;
-    background-color: #20b2aa;
-    width: 25%;
-}
-
 /* 履歴 */
 #messageLists {
     margin: 0.3rem;
