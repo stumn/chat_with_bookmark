@@ -29,9 +29,7 @@ let loginName;
 // ログイン
 document.addEventListener('DOMContentLoaded', () => {
     const pathname = window.location.pathname;
-    // loginName = decodeURIComponent(pathname.split('/')[2]);
     loginName = getCookie('userName');
-    console.log('loginName: ', loginName);
     const nameSelect = $('name-select');
     const nameSelectIndex = nameSelect.selectedIndex;
     nameSelect.options[nameSelectIndex].textContent = loginName;
@@ -67,13 +65,7 @@ socket.on('onlineUsers', (onlines) => {
 
 // 伏せカードオープン通知
 const openCardStatus = new Map();
-setInterval(updateStatus, 1000); // update
-// setInterval(alert_reload, 300000);
-
-// function alert_reload() {
-//     alert('再読み込みします');
-//     location.reload();
-// }
+setInterval(updateStatus, 1000); // update every second
 
 socket.on('notification', (data) => {
     openCardStatus.set(data, data.nowTime);
@@ -297,12 +289,10 @@ function processDownCard(msg, isMine = false) {
 }
 
 function handleKasaneMemoOpen(data) {
-    console.log('handleKasaneMemoOpen: ', data);
     // まず公開したメモをチャット投稿として表示
     const post = data.postSet;
     const item = buildMlElement(post);
     appendChildWithIdAndScroll(item, post, false);
-    console.log('item: ', item);
 
     // ドロップ先の要素を取得
     const dropElement = $(data.dropId);
@@ -329,7 +319,6 @@ function handleKasaneMemoOpen(data) {
 }
 
 function handleBroadcastDrop(data) {
-    console.log('handleBroadcastDrop: ', data);
     const draggedElement = $(data.draggedId);
     const dropElement = $(data.dropId);
     const parentDIV = dropElement.closest('.accordion');
@@ -372,6 +361,7 @@ function buildMemoSendContainer(memo) {
 function insertDownCard(msg, timeSpanArray, index, isLatest = false, isMine) {
     const item = buildMlElement(msg);
 
+    console.log('isMine: ', isMine);
     isMine ? enableDragAndDrop(item) : addBeingDraggedListeners(item);
 
     isLatest
@@ -434,21 +424,34 @@ function addBeingDraggedListeners(element) {
 }
 
 function handleDragStart(event) {
-    event.dataTransfer.effectAllowed = "move";
     draggedElement = event.target;
-    setTimeout(() => {
-        event.target.style.visibility = 'hidden'; // Hide the element during the drag
-    }, 0);
-    socket.emit('dragstart', event.target.id);
+    const isMemo = draggedElement.classList.contains('memo');
+    if (isMemo) {
+        event.dataTransfer.effectAllowed = "none";
+    } else {
+        event.dataTransfer.effectAllowed = "move";
+        setTimeout(() => { event.target.style.visibility = 'hidden'; }, 0);
+        socket.emit('dragstart', event.target.id);
+    }
 }
 
 function handleDragEnd(event) {
+    if (event.target.classList.contains('memo')) {
+        // 元に戻す
+        document.querySelectorAll('.memo').forEach((memo) => {
+            memo.classList.remove('drag-disabled');
+        });
+    }
     event.target.style.visibility = ''; // Restore visibility
     draggedElement = null;
     socket.emit('dragend', event.target.id);
 }
 
 function handleDragOver(event) {
+    if (event.target.classList.contains('drag-disabled')) {
+        // ドロップを禁止
+        event.preventDefault();
+    }
     // Restrict drop targets based on classes
     if (event.target.classList.contains("name-time-msg") || event.target.classList.contains("buttons")) {
         event.dataTransfer.dropEffect = "none"; // Disable drop for invalid targets
@@ -465,6 +468,12 @@ function handleDragLeave(event) {
 }
 
 function handleDrop(event) {
+    if (!draggedElement) { return; }
+    if (event.target.classList.contains('drag-disabled')) {
+        // ドロップを禁止
+        event.preventDefault();
+    }
+
     this.style.border = ""; // Reset visual feedback
     this.style.color = '';
 
@@ -472,7 +481,6 @@ function handleDrop(event) {
     event.stopPropagation();
     const dropElement = event.target.closest('.ml');
 
-    if (!draggedElement) { console.log('no draggedElement'); return; }
     if (!dropElement) { console.log('no dropElement'); return; }
 
     draggedElement.classList.contains('memo')
@@ -498,6 +506,10 @@ function overtDrop(dropElement) {
 
 // memo を重ねてオープン
 function undisclosedMemoDrop(event, dropElement) { // dropElement: ml / detailsContainer
+    if (dropElement.classList.contains('memo')) {
+        alert('メモはメモに重ねることはできません');
+        return;
+    }
     const parentDIV = dropElement.closest('.accordion');
     const dropId = parentDIV ? parentDIV.querySelector('summary').id : dropElement.id;
     socket.emit('undisclosedMemoDrop', draggedElement.id, dropId); // サーバでメモをポストにする
@@ -599,7 +611,6 @@ function createNameTimeMsg(message, nameText = message.name) {
     const userName = createHTMLelement('span', 'userName', nameText);
 
     const timeData = message.memoCreatedAt ? message.memoCreatedAt : message.createdAt;
-    // console.log('timeData: ', message.memoCreatedAt ? 'memoCreatedAt' : 'createdAt');
     const time = createHTMLelement('span', 'time', organizeCreatedAt(timeData));
 
     userName_time.append(userName, time);
@@ -650,8 +661,6 @@ function makeBookmarkButton(message) {
 function setupBookmarkClickHandler(button, message) {
     button.addEventListener('click', (event) => {
         event.stopPropagation(); // 親や子への伝播を防ぐ
-        console.log('pushed bookmark button', 'message.id: ', message.id);
-        console.log('event.target: ', event.target);
 
         button.classList.toggle("active");
         const isActive = button.classList.contains("active");
@@ -662,10 +671,12 @@ function setupBookmarkClickHandler(button, message) {
 }
 
 function enableDragAndDrop(item) {
+    console.log('item: ', item);
     item.setAttribute('draggable', 'true');
     item.classList.add('draggable');
     addDragListeners(item);
     addBeingDraggedListeners(item);
+    console.log('item2: ', item);
 }
 
 function appendChildWithIdAndScroll(item, message = {}, shouldScroll = true) {
@@ -694,7 +705,6 @@ function toggleMemoMode(value) {
 }
 
 input.addEventListener('focus', () => {
-    console.log(sendTo.value);
     if (sendTo.value === 'default') {
         alert('送信先を選択してください');
         sendTo.value = 'personal';
@@ -720,7 +730,6 @@ function checkIsBefore(target, compareCreatedAt) {
 function organizeCreatedAt(createdAt) {
     const UTCdate = new Date(createdAt);
     if (isNaN(UTCdate.getTime())) {
-        console.error("無効な日時:", createdAt);
         return "Invalid Date";
     }
     return UTCdate.toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' });

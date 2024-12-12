@@ -28,17 +28,18 @@
     <button id="notification"></button>
 
     <form id="form" action="">
+      
+      <select name="which" id="sendTo">
+        <option value="personal" selected>自分だけメモ</option>
+        <option value="all">全員でチャット</option>
+      </select>
+
       <select name="name" id="name-select">
         <option value="loginName" selected></option>
         <option value="anonymous">匿名</option>
       </select>
 
       <input id="input" autocomplete="off" placeholder="メモ あなただけに表示" pattern=".*\S+.*" required>
-
-      <select name="which" id="sendTo">
-        <option value="personal" selected>自分だけメモ</option>
-        <option value="all">全員でチャット</option>
-      </select>
 
       <button id="formButton">Memo</button>
     </form>

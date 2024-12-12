@@ -353,6 +353,11 @@ span.bookmark-count {
     cursor: move;
 }
 
+.memo.drag-disabled {
+    cursor: not-allowed; /* ドロップ不可を示すカーソル */
+}
+
+
 /* 伏せカード */
 @keyframes slideInWithImpact {
     0% {

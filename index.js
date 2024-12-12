@@ -215,7 +215,10 @@ io.on('connection', async (socket) => {
     socket.on('drop', async (kasaneData) => {
       console.log('catch drop:', kasaneData);
       socket.broadcast.emit('broadcastDrop', kasaneData); // 操作したユーザ以外に送信
-      await saveStackRelation(kasaneData.draggedId, kasaneData.dropId);
+      const data = await saveStackRelation(kasaneData.draggedId, kasaneData.dropId);
+      if(data === 'alert'){
+        socket.emit('alert', 'メモを重ねることはできません');
+      }
     });
   });
 
