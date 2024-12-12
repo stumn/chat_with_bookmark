@@ -23,7 +23,6 @@ function $(id) {
 }
 
 const messageLists = $('messageLists');
-const memoLists = $('memoLists');
 const notification = $('notification');
 const form = $('form');
 const input = $('input');
@@ -33,7 +32,6 @@ const docsButton = $('docsButton');
 let dropElement;
 let loginName;
 
-///////////////////////////////////////////////////////////////////
 // ログイン
 document.addEventListener('DOMContentLoaded', () => {
     const pathname = window.location.pathname;
@@ -126,8 +124,6 @@ function GoToTheOpenCard(targetId) {
         console.error("指定された要素が見つかりませんでした");
     }
 }
-
-/////////////////////////////////////////////////////////////////////////
 
 // 過去ログ受信
 socket.on('pastLogs', ({ pastLogs, stackLogs }) => {

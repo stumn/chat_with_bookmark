@@ -9,16 +9,27 @@
 
 <body>
   <header>
+    <button id="backButton" onclick="BackToChatRoom()"> ⇦ back to chat </button>
     <span id="login-name"></span>
-    <div>
-      <button id="backButton" onclick="BackToChatRoom()">back to chat page</button>
-      <button id="CopyButton" onclick="copyText()">copy the text</button>
-      <button id="toggleButton" onclick="hideName()">hide name</button>
-    </div>
   </header>
 
   <main>
-    <ul id="textToCopy"></ul>
+    <div id="document-container1">
+      <div class="docHeader">
+        <h2>わたしのまとめ</h2>
+        <button class="CopyButton">copy the text</button>
+        <button class="toggleVisibilityOfName">hide name</button>
+      </div>
+      <ul id="myDocument"></ul>
+    </div>
+    <div id="document-container2">
+      <div class="docHeader">
+        <h2>みんなのまとめ</h2>
+        <button class="CopyButton">copy the text</button>
+        <button class="toggleVisibilityOfName">hide name</button>
+      </div>
+      <ul id="everybodyDocument"></ul>
+    </div>
   </main>
 
   <!-- ブラウザ側のスクリプト -->
@@ -26,7 +37,8 @@
   <script>
     let loginName, randomString;
     // ドキュメントリスト要素の取得
-    const documentList = document.getElementById('textToCopy');
+    const documentList = document.getElementById('myDocument');
+    const everybodyDocumentList = document.getElementById('everybodyDocument');
 
     document.addEventListener('DOMContentLoaded', () => {
       const pathname = window.location.pathname;
@@ -41,24 +53,20 @@
       // APIに接続して、ブックマークされたポストだけ取得
       fetch(`/api/${randomString}/messages`)
         .then(response => response.json())
-        .then(messages => {
-          messages.forEach(msg => {
-            console.log('msg: ' + JSON.stringify(msg)); // メッセージの内容を確認
+        .then(data => {
+          // わたしのまとめ
+          const msg = data.mine;
+          msg.forEach(mine => {
+            console.log(mine);
+            const li = createDocumentElement(mine);
+            documentList.append(li);
+          });
 
-            const li = document.createElement('li');
-            li.classList.add('doc');
-            li.textContent = msg.msg;
-
-            let displayName = msg.name ? `  - ${msg.name}` : '';
-            li.classList.add(msg.name ? 'otherPersonPost' : 'myMemo');
-
-            const span = document.createElement('span');
-            span.textContent = displayName;
-            span.classList.add('displayName');
-            li.append(span);
-
-            li.setAttribute("id", msg.id);
-            documentList.appendChild(li);
+          // みんなのまとめ
+          const everybodyMsg = data.everybody;
+          everybodyMsg.forEach(everybodyMsg => {
+            const li = createDocumentElement(everybodyMsg);
+            everybodyDocumentList.append(li);
           });
         });
     });
@@ -69,11 +77,37 @@
       return null;
     }
 
-    function copyText() {
-      // テキストを取得
-      var text = document.getElementById('textToCopy').innerText;
+    function createDocumentElement(msg) {
+      const li = document.createElement('li');
+      li.textContent = msg.msg;
 
-      // テキストをクリップボードにコピー
+      let displayName = msg.name ? `  - ${msg.name}` : '';
+      li.classList.add(msg.name ? 'otherPersonPost' : 'myMemo');
+      if (msg.wasRocketed) {
+        console.log('wasRocketed', msg.id);
+        li.classList.add('wasRocketed');
+      }
+
+      const span = document.createElement('span');
+      span.textContent = displayName;
+      span.classList.add('displayName');
+      li.append(span);
+
+      li.setAttribute("id", msg.id);
+      return li;
+    }
+
+    document.addEventListener('click', (event) => {
+      const cl = event.target.classList;
+      if (cl.contains('CopyButton')) { copyText(event); }
+      if (cl.contains('toggleVisibilityOfName')) { hideName(event); }
+    });
+
+    function copyText(event) {
+      console.log(event.target);
+      const parentElement = event.target.closest('.docHeader').nextElementSibling;
+      const text = parentElement.innerText;
+
       navigator.clipboard.writeText(text).then(function () {
         alert("テキストがコピーされました！");
       }).catch(function (error) {
@@ -85,16 +119,17 @@
       window.location.href = `/${randomString}/chat`; // 今のところ、別人になっちゃう
     }
 
-    function hideName() {
-      const nameDisplayElements = document.getElementsByClassName('displayName');
-      const toggleButton = document.getElementById('toggleButton');
+    function hideName(event) {
+      const header = event.target.closest('.docHeader');
+      const nameDisplayElements = header.nextElementSibling.querySelectorAll('.displayName');
       const isHidden = nameDisplayElements[0].style.visibility === 'hidden';
 
       for (let i = 0; i < nameDisplayElements.length; i++) {
         nameDisplayElements[i].style.visibility = isHidden ? 'visible' : 'hidden';
       }
-      toggleButton.textContent = isHidden ? 'hide name' : 'show name';
+      event.target.textContent = isHidden ? 'hide name' : 'show name';
     }
+
 
 
   </script>
